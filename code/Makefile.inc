@@ -6,7 +6,7 @@ SSHPORT ?= 0
 .c:
 	${CC} ${CFLAGS} -o $@ $<
 
-all: narrow narrow_realloc narrow_widen privesc.c privesc2.c unrepresentable_length
+all: narrow narrow_realloc narrow_widen privesc privesc2 unrepresentable_length
 
 copyexec-%: %
 	scp -P $(SSHPORT) $< root@127.0.0.1:/root
