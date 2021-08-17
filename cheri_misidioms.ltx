@@ -1,0 +1,352 @@
+\documentclass[a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{courier}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage[numbers]{natbib}
+\usepackage{softdev}
+\usepackage{xspace}
+
+\lstset{
+    basicstyle=\ttfamily,
+    xleftmargin=\parindent,
+    numbers=left,
+    numbersep=.8em,
+    numberstyle=\tiny\tt\color{gray},
+    captionpos=b,
+    escapeinside={{<!}{!>}},
+    commentstyle=\color{gray}\itshape,
+    keywordstyle=\textbf,
+}
+
+% from https://tex.stackexchange.com/questions/264361/skipping-line-numbers-in-lstlisting#264373
+\let\origthelstnumber\thelstnumber
+\makeatletter
+\newcommand*\Suppressnumber{%
+  \lst@AddToHook{OnNewLine}{%
+    \let\thelstnumber\relax%
+     \advance\c@lstnumber-\@ne\relax%
+    }%
+}
+
+\newcommand\narrowingdoesnt{\textsc{Narrow}\xspace}
+\newcommand\narrowwiden{\textsc{NarrowWiden}\xspace}
+\newcommand\privesc{\textsc{PrivEsc}\xspace}
+
+\title{How to unintentionally misuse CHERI}
+
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+CHERI provides and enforces hardware capabilities that allow programmers to
+make strong security guarantees about their programs. We take as a given that
+CHERI's hardware features are correct and complete, and that it is the job of
+the programmer to understand how to use those features to achieve a desired
+level of security. However, while we have found it easy to get a reasonable
+high-level understanding of programming in CHERI, we have found it difficult to
+get an accurate low-level understanding. Because of that, we have made many
+more mistakes when writing CHERI programs than we anticipated, some of which we
+suspect others will repeat when exploring CHERI.
+
+One of the root causes of our mistakes is that no single source of
+documentation systematically covers the subtle implications of CHERI's design.
+Put another way, there is currently little documentation explaining `good'
+CHERI programming idioms or, as we've come to realise, of `bad' CHERI
+programming idioms either.
+
+In this short paper, we capture some `bad' CHERI programming idioms, showing
+how these undermine the expected security guarantees of CHERI programs. For
+each, we attempt to name the idiom, explain the relevant CHERI features, and
+give simple example code. We do not claim that all, or perhaps even any, of the
+idioms in this paper are novel, and some may strike seasoned CHERI programmers
+as naive --- but we also show how one is present in CheriBSD, allowing a real
+attack. We hope that by capturing several of these idioms in a single place,
+naming and describing them, we will make it easier for programmers and
+researchers to understand and communicate about both these and
+yet-to-be-discovered bad idioms.
+
+
+\section{Background}
+
+We assume high-level familiarity with capabilities (an approachable historical overview
+is~\cite{levy84capability}, which may usefully be augmented by more recent work
+such as \cite{miller06robust}),
+CHERI generally (see e.g.~this introduction~\cite{watson20cheriintroduction}),
+the CHERI ABI~\cite{brooks19cheriabi},
+and CHERI C (the dialect of C that CHERI defines)~\cite{watson20chericprogramming}.
+
+Because CHERI has been developed over a number of years, and is explained over
+a variety of documentation and papers, some concepts have more than one name.
+Unfortunately, we have found that some of those names make it difficult to talk
+about capability usage without confusing both speaker and listener. Even more
+unfortunately, we can think of no better solution to this than to propose our
+own terminology. We refer to a capability as \emph{authentic} (what CHERI calls
+`tagged' or `valid') if the hardware has ensured it has been created according
+to CHERI's rules or \emph{forged} (what CHERI calls `untagged' or `invalid')
+otherwise. A capability consists of a \emph{pointer} (i.e.~an address in
+memory) and a set of \emph{permissions}. Amongst the permissions are
+\emph{bounds} -- the region of memory an authentic capability is allowed to
+read/write from/to. A capability's bounds are from a \emph{low} (inclusive) to
+a \emph{high} (exclusive) address and we refer `a bound of $x$ bytes' to refer
+a capability whose \emph{low}-\emph{high} bound addresses equal $x$ bytes. If a
+capability's pointer is contained within its bounds we refer to the pointer as
+\emph{in-bounds} or \emph{out-of-bounds} otherwise
+(see~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
+capability might have an out-of-bounds pointer). Other permissions include
+boolean flags such as whether a capability can read/write to memory addresses
+within its bounds.
+\laurie{i think it's easiest to think of capabilities as immutable, emphasising
+that new capabilities must be created from old capabilities. however, the
+CHERI API has functions with \texttt{set} in their name. i think referring to
+`parent' and `child' capabilities might make this sort of thing clearer.
+thoughts?}
+
+
+\section{\privesc: Privilege Escalation}
+
+The most dangerous attacks on any capability system are those where an attacker
+is able to unexpectedly elevate a capability's privileges. Formally speaking, CHERI capabilities
+have monotonically decreasing privileges: in other words, when taking an existing
+capability \emph{C1} as input, any capability \emph{C2} we create from
+\emph{C1} must have the same or fewer privileges. This may seem to make it
+impossible to increase a capability's privileges, but software
+components can store high privilege capabilities that can then be used to
+give the appearance of returning a capability with increased privileges.
+
+\laurie{add example of storing a capability}
+
+Functions which take in a low privileged capability and use a
+higher\footnote{More formally, a capability with disjoint privileges to the
+input capability} privileged capability to perform calculations are at risk of
+privilege escalation, and need to be carefully audited for bad idioms.
+
+
+\subsection{Insufficient validation of the input capability}
+
+Consider a memory allocator whose \texttt{realloc(cap, size)} function takes in
+a capability \texttt{cap} whose pointer addresses the beginning of a block of
+memory and returns a new capability capable of addressing \texttt{size} bytes.
+A common \texttt{realloc} optimisation is to avoid moving memory if the
+requested size fits within the `bucket' that the block already resides within.
+We might then write a simple \texttt{realloc} as follows, assuming that we have
+access to a high-privileged capability \texttt{MC} (e.g.~from
+\texttt{mmap}~\cite{brooks19cheriabi}):
+
+\begin{lstlisting}[language=C]
+void *realloc(void *cap, size_of size) {
+  if (size_of_bucket(cap) <= size) {
+    // No need to reallocate p.
+    return cheri_bounds_set(
+      cheri_address_set(MC, cap),
+      size);
+  } else {
+    // Allocate a larger region of memory and copy
+    // `cap`'s contents over.
+    ...
+  }
+}
+\end{lstlisting}
+
+\noindent The crucial optimisation is on line 2: if we already have enough
+memory for the resized block, we simply return a new capability with the same
+pointer \texttt{p} and an upper bound \texttt{size}. By definition, reducing
+the size of a block means that it will always fit within its existing bucket so
+the above optimisation is guaranteed to be correct.
+
+Unfortunately this implementation of \texttt{realloc} is subject to privilege
+escalation. For example, one can pass in a capability with narrow bounds and
+receive back a capability with wider bounds:
+
+\begin{lstlisting}[language=C]
+uint8_t *arr = malloc(16);
+arr = cheri_bounds_set(arr, 8);
+assert(cheri_tag_get(arr) && cheri_length_get(arr) == 8);
+arr = realloc(arr, 16);
+assert(cheri_tag_get(arr) && cheri_length_get(arr) == 16);
+\end{lstlisting}
+
+We first \texttt{malloc} a block, returning a capability \emph{C1} with bounds
+$0\ldots{}n$ bytes (line 1). We then create a new capability \emph{C2} with
+bounds $0\ldots{}m$ bytes where $m < n$ (lines 2 and 3). We can then use
+\texttt{realloc} to turn \emph{C2} back into \emph{C1} -- even though we had
+lost access to \emph{C1} entirely!
+
+This is not just a theoretical attack: our example \texttt{realloc} is an
+elided version of CheriBSD's \texttt{realloc}, which (as of 2021-08-16) is
+subject to this attack. Any capability whose bounds contain the base address of
+a memory block can potentially have its privileges escalated, with
+\texttt{realloc} returning a capability with the same permissions as the memory
+system's main capability (as well as widening bounds, this allows
+e.g.~upgrading a read-only capability to a read/write capability).
+
+
+\subsection{Mitigations}
+
+Privilege escalation occurs when a function fails to fully validate a possibly
+lower-privileged capability correctly before using a higher-privileged
+capability. Exactly what validation should occur is highly situation dependent,
+which is why it is easy to get wrong. It is almost certain that the input CHERI
+capability should be authentic and the capability's pointer in-bounds. However,
+as our \texttt{realloc} attack shows, these two conditions may be only part of
+the necessary validation.
+
+In this case, after checking that \texttt{cap} is authentic and in-bounds,
+\texttt{realloc} should then check that \texttt{cap}'s pointer refers to the
+start of a memory block and that the capability's permissions are equal to the
+permissions returned by the most recent \texttt{malloc} or \texttt{realloc} for
+that memory block.
+
+
+\section{\narrowingdoesnt: Narrowing a capability's bounds does not always fully narrow the capability's bounds}
+
+Capabilities have high and low bounds, which are a strong enforcement mechanism
+for restricting the valid region of memory that the capability can access for
+reading and writing. It is thus tempting to write code which hides secrets
+beyond the reach of a capability's bounds such as the following:
+
+% Adapted from narrow.c
+\begin{lstlisting}[language=C]
+uint8_t *array_with_hidden_secret(size_t size) {
+    uint8_t *arr = malloc(size);
+    return cheri_bounds_set(arr, size - 1);
+}
+\end{lstlisting}
+
+\noindent We first \texttt{malloc} an array big enough space to store
+\texttt{size} many \texttt{u8}s (line 2) before creating a child capability
+which prevents access to the array's final byte (line 3). We can verify this
+behaviour by checking the returned capability's length, as in the following
+code, which executes without error:
+
+% Adapted from narrow.c
+\begin{lstlisting}[language=C]
+uint8_t *arr = array_with_hidden_secret(16385);
+assert(cheri_length_get(arr) == 16384);
+\end{lstlisting}
+
+However, this idiom is insidious because it works correctly for the sorts of
+`human friendly' sizes that programmers tend to test, but not for many other
+sizes. As we saw above, creating a capability with a bound of 16384 bytes
+prevents access to the array's last byte. However, making the array 1 byte
+bigger undermines our expectations, as in the following code, which executes
+without error:
+
+% Adapted from narrow.c
+\begin{lstlisting}[language=C]
+uint8_t *arr = array_with_hidden_secret(16386);
+assert(cheri_length_get(arr) == 16392);
+\end{lstlisting}
+
+Note that though we expected a capability with a bound of 16385 bytes, instead
+the length is 16392 bytes. On Morello, 16385 bytes is the smallest bound which
+can not be precisely represented in a capability, and thus it has been been
+rounded up to the next representable bound. If we rely on capability bounds to
+prevent access to secrets, as in our example above, this can cause secrets to
+leak.
+
+Practically speaking, this means that one cannot expect that narrowing a
+capability's bounds precisely captures only the requested region of memory: in
+general, the capability will provide access to more memory than one wishes.
+Forgetting to take account of this, as in our example above, leads to secrets
+being leaked. \laurie{mention cheri\_bounds\_set\_exact}
+
+The underlying issue is that modern CHERI systems use `CHERI
+Concentrate'~\cite{woodruff19chericoncentrate}, an approach to representing
+bounds that requires relatively few bits: for example Morello's capabilities
+have 18 bits to express the bounds for a 64-bit address space. The trade-off is
+simple: the fewer bits used for bounds the smaller capabilities are (which is
+good for memory use and performance), but the less precise the bounds that can
+be represented. On an architecture such as Morello with a 64-bit address space
+and 128-bit capabilities, CHERI Concentrate devotes 41 bits to representing
+bounds. The encoding is ingenious, but hard to capture succinctly: in essence,
+bounds use use exponents, in similar fashion to IEEE 754 floating point
+numbers: the larger the length of a bound, the less accurately it will be
+represented. When a desired length cannot be precisely represented, the next
+largest precisely representable length is used in the bound. On Morello, for
+example, small bounds up to, but excluding, 4097 bytes are precisely
+represented, but if one tries to make a bound with a length of 4097 bytes, it
+is rounded up to 4104 bytes.
+
+
+\subsection{Mitigations}
+
+There are two ways that one can ensure that narrowing bounds does not cause
+secrets to be leaked.
+
+First, one can layout memory in advance such a manner that, no matter what
+imprecise bounds are used, secrets will not leak. One could rewrite
+\texttt{array\_with\_hidden\_secret} using this technique, provided that the
+number of secret items at the end of array does not vary after array creation
+time. However, in general, this approach is wasteful of memory, and is only
+likely to be used by systems such as memory allocators which can `recover' the
+seemingly wasted memory.
+
+Second, one can check whether the narrowed bounds do/would capture only the
+desired region of memory and if they do/would not, move the secret data to a
+(probably new) non-overlapping region of memory. One can check whether bounds
+will be adequately narrowed in advance using
+\texttt{cheri\_representable\_length} or by querying the narrowed capability
+with \texttt{cheri\_length\_get}.
+
+
+\section{\narrowwiden: Narrowing then widening}
+
+Assuming that a child capability with narrow bounds has been created while
+respecting the issues raised in \narrowingdoesnt, it may seem that our issues
+with capability bounds are over. However, if one later widens those bounds
+again, one may unintentionally leak secrets.
+
+CheriBSD's default \texttt{realloc} is subject to this problem. The following
+code executes successfully, with the capability returned by \texttt{realloc}
+giving access to the same range of memory as the original \texttt{malloc}. Note
+that \texttt{realloc} does not move, or scrub, memory in such a case. Thus, if
+the user expected the setting of bounds to protect a secret, this code will not
+give the protection expected.
+
+\begin{lstlisting}[language=C]
+uint8_t *arr = malloc(256);
+for (uint8_t i = 0; i < 255; i++) arr[i] = i;
+arr = realloc(arr, 1);
+assert(cheri_tag_get(arr) && cheri_length_get(arr) == 1);
+arr = realloc(arr, 256);
+for (uint8_t i = 0; i < 255; i++) assert(arr[i] == i);
+\end{lstlisting}
+
+
+\subsection{Mitigations}
+
+In the specific example above, \texttt{realloc} should scrub memory when the
+size of a memory block is being narrowed. However, this may not be appropriate
+in all cases, particularly where capability bounds narrowing is being used to
+hide a secret from another compartment. In such cases, code which can widen a
+capability's bounds must be carefully audited.
+
+
+\section{Protecting the whole but not the parts}
+
+\laurie{i.e.~set permissions on a struct attributes but not the struct (or vice versa): capabilities only cover contiguous chunks of memory}
+
+
+\section{Capability overflow}
+
+\laurie{is this possible?}
+
+
+%\section{Missing or flawed parts of the CHERI API}
+
+%\subsection{\texttt{cheri\_address\_set}}
+
+%\laurie{'cheri_setaddress()` doesn't abort if the result isn't encodable.}
+
+
+\bibliographystyle{plain}
+\bibliography{bib}
+
+\end{document}

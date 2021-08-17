@@ -1,0 +1,4 @@
+CC = ${CHERIBASE}/output/sdk/bin/clang
+CFLAGS = -Wall -fuse-ld=lld --config cheribsd-riscv64-purecap.cfg
+
+include Makefile.inc
