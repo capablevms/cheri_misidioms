@@ -54,6 +54,9 @@ high-level understanding of programming in CHERI, we have found it difficult to
 get an accurate low-level understanding. Because of that, we have made many
 more mistakes when writing CHERI programs than we anticipated, some of which we
 suspect others will repeat when exploring CHERI.
+\jacob{I consider it the other way around; I find it (relatively) easy to
+understand the low-level behaviours but somewhat harder to map those onto
+integrated programs and big systems. Is this back to front, or am I?}
 
 One of the root causes of our mistakes is that no single source of
 documentation systematically covers the subtle implications of CHERI's design.
@@ -95,7 +98,10 @@ memory) and a set of \emph{permissions}. Amongst the permissions are
 \emph{bounds} -- the region of memory an authentic capability is allowed to
 read/write from/to. A capability's bounds are from a \emph{low} (inclusive) to
 a \emph{high} (exclusive) address and we refer `a bound of $x$ bytes' to refer
-a capability whose \emph{low}-\emph{high} bound addresses equal $x$ bytes. If a
+a capability whose \emph{low}-\emph{high} bound addresses equal $x$ bytes.
+\jacob{Should I read that as an arithmetic expression? In which case, it should
+be \emph{high}-\emph{low}.}
+If a
 capability's pointer is contained within its bounds we refer to the pointer as
 \emph{in-bounds} or \emph{out-of-bounds} otherwise
 (see~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
@@ -107,6 +113,11 @@ that new capabilities must be created from old capabilities. however, the
 CHERI API has functions with \texttt{set} in their name. i think referring to
 `parent' and `child' capabilities might make this sort of thing clearer.
 thoughts?}
+\jacob{I agree, it's easier to think about that way, and the \texttt{set}
+functions work that way anyway, despite the name. The terms `parent' and `child'
+work, I think, though we might need further qualification for some situations
+where a capability might have more than one parent (and that's Ok, unless
+there's a potential situation I've missed).}
 
 
 \section{\privesc: Privilege Escalation}
@@ -121,6 +132,12 @@ components can store high privilege capabilities that can then be used to
 give the appearance of returning a capability with increased privileges.
 
 \laurie{add example of storing a capability}
+
+\jacob{If you store a capability, you probably need a way to retrieve it, and
+then the stored capability is still accessible. The store must be combined with
+a compartment-switching mechanism (like sealing or a privileged state) to be
+effective. That could be a complicated detour, but do we need to acknowledge it
+so as not to upset those with some prior knowledge?}
 
 Functions which take in a low privileged capability and use a
 higher\footnote{More formally, a capability with disjoint privileges to the
@@ -179,8 +196,8 @@ bounds $0\ldots{}m$ bytes where $m < n$ (lines 2 and 3). We can then use
 lost access to \emph{C1} entirely!
 
 This is not just a theoretical attack: our example \texttt{realloc} is an
-elided version of CheriBSD's \texttt{realloc}, which (as of 2021-08-16) is
-subject to this attack. Any capability whose bounds contain the base address of
+elided\jacob{abbreviated?} version of CheriBSD's \texttt{realloc}, which (as of 2021-08-16) is
+subject\jacob{vulnerable?} to this attack. Any capability whose bounds contain the base address of
 a memory block can potentially have its privileges escalated, with
 \texttt{realloc} returning a capability with the same permissions as the memory
 system's main capability (as well as widening bounds, this allows
@@ -257,10 +274,21 @@ general, the capability will provide access to more memory than one wishes.
 Forgetting to take account of this, as in our example above, leads to secrets
 being leaked. \laurie{mention cheri\_bounds\_set\_exact}
 
+\jacob{Notably, occurrences of this pattern in real code will (as we've seen) be
+much less obvious, and very hard to spot in code reviews. We could really do
+with a helper that tests whether or not a hypothetical access would be
+permitted, so we can write assertions in our \texttt{realloc} implementation, etc.}
+
 The underlying issue is that modern CHERI systems use `CHERI
 Concentrate'~\cite{woodruff19chericoncentrate}, an approach to representing
 bounds that requires relatively few bits: for example Morello's capabilities
-have 18 bits to express the bounds for a 64-bit address space. The trade-off is
+have 18 bits to express the bounds for a 64-bit address space.
+\jacob{Morello's \texttt{B} is encoded in 16 bits, and \texttt{T} in 14 (with
+the top two bits derived in a clever way). I think it's fair to say that the
+bounds have 16 bits, but the bottom three bits of \texttt{B} and \texttt{T} are
+zero when an exponent is used, so there's a resolution discontinuity when the
+exponent is introduced.}
+The trade-off is
 simple: the fewer bits used for bounds the smaller capabilities are (which is
 good for memory use and performance), but the less precise the bounds that can
 be represented. On an architecture such as Morello with a 64-bit address space
@@ -273,6 +301,14 @@ largest precisely representable length is used in the bound. On Morello, for
 example, small bounds up to, but excluding, 4097 bytes are precisely
 represented, but if one tries to make a bound with a length of 4097 bytes, it
 is rounded up to 4104 bytes.
+\jacob{Those figures are too small for Morello. Empirically, Morello's
+\texttt{rrlen} instruction -- which I think is used to implement
+\texttt{cheri\_representable\_length(...)} -- doesn't round anything smaller
+than 16385, which is the figure used on the previous page. Actually a larger
+length might be representable in some cases; \texttt{rrlen} is conservative, and
+the wrap-around encoding makes precise reasoning difficult. I did work all this
+out once, but I'd need to spend some time with my notes to say anything usefully
+quantitative.}
 
 
 \subsection{Mitigations}
@@ -281,9 +317,9 @@ There are two ways that one can ensure that narrowing bounds does not cause
 secrets to be leaked.
 
 First, one can layout memory in advance such a manner that, no matter what
-imprecise bounds are used, secrets will not leak. One could rewrite
+imprecise bounds are used, secrets will not leak. \jacob{How?} One could rewrite
 \texttt{array\_with\_hidden\_secret} using this technique, provided that the
-number of secret items at the end of array does not vary after array creation
+number of secret items at the end of \jacob{the?} array does not vary after array creation
 time. However, in general, this approach is wasteful of memory, and is only
 likely to be used by systems such as memory allocators which can `recover' the
 seemingly wasted memory.
@@ -294,6 +330,24 @@ desired region of memory and if they do/would not, move the secret data to a
 will be adequately narrowed in advance using
 \texttt{cheri\_representable\_length} or by querying the narrowed capability
 with \texttt{cheri\_length\_get}.
+
+\jacob{There's a huge difference between a memory allocator, where the first
+suggestion is probably best here, and something allocated as, say, a struct,
+where the C compiler might not know if it needs to pad an array member to allow
+bounds to be restricted later. A struct is a reasonably intuitive way to
+describe an array with a hidden secret, I think.}
+
+\jacob{We should perhaps clarify "no matter what imprecise bounds are used".
+Ignoring \texttt{realloc}, the bounds will never grow after the initial
+restriction, so this surely only matters at allocation time or the time when you
+restrict the bounds down to the non-secret part.}
+
+\jacob{The first mental response I had was to wonder why we're trying to
+allocate non-secret and secret memory together anyway. There are good reasons
+(e.g. discoverability for allocation metadata), but also, this is exactly the
+problem I had when prototyping the stack compartmentalisation idea, and bump
+pointer allocators hit this for every allocation. I'm not sure if we need to
+reinforce this with a practical example, but they certainly exist.}
 
 
 \section{\narrowwiden: Narrowing then widening}
@@ -337,6 +391,11 @@ capability's bounds must be carefully audited.
 \section{Capability overflow}
 
 \laurie{is this possible?}
+\jacob{Not when used in the obvious way (e.g. dereferencing), but extreme
+(65-bit) bounds behave in non-portable ways when queried explicitly, e.g.
+saturating on Morello, and this isn't obvious in the CHERI API. This makes
+manually testing the bounds difficult.}
+
 
 
 %\section{Missing or flawed parts of the CHERI API}
