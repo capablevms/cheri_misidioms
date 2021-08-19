@@ -15,3 +15,11 @@ port 12345 and want to to run the `privesc.c` code example:
 
 ```
 $ SSHPORT=12345 make -f Makefile.morello-purecap copyexec-privesc
+```
+
+If you want to run *all* of the code examples in one go, use the `all-copyexec`
+target:
+
+```
+$ SSHPORT=12345 make -f Makefile.morello-purecap all-copyexec
+```
