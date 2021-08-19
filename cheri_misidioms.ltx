@@ -89,7 +89,7 @@ own terminology. CHERI capabilities are immutable and thus a new \emph{child}
 capability must be derived from one or more \emph{parent} capabilities.
 We refer to a capability as \emph{authentic} (what CHERI calls
 `tagged' or `valid') if it has been derived from its parents according
-to CHERI's rules, or \emph{forged} (what CHERI calls `untagged' or `invalid')
+to CHERI's rules, or \emph{inauthentic} (what CHERI calls `untagged' or `invalid')
 otherwise. A capability consists of a \emph{pointer} (i.e.~an address in
 memory) and a set of \emph{permissions}. Amongst the permissions are
 \emph{bounds} -- the region of memory an authentic capability is allowed to
