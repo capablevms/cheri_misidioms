@@ -49,14 +49,9 @@ CHERI provides and enforces hardware capabilities that allow programmers to
 make strong security guarantees about their programs. We take as a given that
 CHERI's hardware features are correct and complete, and that it is the job of
 the programmer to understand how to use those features to achieve a desired
-level of security. However, while we have found it easy to get a reasonable
-high-level understanding of programming in CHERI, we have found it difficult to
-get an accurate low-level understanding. Because of that, we have made many
-more mistakes when writing CHERI programs than we anticipated, some of which we
-suspect others will repeat when exploring CHERI.
-\jacob{I consider it the other way around; I find it (relatively) easy to
-understand the low-level behaviours but somewhat harder to map those onto
-integrated programs and big systems. Is this back to front, or am I?}
+level of security. However, while the broad thrust of CHERI features is
+relatively easy to grasp, we have made many mistakes in trying to use those
+features together reliably.
 
 One of the root causes of our mistakes is that no single source of
 documentation systematically covers the subtle implications of CHERI's design.
@@ -90,34 +85,23 @@ a variety of documentation and papers, some concepts have more than one name.
 Unfortunately, we have found that some of those names make it difficult to talk
 about capability usage without confusing both speaker and listener. Even more
 unfortunately, we can think of no better solution to this than to propose our
-own terminology. We refer to a capability as \emph{authentic} (what CHERI calls
-`tagged' or `valid') if the hardware has ensured it has been created according
-to CHERI's rules or \emph{forged} (what CHERI calls `untagged' or `invalid')
+own terminology. CHERI capabilities are immutable and thus a new \emph{child}
+capability must be derived from one or more \emph{parent} capabilities.
+We refer to a capability as \emph{authentic} (what CHERI calls
+`tagged' or `valid') if it has been derived from its parents according
+to CHERI's rules, or \emph{forged} (what CHERI calls `untagged' or `invalid')
 otherwise. A capability consists of a \emph{pointer} (i.e.~an address in
 memory) and a set of \emph{permissions}. Amongst the permissions are
 \emph{bounds} -- the region of memory an authentic capability is allowed to
 read/write from/to. A capability's bounds are from a \emph{low} (inclusive) to
 a \emph{high} (exclusive) address and we refer `a bound of $x$ bytes' to refer
-a capability whose \emph{low}-\emph{high} bound addresses equal $x$ bytes.
-\jacob{Should I read that as an arithmetic expression? In which case, it should
-be \emph{high}-\emph{low}.}
-If a
-capability's pointer is contained within its bounds we refer to the pointer as
+a capability whose \emph{high}-\emph{low} bound addresses equal $x$ bytes.
+If a capability's pointer is contained within its bounds we refer to the pointer as
 \emph{in-bounds} or \emph{out-of-bounds} otherwise
 (see~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
 capability might have an out-of-bounds pointer). Other permissions include
 boolean flags such as whether a capability can read/write to memory addresses
 within its bounds.
-\laurie{i think it's easiest to think of capabilities as immutable, emphasising
-that new capabilities must be created from old capabilities. however, the
-CHERI API has functions with \texttt{set} in their name. i think referring to
-`parent' and `child' capabilities might make this sort of thing clearer.
-thoughts?}
-\jacob{I agree, it's easier to think about that way, and the \texttt{set}
-functions work that way anyway, despite the name. The terms `parent' and `child'
-work, I think, though we might need further qualification for some situations
-where a capability might have more than one parent (and that's Ok, unless
-there's a potential situation I've missed).}
 
 
 \section{\privesc: Privilege Escalation}
@@ -282,33 +266,17 @@ permitted, so we can write assertions in our \texttt{realloc} implementation, et
 The underlying issue is that modern CHERI systems use `CHERI
 Concentrate'~\cite{woodruff19chericoncentrate}, an approach to representing
 bounds that requires relatively few bits: for example Morello's capabilities
-have 18 bits to express the bounds for a 64-bit address space.
-\jacob{Morello's \texttt{B} is encoded in 16 bits, and \texttt{T} in 14 (with
-the top two bits derived in a clever way). I think it's fair to say that the
-bounds have 16 bits, but the bottom three bits of \texttt{B} and \texttt{T} are
-zero when an exponent is used, so there's a resolution discontinuity when the
-exponent is introduced.}
-The trade-off is
+have 41 bits to express the bounds for a 64-bit address space. The trade-off is
 simple: the fewer bits used for bounds the smaller capabilities are (which is
 good for memory use and performance), but the less precise the bounds that can
-be represented. On an architecture such as Morello with a 64-bit address space
-and 128-bit capabilities, CHERI Concentrate devotes 41 bits to representing
-bounds. The encoding is ingenious, but hard to capture succinctly: in essence,
+be represented. The encoding is ingenious, but hard to capture succinctly: in essence,
 bounds use use exponents, in similar fashion to IEEE 754 floating point
 numbers: the larger the length of a bound, the less accurately it will be
 represented. When a desired length cannot be precisely represented, the next
 largest precisely representable length is used in the bound. On Morello, for
-example, small bounds up to, but excluding, 4097 bytes are precisely
-represented, but if one tries to make a bound with a length of 4097 bytes, it
-is rounded up to 4104 bytes.
-\jacob{Those figures are too small for Morello. Empirically, Morello's
-\texttt{rrlen} instruction -- which I think is used to implement
-\texttt{cheri\_representable\_length(...)} -- doesn't round anything smaller
-than 16385, which is the figure used on the previous page. Actually a larger
-length might be representable in some cases; \texttt{rrlen} is conservative, and
-the wrap-around encoding makes precise reasoning difficult. I did work all this
-out once, but I'd need to spend some time with my notes to say anything usefully
-quantitative.}
+example, small bounds up to, but excluding, 16385 bytes are precisely
+represented, but if one tries to make a bound with a length of 16385 bytes, it
+is rounded up to 16392 bytes.
 
 
 \subsection{Mitigations}
