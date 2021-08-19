@@ -16,20 +16,21 @@
 
 int main() {
     // malloc returns a capability C1 to a block 0..n bytes long
-    uint8_t *arr = malloc(16);
+    uint8_t *c1 = malloc(16);
     // Separate out the pointer from the capability so that we can check it
     // later.
-    vaddr_t arr_addr = cheri_address_get(arr);
+    vaddr_t c1_addr = cheri_address_get(c1);
 
     // Create a capability C2 with bounds 0..m where m < n
-    arr = cheri_bounds_set(arr, 8);
-    assert(cheri_tag_get(arr) && cheri_length_get(arr) == 8);
+    uint8_t *c2 = cheri_bounds_set(c1, 8);
+    c1 = NULL; // Be clear that we've lost access to C1.
+    assert(cheri_tag_get(c2) && cheri_length_get(c2) == 8);
 
     // We first free C2...
-    free(arr);
+    free(c2);
     // ...and then immediately allocate a block the same size as C1.
-    arr = malloc(16);
+    uint8_t *c3 = malloc(16);
     // We get back a capability C3 that is identical to C1.
-    assert(cheri_address_get(arr) == arr_addr);
-    assert(cheri_tag_get(arr) && cheri_length_get(arr) == 16);
+    assert(cheri_tag_get(c3) && cheri_length_get(c3) == 16);
+    assert(cheri_address_get(c3) == c1_addr);
 }
