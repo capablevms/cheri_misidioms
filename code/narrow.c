@@ -29,6 +29,7 @@ uint8_t *array_with_hidden_secret(size_t size) {
 }
 
 int main() {
+#if defined(__aarch64__)
     // If we allocate 16385 bytes, we get back a capability which precisely
     // forbids us from accessing the last byte...
     uint8_t *arr = array_with_hidden_secret(16385);
@@ -38,4 +39,16 @@ int main() {
     // allows us to access the last byte.
     arr = array_with_hidden_secret(16386);
     assert(cheri_length_get(arr) == 16392);
+
+#elif defined(__riscv)
+    // If we allocate 4097 bytes, we get back a capability which precisely
+    // forbids us from accessing the last byte...
+    uint8_t *arr = array_with_hidden_secret(4097);
+    assert(cheri_length_get(arr) == 4096);
+
+    // ...however, if we allocate 4098 bytes, we get back a capability which
+    // allows us to access the last byte.
+    arr = array_with_hidden_secret(4098);
+    assert(cheri_length_get(arr) == 4104);
+#endif
 }

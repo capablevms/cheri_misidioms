@@ -15,16 +15,32 @@
 // the first bounds length which is not precisely representable.
 
 int main() {
-    // If we allocate 4112 bytes, the capability we get from malloc has a
-    // bounds length of 4112 bytes...
+#if defined(__aarch64__)
+    // If we allocate 16400 bytes, the capability we get from malloc has a
+    // bounds length of 16400 bytes...
     uint8_t *arr = malloc(16400);
     assert(cheri_tag_get(arr) && cheri_length_get(arr) == 16400);
-    // ...if we realloc it down to 4104 bytes, the capability we get from
-    // realloc has a bounds length of 4104 bytes...
+    // ...if we realloc it down to 16392 bytes, the capability we get from
+    // realloc has a bounds length of 16392 bytes...
     arr = realloc(arr, 16392);
     assert(cheri_tag_get(arr) && cheri_length_get(arr) == 16392);
-    // ...but if we realloc it down to 4097 bytes, the capability we get from
-    // realloc still has a bounds of length of 4104 bytes.
+    // ...but if we realloc it down to 16385 bytes, the capability we get from
+    // realloc still has a bounds of length of 16392 bytes.
     arr = realloc(arr, 16385);
     assert(cheri_tag_get(arr) && cheri_length_get(arr) == 16392);
+
+#elif defined(__riscv)
+    // If we allocate 4112 bytes, the capability we get from malloc has a
+    // bounds length of 4112 bytes...
+    uint8_t *arr = malloc(4112);
+    assert(cheri_tag_get(arr) && cheri_length_get(arr) == 4112);
+    // ...if we realloc it down to 4104 bytes, the capability we get from
+    // realloc has a bounds length of 4104 bytes...
+    arr = realloc(arr, 4104);
+    assert(cheri_tag_get(arr) && cheri_length_get(arr) == 4104);
+    // ...but if we realloc it down to 4097 bytes, the capability we get from
+    // realloc still has a bounds of length of 4104 bytes.
+    arr = realloc(arr, 4097);
+    assert(cheri_tag_get(arr) && cheri_length_get(arr) == 4104);
+#endif
 }
