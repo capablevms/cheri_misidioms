@@ -6,7 +6,7 @@ SSHPORT ?= 0
 .c:
 	${CC} ${CFLAGS} -o $@ $<
 
-TARGETS = narrow narrow_realloc narrow_widen privesc privesc2 unrepresentable_length
+TARGETS = narrow narrow_realloc narrow_widen privesc privesc2 reappearing unrepresentable_length
 
 all: ${TARGETS}
 
