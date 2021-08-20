@@ -169,7 +169,11 @@ We first \texttt{malloc} a block, returning a capability \emph{C1} with bounds
 $0\ldots{}n$ bytes (line 1). We then create a new capability \emph{C2} with
 bounds $0\ldots{}m$ bytes where $m < n$ (lines 2 and 3). We can then use
 \texttt{realloc} to turn \emph{C2} back into \emph{C1} -- even though we had
-lost access to \emph{C1} entirely!
+lost access to \emph{C1} entirely!\cris{This is not really a privelege escalation issue.
+You already had the privilege requried to call realloc which does exactly what it says in the tin.
+The fact that realloc effectively "gives you back C1" (which we had anyway) is neither here nor there. 
+The negative side-effect of being able to access the memory previously pointed to by C1 
+is already covered in the Narrow/NarrowWiden examples. }
 
 This is not just a theoretical attack: our example \texttt{realloc} is effectively
 a simplified version of CheriBSD's \texttt{realloc}, which (as of
@@ -197,13 +201,15 @@ start of a memory block and that the capability's permissions are equal to the
 permissions returned by the most recent \texttt{malloc} or \texttt{realloc} for
 that memory block.
 
+\cris{WIP: In this case CHKSSU might actually be what's needed: you can have a sealed cap as the token.}
 
 \section{\narrowingdoesnt: Narrowing a capability's bounds does not always fully narrow the capability's bounds}
 
 Capabilities have high and low bounds, which are a strong enforcement mechanism
 for restricting the valid region of memory that the capability can access for
-reading and writing. It is thus tempting to write code which hides secrets
-beyond the reach of a capability's bounds such as the following:
+reading and writing. \cris{ --pedantic=on:  The use of "valid" risks confusing the reader by association with the notion of "valid capability".  Likewise, "for reading and writing" risks confusion by omission of execute, capLoad, capsStore are not mentioned. The capability does not *access* but can be *used to access* a region of memory. }
+It is thus tempting to write code which hides secrets beyond the reach of a 
+capability's bounds such as the following: \cris{Maybe include an assignment operation in between lines 2 and 3 to make the "hiding of a secret" explicit ?}
 
 % Adapted from narrow.c
 \begin{lstlisting}[language=C]
@@ -212,6 +218,8 @@ uint8_t *array_with_hidden_secret(size_t size) {
     return cheri_bounds_set(arr, size - 1);
 }
 \end{lstlisting}
+
+
 
 \noindent We first \texttt{malloc} an array big enough space to store
 \texttt{size} many \texttt{u8}s (line 2) before creating a child capability
@@ -263,12 +271,12 @@ have 41 bits to express the bounds for a 64-bit address space. The trade-off is
 simple: the fewer bits used for bounds the smaller capabilities are (which is
 good for memory use and performance), but the less precise the bounds that can
 be represented. The encoding is ingenious, but hard to capture succinctly: in essence,
-bounds use use exponents, in similar fashion to IEEE 754 floating point
-numbers: the larger the length of a bound, the less accurately it will be
+bounds use exponents, in similar fashion to IEEE 754 floating point
+numbers: the larger the length of a bound\cris{ == "the wider the bound"}, the less accurately it will be
 represented. When a desired length cannot be precisely represented, the next
 largest precisely representable length is used in the bound. On Morello, for
 example, small bounds up to, but excluding, 16385 bytes are precisely
-represented, but if one tries to make a bound with a length of 16385 bytes, it
+represented, but if one tries to make\cris{=> set ?} a bound with a length of 16385\cris{meant 16386 ?} bytes, it
 is rounded up to 16392 bytes.
 
 
@@ -340,6 +348,7 @@ size of a memory block is being narrowed. However, this may not be appropriate
 in all cases, particularly where capability bounds narrowing is being used to
 hide a secret from another compartment. In such cases, code which can widen a
 capability's bounds must be carefully audited.
+\cris{Perhaps mention the Cherivoke paper.}
 
 
 \section{Protecting the whole but not the parts}
