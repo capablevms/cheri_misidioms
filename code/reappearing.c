@@ -21,7 +21,7 @@ int main() {
     // later.
     vaddr_t c1_addr = cheri_address_get(c1);
 
-    // Create a capability C2 with bounds 0..m where m < n
+    // Derive a capability C2 with bounds 0..m where m < n
     uint8_t *c2 = cheri_bounds_set(c1, 8);
     c1 = NULL; // Be clear that we've lost access to C1.
     assert(cheri_tag_get(c2) && cheri_length_get(c2) == 8);
@@ -30,7 +30,7 @@ int main() {
     free(c2);
     // ...and then immediately allocate a block the same size as C1.
     uint8_t *c3 = malloc(16);
-    // We get back a capability C3 that is identical to C1.
+    // malloc returns a capability C3 that is identical to C1.
     assert(cheri_tag_get(c3) && cheri_length_get(c3) == 16);
     assert(cheri_address_get(c3) == c1_addr);
 }

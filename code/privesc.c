@@ -20,7 +20,7 @@ int main() {
     // malloc returns a capability C1 to a block 0..n bytes long
     uint8_t *arr = malloc(16);
 
-    // Create a capability C2 with bounds 0..m where m < n
+    // Derive a capability C2 with bounds 0..m where m < n
     arr = cheri_bounds_set(arr, 8);
     assert(cheri_tag_get(arr) && cheri_length_get(arr) == 8);
 

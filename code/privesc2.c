@@ -22,14 +22,14 @@ int main() {
     uint8_t *arr = malloc(16);
     assert(cheri_perms_get(arr) & (CHERI_PERM_LOAD | CHERI_PERM_STORE));
 
-    // Create a capability C2 with bounds 0..m where m < n
+    // Derive a capability C2 with bounds 0..m where m < n
     arr = cheri_bounds_set(arr, 8);
     assert(cheri_tag_get(arr) && cheri_length_get(arr) == 8);
     // Make C2 read-only.
     arr = cheri_perms_and(arr, CHERI_PERM_LOAD);
     assert((cheri_perms_get(arr) & CHERI_PERM_STORE) == 0);
 
-    // realloc allows us to launder C2 back into C1
+    // realloc allows us to turn C2 back into C1
     arr = realloc(arr, 16);
     assert(cheri_tag_get(arr) && cheri_length_get(arr) == 16);
     assert(cheri_perms_get(arr) & CHERI_PERM_STORE);
