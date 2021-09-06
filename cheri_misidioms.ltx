@@ -50,9 +50,9 @@ CHERI provides and enforces hardware capabilities that allow programmers to
 make strong security guarantees about their programs. We take as a given that
 CHERI's hardware features are correct and complete, and that it is the job of
 the programmer to understand how to use those features to achieve a desired
-level of security. However, while the broad thrust of CHERI features is
+level of security in software. However, while the broad thrust of CHERI features is
 relatively easy to grasp, we have made many mistakes in trying to use those
-features together reliably.
+features reliably.
 
 One of the root causes of our mistakes is that no single source of
 documentation systematically covers the subtle implications of CHERI's design.
@@ -61,15 +61,15 @@ CHERI programming idioms or, as we've come to realise, of `bad' CHERI
 programming idioms either.
 
 In this short paper, we capture some `bad' CHERI programming idioms, showing
-how these undermine the expected security guarantees of CHERI programs. For
+how these undermine what might have seemed like reasonable security expectations. For
 each, we attempt to name the idiom, explain the relevant CHERI features, and
 give simple example code. We do not claim that all, or perhaps even any, of the
 idioms in this paper are novel, and some may strike seasoned CHERI programmers
 as naive --- but we also show how one is present in CheriBSD, allowing a real
 attack. We hope that by capturing several of these idioms in a single place,
 naming and describing them, we will make it easier for programmers and
-researchers to understand and communicate about both these and
-yet-to-be-discovered bad idioms.
+researchers to understand and communicate about both these bad idioms and
+those yet to be discovered.
 
 
 \section{Background}
@@ -83,8 +83,8 @@ and CHERI C (the dialect of C that CHERI defines)~\cite{watson20chericprogrammin
 
 Because CHERI has been developed over a number of years, and is explained over
 a variety of documentation and papers, some concepts have more than one name.
-Unltx we have found that some of those names make it difficult to talk
-about capability usage without confusing both speaker and listener. Even more
+We have found that some of those names make it difficult to talk, and sometimes
+reason about, capability usage. Even more
 unfortunately, we can think of no better solution to this than to propose our
 own terminology. CHERI capabilities are immutable and thus a new \emph{child}
 capability must be derived from one or more \emph{parent} capabilities.
@@ -95,8 +95,8 @@ otherwise. A capability consists of a \emph{pointer} (i.e.~an address in
 memory) and a set of \emph{permissions}. Amongst the permissions are
 \emph{bounds} -- the region of memory an authentic capability is allowed to
 read/write from/to. A capability's bounds are from a \emph{low} (inclusive) to
-a \emph{high} (exclusive) address and we refer `a bound of $x$ bytes' to refer
-a capability whose \emph{high}-\emph{low} bound addresses equal $x$ bytes.
+a \emph{high} (exclusive) address and we refer to `a bound of $x$ bytes' to mean
+a capability where $\textit{high}-\textit{low}=x$.
 If a capability's pointer is contained within its bounds we refer to the pointer as
 \emph{in-bounds} or \emph{out-of-bounds} otherwise
 (see~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
@@ -142,7 +142,7 @@ void *realloc(void *cap, size_of size) {
       size);
   } else {
     // Allocate a larger region of memory and copy
-    // `cap`'s contents over.
+    // cap's contents over.
     ...
   }
 }
@@ -170,13 +170,7 @@ We first \texttt{malloc} a block, returning a capability \emph{C1} with bounds
 $0\ldots{}n$ bytes (line 1). We then create a new capability \emph{C2} with
 bounds $0\ldots{}m$ bytes where $m < n$ (lines 2 and 3). We can then use
 \texttt{realloc} to turn \emph{C2} back into \emph{C1} -- even though we had
-lost access to \emph{C1} entirely!\cris{This is not really a privelege escalation issue.
-You already had the privilege requried to call realloc which does exactly what it says in the tin.
-The fact that realloc effectively "gives you back C1" (which we had anyway) is neither here nor there. 
-The negative side-effect of being able to access the memory previously pointed to by C1 
-is already covered in the Narrow/NarrowWiden examples. }\laurie{i disagree:
-notice that we lost the original C1 capability but recovered it without any
-worries about uninitialised memory with the realloc call.}
+lost access to \emph{C1} entirely!
 
 This is not just a theoretical attack: our example \texttt{realloc} is effectively
 a simplified version of CheriBSD's \texttt{realloc}, which (as of
@@ -193,16 +187,23 @@ e.g.~upgrading a read-only capability to a read/write capability).
 Privilege escalation occurs when a function fails to fully validate a possibly
 lower-privileged capability correctly before using a higher-privileged
 capability. Exactly what validation should occur is highly situation dependent,
-which is why it is easy to get wrong. It is almost certain that the input CHERI
-capability should be authentic and the capability's pointer in-bounds. However,
-as our \texttt{realloc} attack shows, these two conditions may be only part of
-the necessary validation.
+which is why it is easy to get wrong.
 
-In this case, after checking that \texttt{cap} is authentic and in-bounds,
-\texttt{realloc} should then check that \texttt{cap}'s pointer refers to the
-start of a memory block and that the capability's permissions are equal to the
-permissions returned by the most recent \texttt{malloc} or \texttt{realloc} for
-that memory block.
+In most, perhaps all, reasonable cases, the input CHERI capability should be
+authentic and the capability's pointer in-bounds. However, as our
+\texttt{realloc} attack shows, these two conditions are necessary but not
+sufficient.  For example, one solution to the \texttt{realloc} attack is to
+check that \texttt{cap}'s pointer refers to the start of a memory block and
+that the capability's permissions are equal to the permissions returned by the
+most recent \texttt{malloc} or \texttt{realloc} for that memory block. This
+implies that the memory allocator must either store, or be able to recreate by
+other means, the capability returned by the most recent \texttt{malloc} or
+\texttt{realloc} call.
+
+However, it may be too restrictive to restrict \texttt{realloc} to precisely
+equal capabilities: one may wish to allow \emph{compatible} capabilities. The
+definition of compatibility is then crucial, particularly as different CHERI
+architectures have different bounds representations and permissions.
 
 
 \section{\narrowingdoesnt: Narrowing a capability's bounds does not always fully narrow the capability's bounds}
@@ -210,8 +211,8 @@ that memory block.
 Capabilities have high and low bounds, which are a strong enforcement mechanism
 for restricting the region of memory that the capability can access for
 reading and writing.
-It is thus tempting to write code which hides secrets beyond the reach of a 
-capability's bounds such as the following: \cris{Maybe include an assignment operation in between lines 2 and 3 to make the "hiding of a secret" explicit ?}
+It is thus tempting to write code which hides secrets beyond the reach of a
+capability's bounds such as the following:
 
 % Adapted from narrow.c
 \begin{lstlisting}[language=C]
@@ -286,11 +287,11 @@ There are two approaches that can ensure that narrowing bounds does not cause
 secrets to be leaked.
 
 First, one can check whether the narrowed bounds do/would capture only the
-desired region of memory and if they do/would not, move the secret data to a
+desired region of memory and if they don't/wouldn't, move the secret data to a
 (probably new) non-overlapping region of memory. One can check whether bounds
 will be adequately narrowed in advance using
-\texttt{cheri\_representable\_length} or by querying the narrowed capability
-with \texttt{cheri\_length\_get}.
+\texttt{cheri\_representable\_length} or retrospectively by querying the
+narrowed capability with \texttt{cheri\_length\_get}.
 
 Second, one can lay out memory in advance such that, no matter what
 imprecise bounds are used, secrets will not leak. In essence, this requires
@@ -348,14 +349,13 @@ size of a memory block is being narrowed. However, this may not be appropriate
 in all cases, particularly where capability bounds narrowing is being used to
 hide a secret from another compartment. In such cases, code which can widen a
 capability's bounds must be carefully audited.
-\cris{Perhaps mention the Cherivoke paper.}
 
 
 \section{\undef: Authentic capabilities from undefined behaviour}
 
 It is easy to assume that authentic capabilities can only be created if one
 follow's CHERI-C's rules correctly. However, it is possible for an attacker to
-use undefined behaviour to derive useful authentic capabilities. Consider the
+use undefined behaviour to derive authentic capabilities. Consider the
 following code:
 
 \begin{lstlisting}[language=C]
