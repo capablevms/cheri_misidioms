@@ -386,7 +386,20 @@ and who now has a capability \emph{C3} giving the same access as \emph{C1}.
 
 \subsection{Mitigations}
 
-\laurie{None?}
+There are no general mitigations for \undef. For the particular concrete
+example, a partial mitigation is for \texttt{free} to scrub memory so that, at
+least, whatever was present in the buffer cannot read by the attacker: however,
+since the attack has in effect `aliased' the capability, future writes can be
+observed and tampered with by the attacker.
+
+A more complete mitigation for the concrete example is for \texttt{free} to
+revoke all references to the capability. In other words, CHERI allows one to
+scan memory looking for all capabilities with bounds encompassing an address
+$p$ and invalidate the capability~\cite{xia19cherivoke}. In this case, this
+means that the original code will then fail with a \texttt{SIGPROT} when it
+tries to use \emph{C1}, downgrading the security leak into a denial-of-service.
+However, scanning the stack and heap in order to perform revocation is not
+likely to be a quick operation.
 
 
 \section{Protecting the whole but not the parts}
