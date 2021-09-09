@@ -84,8 +84,8 @@ and CHERI C (the dialect of C that CHERI defines)~\cite{watson20chericprogrammin
 Because CHERI has been developed over a number of years, and is explained over
 a variety of documentation and papers, some concepts have more than one name.
 We have found that some of those names make it difficult to talk, and sometimes
-reason about, capability usage. Even more
-unfortunately, we can think of no better solution to this than to propose our
+reason about, capability usage.
+Unfortunately, we can think of no better solution to this than to propose our
 own terminology. CHERI capabilities are immutable and thus a new \emph{child}
 capability must be derived from one or more \emph{parent} capabilities.
 We refer to a capability as \emph{authentic} (what CHERI calls
@@ -103,6 +103,13 @@ If a capability's pointer is contained within its bounds we refer to the pointer
 capability might have an out-of-bounds pointer). Other permissions include
 boolean flags such as whether a capability can read/write to memory addresses
 within its bounds.
+\jacob{I would avoid referring to any component of a capability as a
+\emph{pointer}, because in a language like C, a \emph{pointer} might actually be
+a whole capability, and subsequent discussions get very confusing. Alternatives
+include \emph{value}, based on the Morello ISA naming but quite generic, or
+\meph{address}, which is often more intuitive but occasionally confusing, e.g.
+if the capability is just a token. I think \emph{address} is probably the best
+overall, but that's just my view.}
 
 
 \section{\privesc: Privilege Escalation}
@@ -268,7 +275,7 @@ permitted, so we can write assertions in our \texttt{realloc} implementation, et
 The underlying issue is that modern CHERI systems use `CHERI
 Concentrate'~\cite{woodruff19chericoncentrate}, an approach to representing
 bounds that requires relatively few bits: for example Morello's capabilities
-have 41 bits to express the bounds for a 64-bit address space. The trade-off is
+have 31 bits to express the bounds for a 64-bit address space. The trade-off is
 simple: the fewer bits used for bounds the smaller capabilities are (which is
 good for memory use and performance), but the less precise the bounds that can
 be represented. The encoding is ingenious, but hard to capture succinctly: in essence,
