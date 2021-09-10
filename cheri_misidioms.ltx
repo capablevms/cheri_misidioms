@@ -48,14 +48,15 @@
 \section{Introduction}
 
 CHERI provides and enforces hardware capabilities that allow programmers to
-make strong security guarantees about their programs. We take as a given that
-CHERI's hardware features are correct and complete, and that it is the job of
-the programmer to understand how to use those features to achieve a desired
-level of security in software. However, while the broad thrust of CHERI features is
-relatively easy to grasp, we have made many mistakes in trying to use those
-features reliably.
+make strong security guarantees about their programs. Our experience of CHERI
+hardware implementations is that the security features they provide are well
+thought through and robust -- but the programmer then has to work out how to
+use those features to achieve a desired level of security in software.
 
-One of the root causes of our mistakes is that no single source of
+We have made many mistakes in trying to write software that matches our
+security expectations -- indeed, we have made many mistakes in working out what
+reasonable security expectations with CHERI might be.  One of the root causes
+of our mistakes is that no single source of
 documentation systematically covers the subtle implications of CHERI's design.
 Put another way, there is currently little documentation explaining `good'
 CHERI programming idioms or, as we've come to realise, of `bad' CHERI
