@@ -1,0 +1,35 @@
+\documentclass[a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{courier}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage[numbers]{natbib}
+\usepackage{softdev}
+\usepackage{xspace}
+
+\lstset{
+    basicstyle=\ttfamily,
+    xleftmargin=\parindent,
+    numbers=left,
+    numbersep=.8em,
+    numberstyle=\tiny\tt\color{gray},
+    captionpos=b,
+    escapeinside={{<!}{!>}},
+    commentstyle=\color{gray}\itshape,
+    keywordstyle=\textbf,
+}
+
+% from https://tex.stackexchange.com/questions/264361/skipping-line-numbers-in-lstlisting#264373
+\let\origthelstnumber\thelstnumber
+\makeatletter
+\newcommand*\Suppressnumber{%
+  \lst@AddToHook{OnNewLine}{%
+    \let\thelstnumber\relax%
+     \advance\c@lstnumber-\@ne\relax%
+    }%
+}
+
