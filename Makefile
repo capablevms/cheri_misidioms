@@ -23,7 +23,7 @@ cheri_misidioms_preamble.fmt: cheri_misidioms_preamble.ltx
 	set -e; \
 	  tmpltx=`mktemp`; \
 	  cat cheri_misidioms_preamble.ltx > $${tmpltx}; \
-	  grep -v "..cheri_misidioms_preamble" cheri_misidioms.ltx >> $${tmpltx}; \
+	  grep -v "%&cheri_misidioms_preamble" cheri_misidioms.ltx >> $${tmpltx}; \
 	  pdftex -ini -jobname="cheri_misidioms_preamble" "&pdflatex" mylatexformat.ltx $${tmpltx}; \
 	  rm $${tmpltx}
 
