@@ -53,10 +53,7 @@ We use the term \textit{CHERI} to refer to the `abstract capability machine'
 that software can observe: that is, the combination of a capability hardware
 instruction set, an ABI, and a user-facing library that exposes capability-related functions.
 We refer to specific hardware implementations by their name
-(e.g.~Arm's `Morello', or `CHERI RISC-V'). CHERI provides two modes of
-operation: \textit{hybrid} execution, where `traditional' pointers can be
-freely mixed alongside (`fat pointer') `capabilities'; and \textit{pure
-capability} execution where only capabilities can be used.
+(e.g.~Arm's `Morello', or `CHERI RISC-V').
 
 CHERI capabilities are immutable and thus a new \emph{child}
 capability must be derived from one or more \emph{parent} capabilities.
@@ -75,6 +72,12 @@ a whole as \emph{in-bounds} or \emph{out-of-bounds} otherwise
 capability might have an out-of-bounds address). Other permissions include
 boolean flags such as whether a capability can read/write to memory addresses
 within its bounds.
+
+As well as capabilities (which on Morello and CHERI RISC-V, for example, are
+implemented as double-width pointers), CHERI also allows `traditional' pointers
+to be used. Conventionally, a program which uses both traditional pointers and
+capabilities is said to be operating in \emph{hybrid} mode while a program
+which uses only capabilities is in \emph{pure capability} mode.
 
 
 \section{\privesc: Privilege Escalation}
