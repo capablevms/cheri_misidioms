@@ -211,7 +211,7 @@ uint8_t *arr = array_with_hidden_secret(16385);
 assert(cheri_length_get(arr) == 16384);
 \end{lstlisting}
 
-However, this idiom is insidious because it works correctly for the sorts of
+\noindent This idiom is insidious because it works correctly for the sorts of
 `human friendly' sizes that programmers tend to test, but not for many other
 sizes. As we saw above, creating a capability with a bound of 16384 bytes
 prevents access to the array's last byte. However, making the array 1 byte
@@ -224,12 +224,11 @@ uint8_t *arr = array_with_hidden_secret(16386);
 assert(cheri_length_get(arr) == 16392);
 \end{lstlisting}
 
-Note that though we expected a capability with a bound of 16385 bytes, instead
-the length is 16392 bytes. On Morello, 16385 bytes is the smallest bound which
+\noindent Although we expected a capability with a bound of 16385 bytes, the
+capability we receive has a bound of 16392 bytes. On Morello, 16385 bytes is
+the smallest bound which
 can not be precisely represented in a capability, and thus it has been been
-rounded up to the next representable bound. If we rely on capability bounds to
-prevent access to secrets, as in our example above, this can cause secrets to
-leak.
+rounded up to the next representable bound.
 
 Practically speaking, this means that one cannot expect that narrowing a
 capability's bounds precisely captures only the requested region of memory: in
@@ -241,16 +240,13 @@ The underlying issue is that modern CHERI systems use `CHERI
 Concentrate'~\cite{woodruff19chericoncentrate}, an approach to representing
 bounds that requires relatively few bits: for example Morello's capabilities
 have 31 bits to express the bounds for a 64-bit address space. The trade-off is
-simple: the fewer bits used for bounds the smaller capabilities are (which is
+simple: the fewer bits used for bounds, the smaller capabilities are (which is
 good for memory use and performance), but the less precise the bounds that can
 be represented. The encoding is ingenious, but hard to capture succinctly: in essence,
 bounds use exponents, in similar fashion to IEEE 754 floating point
 numbers: the wider the bound, the less accurately it will be
 represented. When a desired length cannot be precisely represented, the next
-largest precisely representable length is used in the bound. On Morello, for
-example, small bounds up to, but excluding, 16385 bytes are precisely
-represented, but if one tries to create a bound of 16385 bytes, it
-is rounded up to 16392 bytes.
+largest precisely representable length is used in the bound.
 
 
 \subsection{Mitigations}
