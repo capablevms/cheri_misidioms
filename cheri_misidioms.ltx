@@ -74,8 +74,8 @@ boolean flags such as whether a capability can read/write to memory addresses
 within its bounds.
 
 As well as capabilities (which on Morello and CHERI RISC-V, for example, are
-implemented as double-width pointers), CHERI also allows `traditional' pointers
-to be used. Conventionally, a program which uses both traditional pointers and
+implemented as double-width addresses), CHERI also allows `traditional' single-width addresses
+to be used. Conventionally, a program which uses both traditional addresses and
 capabilities is said to be operating in \emph{hybrid} mode while a program
 which uses only capabilities is in \emph{pure capability} mode.
 
