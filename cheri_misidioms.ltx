@@ -82,7 +82,7 @@ within its bounds.
 The most dangerous attacks on any capability system are those where an attacker
 is able to unexpectedly elevate a capability's privileges. Formally speaking, CHERI capabilities
 have monotonically decreasing privileges: in other words, when taking an existing
-capability \emph{C1} as input, any capability \emph{C2} we create from
+capability \emph{C1} as input, any capability \emph{C2} we derive from
 \emph{C1} must have the same or fewer privileges. This may seem to make it
 impossible to increase a capability's privileges, but software
 components can store high privilege capabilities that can then be used to
@@ -140,7 +140,7 @@ assert(cheri_tag_get(arr) && cheri_length_get(arr) == 16);
 \end{lstlisting}
 
 We first \texttt{malloc} a block, returning a capability \emph{C1} with bounds
-$0\ldots{}n$ bytes (line 1). We then create a new capability \emph{C2} with
+$0\ldots{}n$ bytes (line 1). We then derive a new capability \emph{C2} with
 bounds $0\ldots{}m$ bytes where $m < n$ (lines 2 and 3). We can then use
 \texttt{realloc} to turn \emph{C2} back into \emph{C1} -- even though we had
 lost access to \emph{C1} entirely!
@@ -169,7 +169,7 @@ sufficient.  For example, one solution to the \texttt{realloc} attack is to
 check that \texttt{cap}'s address refers to the start of a memory block and
 that the capability's permissions are equal to the permissions returned by the
 most recent \texttt{malloc} or \texttt{realloc} for that memory block. This
-implies that the memory allocator must either store, or be able to recreate by
+implies that the memory allocator must either store, or be able to derive by
 other means, the capability returned by the most recent \texttt{malloc} or
 \texttt{realloc} call.
 
@@ -280,7 +280,7 @@ this approach is infeasible --- one cannot, for example, easily move the
 \emph{n}th element of a contiguous array because it is too big to be
 represented with precise bounds. The second approach, in contrast, has fixed
 up-front costs, but requires wasting memory for every object, even if no
-capability will ever try to create bounds covering it.
+future capability will ever have bounds covering it.
 
 \jacob{The first mental response I had was to wonder why we're trying to
 allocate non-secret and secret memory together anyway. There are good reasons
@@ -293,7 +293,7 @@ reinforce this with a practical example, but they certainly exist.}
 
 \section{\narrowwiden: Narrowing then widening}
 
-Assuming that a child capability with narrow bounds has been created while
+Assuming that a child capability with narrow bounds has been derived while
 respecting the issues raised in \narrowingdoesnt, it may seem that our issues
 with capability bounds are over. However, if one later widens those bounds
 again, one may unintentionally leak secrets.
@@ -326,7 +326,7 @@ capability's bounds must be carefully audited.
 
 \section{\undef: Authentic capabilities from undefined behaviour}
 
-It is easy to assume that authentic capabilities can only be created if one
+It is easy to assume that authentic capabilities can only be derived if one
 follows CHERI-C's rules correctly. However, it is possible for an attacker to
 use undefined behaviour to derive authentic capabilities. Consider the
 following code:
@@ -342,7 +342,7 @@ assert(cheri_tag_get(c3) && cheri_length_get(c3) == 16);
 assert(cheri_address_get(c3) == c1_addr);
 \end{lstlisting}
 
-In this example, we first create a capability \emph{C1} with bounds of 16 bytes
+In this example, we first derive a capability \emph{C1} with bounds of 16 bytes
 (line 1) before deriving a narrower capability \emph{C2} from it (line 3). It
 is then possible that after \texttt{free}ing the block of memory addressed by \emph{C1},
 a subsequent \texttt{malloc} of 16 bytes returns a
