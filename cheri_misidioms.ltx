@@ -47,7 +47,18 @@ a variety of documentation and papers, some concepts have more than one name.
 We have found that some of those names make it difficult to talk, and sometimes
 reason about, capability usage.
 Unfortunately, we can think of no better solution to this than to propose our
-own terminology. CHERI capabilities are immutable and thus a new \emph{child}
+own terminology.
+
+We use the term \textit{CHERI} to refer to the `abstract capability machine'
+that software can observe: that is, the combination of a capability hardware
+instruction set, an ABI, and a user-facing library that exposes CHERI-related
+functions. We refer to specific hardware implementations by their name
+(e.g.~Arm's `Morello', or `CHERI RISC-V'). CHERI provides two modes of
+operation: \textit{hybrid} execution, where `traditional' pointers can be
+freely mixed alongside (`fat pointer') `capabilities'; and \textit{pure
+capability} execution where only capabilities can be used.
+
+CHERI capabilities are immutable and thus a new \emph{child}
 capability must be derived from one or more \emph{parent} capabilities.
 We refer to a capability as \emph{authentic} (what CHERI calls
 `tagged' or `valid') if it has been derived from its parents according
