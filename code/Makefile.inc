@@ -17,4 +17,4 @@ copyexec-%: %
 	ssh -p $(SSHPORT) root@127.0.0.1 -t '/root/$<'
 
 clean:
-	rm -f narrow
+	rm -f ${TARGETS}
