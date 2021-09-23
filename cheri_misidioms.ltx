@@ -183,9 +183,9 @@ architectures have different bounds representations and permissions.
 
 Capabilities have high and low bounds, which are a strong enforcement mechanism
 for restricting the region of memory that the capability can access for
-reading and writing.
-It is thus tempting to write code which hides secrets beyond the reach of a
-capability's bounds such as the following:
+reading and writing. It is thus tempting to write code which hides secrets
+(e.g.~allocator metadata) beyond the reach of a capability's bounds such as the
+following:
 
 % Adapted from narrow.c
 \begin{lstlisting}[language=C]
@@ -231,12 +231,7 @@ Practically speaking, this means that one cannot expect that narrowing a
 capability's bounds precisely captures only the requested region of memory: in
 general, the capability will provide access to more memory than one wishes.
 Forgetting to take account of this, as in our example above, leads to secrets
-being leaked. \laurie{mention cheri\_bounds\_set\_exact}
-
-\jacob{Notably, occurrences of this pattern in real code will (as we've seen) be
-much less obvious, and very hard to spot in code reviews. We could really do
-with a helper that tests whether or not a hypothetical access would be
-permitted, so we can write assertions in our \texttt{realloc} implementation, etc.}
+being leaked.
 
 The underlying issue is that modern CHERI systems use `CHERI
 Concentrate'~\cite{woodruff19chericoncentrate}, an approach to representing
@@ -256,7 +251,7 @@ is rounded up to 16392 bytes.
 
 \subsection{Mitigations}
 
-There are two approaches that can ensure that narrowing bounds does not cause
+There are three approaches that can ensure that narrowing bounds does not cause
 secrets to be leaked.
 
 First, one can check whether the narrowed bounds do/would capture only the
@@ -282,13 +277,20 @@ represented with precise bounds. The second approach, in contrast, has fixed
 up-front costs, but requires wasting memory for every object, even if no
 future capability will ever have bounds covering it.
 
-\jacob{The first mental response I had was to wonder why we're trying to
-allocate non-secret and secret memory together anyway. There are good reasons
-(e.g. discoverability for allocation metadata), but also, this is exactly the
-problem I had when prototyping the stack compartmentalisation idea, and bump
-pointer allocators hit this for every allocation. I'm not sure if we need to
-reinforce this with a practical example, but they certainly exist.}
-\laurie{i'm trying to think of a non-artifical example... any suggestions?}
+Third, one can abort execution if bounds cannot be precisely represented. The
+\texttt{cheri\_bounds\_set\_exact} is a `safe` variant of
+\texttt{cheri\_bounds\_set} which raises an error if bounds cannot be precisely
+represented. We would prefer to see this be the standard bounds-setting
+function, with a \texttt{cheri\_bounds\_set\_unsafe} variant allowing the
+programmer to bypass bounds precision checks (because they are confident that
+either: their bounds request can be precisely represented; or their code works
+correctly with any resulting imprecision).
+
+\jacob{Notably, occurrences of this pattern in real code will (as we've seen) be
+much less obvious, and very hard to spot in code reviews. We could really do
+with a helper that tests whether or not a hypothetical access would be
+permitted, so we can write assertions in our \texttt{realloc} implementation, etc.}
+\laurie{what would such a helper function look like?}
 
 
 \section{\narrowwiden: Narrowing then widening}
