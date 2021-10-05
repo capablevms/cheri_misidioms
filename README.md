@@ -1,4 +1,4 @@
-# Bad CHERI idioms
+# CHERI misidioms
 
 This draft paper describes some bad CHERI idioms we have encountered. The
 `code/` directory gives executable examples of many of these bad idioms.

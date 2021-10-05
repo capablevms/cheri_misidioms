@@ -17,14 +17,21 @@
 //   3. realloc allows us to launder C2 back into C1
 
 int main() {
-    // malloc returns a capability C1 to a block 0..n bytes long
-    uint8_t *arr = malloc(16);
-
-    // Derive a capability C2 with bounds 0..m where m < n
-    arr = cheri_bounds_set(arr, 8);
-    assert(cheri_tag_get(arr) && cheri_length_get(arr) == 8);
-
-    // realloc allows us to launder C2 back into C1
-    arr = realloc(arr, 16);
-    assert(cheri_tag_get(arr) && cheri_length_get(arr) == 16);
+int32_t array[16] = {0};
+	int32_t *array_ptr = &array;
+	uint32_t bounds = 64;
+	// Get a valid capability from the DDC
+	void *__capability ddc_cap = (void *__capability) cheri_ddc_get();
+	assert(cheri_tag_get(ddc_cap));
+	// Set its address to array_ptr
+	ddc_cap = cheri_address_set(ddc_cap, array_ptr);
+	// Reduce its bounds
+	ddc_cap = cheri_bounds_set(ddc_cap, bounds);
+	// Check whether it is still valid
+	assert(cheri_tag_get(ddc_cap));
+	// Write it back
+	// FIXME: CHERI PROTECTION VIOLATION
+	// Capability bounds fault
+	write_ddc(ddc_cap);
+	return 0;
 }
