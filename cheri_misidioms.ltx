@@ -200,7 +200,7 @@ uint8_t *array_with_hidden_secret(size_t size) {
 \end{lstlisting}
 
 \noindent We first \texttt{malloc} an array big enough space to store
-\texttt{size} many \texttt{u8}s (line 2) before creating a child capability
+\texttt{size} bytes (line 2) before creating a child capability
 which prevents access to the array's final byte (line 3). We can verify this
 behaviour by checking the returned capability's length, as in the following
 code, which executes without error:
