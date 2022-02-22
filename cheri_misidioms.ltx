@@ -79,6 +79,30 @@ to be used. Conventionally, a program which uses both traditional addresses and
 capabilities is said to be operating in \emph{hybrid} mode while a program
 which uses only capabilities is in \emph{pure capability} mode.
 
+%%%%%
+
+\section{CHERI Allocators}
+
+This section surveys the set of presently available open-source allocators that
+have been adapted for CHERI. Although new software is constantly being adapted for CHERI as part of the Digital Security by Design (DSbD) initiative, we feel it is instructive to look at current ports to learn lessons about the complexities of memory management on capability-enabled platforms.
+
+\subsection{C Library Implementations}
+
+We examine Kingsley's \textit{BSD malloc} and Evans' \textit{jemalloc}, both of which are
+supported on CHERIBSD and used by many client applications.
+We also consider two embedded C libraries with malloc implementations, \textit{newlib} and \textit{Musl}. These are both available as part of the Morello project.
+For a baseline comparator, we use a trivial \textit{bump-pointer allocator} with
+CHERI support. % this is our own code from cheri-examples
+
+\subsection{Managed Runtimes}
+
+To date, relatively few high-level language runtimes have been adapted for
+CHERI platforms. We consider memory allocation within \textit{JavaScriptCore} and \textit{BoehmGC}, however we are aware that these projects have only partial ports to CHERI.
+
+
+
+%%%%%
+
 
 \section{\privesc: Privilege Escalation}
 
