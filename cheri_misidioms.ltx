@@ -82,6 +82,7 @@ which uses only capabilities is in \emph{pure capability} mode.
 %%%%%
 
 \section{CHERI Allocators}
+\label{sec:cheriallocators}
 
 This section surveys the set of presently available open-source allocators that
 have been adapted for CHERI. Although new software is constantly being adapted for CHERI as part of the Digital Security by Design (DSbD) initiative, we feel it is instructive to look at current ports to learn lessons about the complexities of memory management on capability-enabled platforms.
@@ -99,6 +100,22 @@ CHERI support. % this is our own code from cheri-examples
 To date, relatively few high-level language runtimes have been adapted for
 CHERI platforms. We consider memory allocation within \textit{JavaScriptCore} and \textit{BoehmGC}, however we are aware that these projects have only partial ports to CHERI.
 
+
+
+%%%%%
+
+\section{Research Questions}
+\label{sec:researchquestions}
+
+We use the following set of research questions in our attempt to understand the complexities of supporting memory management code on capability platforms.
+
+\begin{itemize}
+\item \textbf{RQ1}: Which CHERI API calls are most commonly used by memory allocators?
+\item \textbf{RQ2}: How extensive are CHERI adaptations to the code base of a memory allocator?
+\item \textbf{RQ3}: Do any memory management design patterns require substantial modifications for CHERI platforms?
+\item \textbf{RQ4}: Do the CHERI versions of memory allocation provide additional security properties relative to equivalent non-CHERI allocation?
+\item \textbf{RQ5}: Are any mis-idioms apparent in CHERI implementations of memory allocation?
+\end{itemize}
 
 
 %%%%%
