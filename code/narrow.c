@@ -35,7 +35,7 @@ int main() {
     uint8_t *arr = array_with_hidden_secret(16385);
     assert(cheri_length_get(arr) == 16384);
 
-    // ...however, if we allocate 16385 bytes, we get back a capability which
+    // ...however, if we allocate 16386 bytes, we get back a capability which
     // allows us to access the last byte.
     arr = array_with_hidden_secret(16386);
     assert(cheri_length_get(arr) == 16392);
