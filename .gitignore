@@ -8,5 +8,8 @@ cheri_misidioms.out
 cheri_misidioms.pdf
 cheri_misidioms_preamble.fmt
 cheri_misidioms_preamble.log
+cheri_misidioms.fdb_latexmk
+cheri_misidioms.fls
+pdflatex1681.fls
 softdevbib/
 
