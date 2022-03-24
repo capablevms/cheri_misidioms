@@ -103,6 +103,37 @@ We use the following set of research questions in our attempt to understand the 
 \end{itemize}
 
 
+%%%
+
+\subsection{CHERI Adaptations}
+
+Richardson and Watson (cite Capabilities Ltd tech report)
+state that only 0.026\% of a major open source code base requires
+modification. We expect that the proportion of code that
+requires changes for CHERI will be significantly higher
+for typical memory manager implementation code, where
+low-level system operations are more densely located in the
+source.
+
+We measure the number of lines of code (SLoC)
+within CHERI conditional preprocessor includes
+
+\begin{table}
+  \begin{center}
+    \begin{tabular}{c|r|r|r} \hline
+      \textbf{allocator} & \textbf{lines changed} & \textbf{total SLoC} & \textbf{\% change} \\ \hline
+      jemalloc & 116 &  39059 & 0.30\% \\
+libmalloc-simple &  43 & 680 & 6.3\% \\
+ musl-libc & 624 & 72177 & 0.87\% \\
+ newlib stdlib & 83 & 26041 & 0.32\%\\
+    \end{tabular}
+  \end{center}
+  \caption{\label{tab:cheriadaptation}Source code impact of CHERI modification}
+\end{table}
+
+
+%%%
+
 %%%%%
 
 
