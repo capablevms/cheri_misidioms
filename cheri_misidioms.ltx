@@ -12,25 +12,10 @@ hardware implementations is that the security features they provide are well
 thought through and robust -- but the programmer then has to work out how to
 use those features to achieve a desired level of security in software.
 
-We have made many mistakes in trying to write software that matches our
-security expectations -- indeed, we have made many mistakes in working out what
-reasonable security expectations with CHERI might be.  One of the root causes
-of our mistakes is that no single source of
-documentation systematically covers the subtle implications of CHERI's design.
-Put another way, there is currently little documentation explaining `good'
-CHERI programming idioms or, as we've come to realise, of `bad' CHERI
-programming idioms either.
-
-In this short paper, we capture some `bad' CHERI programming idioms, showing
-how these undermine what might have seemed like reasonable security expectations. For
-each, we attempt to name the idiom, explain the relevant CHERI features, and
-give simple example code. We do not claim that all, or perhaps even any, of the
-idioms in this paper are novel, and some may strike seasoned CHERI programmers
-as naive --- but we also show how some are present in CheriBSD.
-We hope that by capturing several of these idioms in a single place,
-naming and describing them, we will make it easier for programmers and
-researchers to understand and communicate about both these bad idioms and
-those yet to be discovered.
+In this short paper, we investigate a number of memory allocators adapted for
+CHERI from several angles. We show that many do not enforce expected security
+properties. We name and describe several different attacks and possible
+mitigations.
 
 
 \section{Background}
@@ -121,10 +106,15 @@ We use the following set of research questions in our attempt to understand the 
 %%%%%
 
 
-\section{\privesc: Privilege Escalation}
+\section{Attacking Pure Capability Memory Allocators}
 
-The most dangerous attacks on any capability system are those where an attacker
-is able to unexpectedly elevate a capability's privileges. Formally speaking, CHERI capabilities
+Conceptually capability memory allocator attacks come in two flavours: the
+allocator can initially hand hand out more permissions than expected; or can
+later be tricked in to escalating a capability's privileges. In this section
+we start with three serious attacks in the latter category, before detailing
+one minor `attack' in the former category.
+
+Formally speaking, CHERI capabilities
 have monotonically decreasing privileges: in other words, when taking an existing
 capability \emph{C1} as input, any capability \emph{C2} we derive from
 \emph{C1} must have the same or fewer privileges. This may seem to make it
@@ -200,7 +190,7 @@ system's main capability (as well as widening bounds, this allows
 e.g.~upgrading a read-only capability to a read/write capability).
 
 
-\subsection{Mitigations}
+\subsubsection{Mitigations}
 
 Privilege escalation occurs when a function fails to fully validate a possibly
 lower-privileged capability correctly before using a higher-privileged
@@ -224,7 +214,97 @@ definition of compatibility is then crucial, particularly as different CHERI
 architectures have different bounds representations and permissions.
 
 
-\section{\narrowingdoesnt: Narrowing a capability's bounds does not always fully narrow the capability's bounds}
+\subsection{\narrowwiden: Narrowing then widening}
+
+Assuming that a child capability with narrow bounds has been derived while
+respecting the issues raised in \narrowingdoesnt, it may seem that our issues
+with capability bounds are over. However, if one later widens those bounds
+again, one may unintentionally leak secrets.
+
+CheriBSD's default \texttt{realloc} is subject to this problem. The following
+code executes successfully, with the capability returned by \texttt{realloc}
+giving access to the same range of memory as the original \texttt{malloc}. Note
+that \texttt{realloc} does not move, or scrub, memory in such a case. Thus, if
+the user expected the setting of bounds to protect a secret, this code will not
+give the protection expected.
+
+\begin{lstlisting}[language=C]
+uint8_t *arr = malloc(256);
+for (uint8_t i = 0; i < 255; i++) arr[i] = i;
+arr = realloc(arr, 1);
+assert(cheri_tag_get(arr) && cheri_length_get(arr) == 1);
+arr = realloc(arr, 256);
+for (uint8_t i = 0; i < 255; i++) assert(arr[i] == i);
+\end{lstlisting}
+
+
+\subsubsection{Mitigations}
+
+In the specific example above, \texttt{realloc} should scrub memory when the
+size of a memory block is being narrowed. However, this may not be appropriate
+in all cases, particularly where capability bounds narrowing is being used to
+hide a secret from another compartment. In such cases, code which can widen a
+capability's bounds must be carefully audited.
+
+
+\subsection{\undef: Authentic capabilities from undefined behaviour}
+
+It is easy to assume that authentic capabilities can only be derived if one
+follows CHERI-C's rules correctly. However, it is possible for an attacker to
+use undefined behaviour to derive authentic capabilities. Consider the
+following code:
+
+\begin{lstlisting}[language=C]
+uint8_t *c1 = malloc(16);
+vaddr_t c1_addr = cheri_address_get(c1);
+uint8_t *c2 = cheri_bounds_set(c1, 8);
+
+free(c2);
+uint8_t *c3 = malloc(16);
+assert(cheri_tag_get(c3) && cheri_length_get(c3) == 16);
+assert(cheri_address_get(c3) == c1_addr);
+\end{lstlisting}
+
+In this example, we first derive a capability \emph{C1} with bounds of 16 bytes
+(line 1) before deriving a narrower capability \emph{C2} from it (line 3). It
+is then possible that after \texttt{free}ing the block of memory addressed by \emph{C1},
+a subsequent \texttt{malloc} of 16 bytes returns a
+capability \emph{C3} that is identical to \emph{C1}. This attack relies
+on the underlying memory allocator reusing memory blocks, which many do in a
+predictable fashion: this example runs successfully on CheriBSD (as of
+2021-08-19).
+
+Interestingly, C's pointer provenance rules mean that, after the code above has
+executed, using \emph{C1} is no longer defined behaviour though this will not
+trouble an attacker, who will find that most programs still execute as expected
+and who now has a capability \emph{C3} giving the same access as \emph{C1}.
+
+
+\subsubsection{Mitigations}
+
+There are no general mitigations for \undef. For the particular concrete
+example, a partial mitigation is for \texttt{free} to scrub memory so that, at
+least, whatever was present in the buffer cannot read by the attacker: however,
+since the attack has in effect `aliased' the capability, future writes can be
+observed and tampered with by the attacker.
+
+A more complete mitigation for the concrete example is for \texttt{free} to
+revoke all references to the capability. In other words, CHERI allows one to
+scan memory looking for all capabilities with bounds encompassing an address
+$p$ and invalidate the capability~\cite{xia19cherivoke}. In this case, this
+means that the original code will then fail with a \texttt{SIGPROT} when it
+tries to use \emph{C1}, downgrading the security leak into a denial-of-service.
+However, scanning the stack and heap in order to perform revocation is not
+likely to be a quick operation.
+
+
+\subsection{\narrowingdoesnt: Narrowing a capability's bounds does not always fully narrow the capability's bounds}
+
+\laurie{this isn't quite an attack in the same style as the others or, at
+least, i couldn't tickle it in quite the same way. however, if there are
+allocators which allocate `larger' chunks of memory contiguously, they could be
+subject to this attack, as one block's bounds might overlap with a
+predecessor/successor}
 
 Capabilities have high and low bounds, which are a strong enforcement mechanism
 for restricting the region of memory that the capability can access for
@@ -290,7 +370,7 @@ represented. When a desired length cannot be precisely represented, the next
 largest precisely representable length is used in the bound.
 
 
-\subsection{Mitigations}
+\subsubsection{Mitigations}
 
 There are three approaches that can ensure that narrowing bounds does not cause
 secrets to be leaked.
@@ -334,96 +414,7 @@ permitted, so we can write assertions in our \texttt{realloc} implementation, et
 \laurie{what would such a helper function look like?}
 
 
-\section{\narrowwiden: Narrowing then widening}
-
-Assuming that a child capability with narrow bounds has been derived while
-respecting the issues raised in \narrowingdoesnt, it may seem that our issues
-with capability bounds are over. However, if one later widens those bounds
-again, one may unintentionally leak secrets.
-
-CheriBSD's default \texttt{realloc} is subject to this problem. The following
-code executes successfully, with the capability returned by \texttt{realloc}
-giving access to the same range of memory as the original \texttt{malloc}. Note
-that \texttt{realloc} does not move, or scrub, memory in such a case. Thus, if
-the user expected the setting of bounds to protect a secret, this code will not
-give the protection expected.
-
-\begin{lstlisting}[language=C]
-uint8_t *arr = malloc(256);
-for (uint8_t i = 0; i < 255; i++) arr[i] = i;
-arr = realloc(arr, 1);
-assert(cheri_tag_get(arr) && cheri_length_get(arr) == 1);
-arr = realloc(arr, 256);
-for (uint8_t i = 0; i < 255; i++) assert(arr[i] == i);
-\end{lstlisting}
-
-
-\subsection{Mitigations}
-
-In the specific example above, \texttt{realloc} should scrub memory when the
-size of a memory block is being narrowed. However, this may not be appropriate
-in all cases, particularly where capability bounds narrowing is being used to
-hide a secret from another compartment. In such cases, code which can widen a
-capability's bounds must be carefully audited.
-
-
-\section{\undef: Authentic capabilities from undefined behaviour}
-
-It is easy to assume that authentic capabilities can only be derived if one
-follows CHERI-C's rules correctly. However, it is possible for an attacker to
-use undefined behaviour to derive authentic capabilities. Consider the
-following code:
-
-\begin{lstlisting}[language=C]
-uint8_t *c1 = malloc(16);
-vaddr_t c1_addr = cheri_address_get(c1);
-uint8_t *c2 = cheri_bounds_set(c1, 8);
-
-free(c2);
-uint8_t *c3 = malloc(16);
-assert(cheri_tag_get(c3) && cheri_length_get(c3) == 16);
-assert(cheri_address_get(c3) == c1_addr);
-\end{lstlisting}
-
-In this example, we first derive a capability \emph{C1} with bounds of 16 bytes
-(line 1) before deriving a narrower capability \emph{C2} from it (line 3). It
-is then possible that after \texttt{free}ing the block of memory addressed by \emph{C1},
-a subsequent \texttt{malloc} of 16 bytes returns a
-capability \emph{C3} that is identical to \emph{C1}. This attack relies
-on the underlying memory allocator reusing memory blocks, which many do in a
-predictable fashion: this example runs successfully on CheriBSD (as of
-2021-08-19).
-
-Interestingly, C's pointer provenance rules mean that, after the code above has
-executed, using \emph{C1} is no longer defined behaviour though this will not
-trouble an attacker, who will find that most programs still execute as expected
-and who now has a capability \emph{C3} giving the same access as \emph{C1}.
-
-
-\subsection{Mitigations}
-
-There are no general mitigations for \undef. For the particular concrete
-example, a partial mitigation is for \texttt{free} to scrub memory so that, at
-least, whatever was present in the buffer cannot read by the attacker: however,
-since the attack has in effect `aliased' the capability, future writes can be
-observed and tampered with by the attacker.
-
-A more complete mitigation for the concrete example is for \texttt{free} to
-revoke all references to the capability. In other words, CHERI allows one to
-scan memory looking for all capabilities with bounds encompassing an address
-$p$ and invalidate the capability~\cite{xia19cherivoke}. In this case, this
-means that the original code will then fail with a \texttt{SIGPROT} when it
-tries to use \emph{C1}, downgrading the security leak into a denial-of-service.
-However, scanning the stack and heap in order to perform revocation is not
-likely to be a quick operation.
-
-
-\section{Protecting the whole but not the parts}
-
-\laurie{i.e.~set permissions on a struct attributes but not the struct (or vice versa): capabilities only cover contiguous chunks of memory}
-
-
-\section{Capability overflow}
+\subsection{Capability overflow}
 
 \laurie{is this possible?}
 \jacob{Not when used in the obvious way (e.g. dereferencing), but extreme
@@ -431,14 +422,6 @@ likely to be a quick operation.
 saturating on Morello, and this isn't obvious in the CHERI API. This makes
 manually testing the bounds difficult.}
 \laurie{interesting! can we make a simple code example which shows this?}
-
-
-
-%\section{Missing or flawed parts of the CHERI API}
-
-%\subsection{\texttt{cheri\_address\_set}}
-
-%\laurie{'cheri_setaddress()` doesn't abort if the result isn't encodable.}
 
 
 \section{Conclusions}
