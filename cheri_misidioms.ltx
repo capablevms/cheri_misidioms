@@ -106,6 +106,32 @@ We use the following set of research questions in our attempt to understand the 
 
 \subsection{RQ1: CHERI API Coverage}
 
+different CHERI APIs, given evolution of system.
+older set of header files \texttt{cheric.h}.
+Two C allocators, BSD malloc and jemalloc - use this API.
+
+newer \texttt{builtin} API based on compiler intrinsics
+Three allocators, newlib, Musl and trivial - use this API.
+
+For each of these C allocators, we inspected the source code
+to count the number of different CHERI API calls. We report these
+as a proportion of the overall API. Show that some allocators
+have a broader spread of API calls - what does this indicate?
+
+
+\begin{table}
+  \begin{center}
+    \begin{tabular}{c|c|r|r} \hline
+      \textbf{allocator} & \textbf{API} & \textbf{\# API calls} & \textbf{\% API coverage} \\ \hline
+      BSD malloc & cheric & 10 & 10/57 \\
+      jemalloc & cheric & 11 & 11/57 \\
+      Musl & builtin & ?? 22 or 6 ?? & 6/37 \\
+      Newlib & builtin & 9 & 9/37 \\
+      Trivial & builtin & 3 & 3/37 \\ \hline
+    \end{tabular}
+  \end{center}
+  \caption{\label{tab:cheriadaptation}Coverage of CHERI API calls by various allocators}
+\end{table}
 
 
 %%%
