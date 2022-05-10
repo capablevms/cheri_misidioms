@@ -70,7 +70,7 @@ which uses only capabilities is in \emph{pure capability} mode.
 \label{sec:cheriallocators}
 
 This section surveys the set of presently available open-source allocators that
-have been adapted for CHERI. Although new software is constantly being adapted for CHERI as part of the Digital Security by Design (DSbD) initiative, we feel it is instructive to look at current ports to learn lessons about the complexities of memory management on capability-enabled platforms.
+have been adapted for CHERI. Although new software is constantly being adapted for CHERI as part of the Digital Security by Design (DSbD) initiative, we feel it is instructive to look at current ports to learn lessons about the complexities of memory management implementation on capability-enabled platforms.
 
 \subsection{C Library Implementations}
 
@@ -90,9 +90,9 @@ CHERI platforms. We consider memory allocation within \textit{JavaScriptCore} an
 %%%%%
 
 \section{Research Questions}
-\label{sec:researchquestions}
+\label{sec:rqs}
 
-We use the following set of research questions in our attempt to understand the complexities of supporting memory management code on capability platforms.
+We address the following set of research questions in our attempt to understand the complexities of supporting memory management code on capability platforms.
 
 \begin{itemize}
 \item \textbf{RQ1}: Which CHERI API calls are most commonly used by memory allocators?
@@ -105,18 +105,30 @@ We use the following set of research questions in our attempt to understand the 
 %%%
 
 \subsection{RQ1: CHERI API Coverage}
+\label{sec:rqs:rq1}
 
-different CHERI APIs, given evolution of system.
-older set of header files \texttt{cheric.h}.
-Two C allocators, BSD malloc and jemalloc - use this API.
+For system-level C programming, there are two
+distinct CHERI APIs; this is due to the gradual evolution of
+the software ecosystem.
+Older projects use a set of legacy functions from the \texttt{cheric.h}
+header file. 
+Two of the memory allocators we study, i.e.\ BSD malloc and jemalloc,
+make use of this now-deprecated API.
+The \texttt{cheric.h} API exposes 57 CHERI functions to client
+code.
+A newer \texttt{builtin} API relies on LLVM-supported
+\textit{compiler intrinsics}.
+Three of the memory allocators we study, i.e.\ newlib, Musl and trivial, make use of this API.
+This \texttt{builtin} API exposes 37 CHERI functions to client code.
+\emph{why 20 fewer functions???}
 
-newer \texttt{builtin} API based on compiler intrinsics
-Three allocators, newlib, Musl and trivial - use this API.
-
-For each of these C allocators, we inspected the source code
+For each of the allocators, we inspected the source code
 to count the number of different CHERI API calls. We report these
-as a proportion of the overall API. Show that some allocators
-have a broader spread of API calls - what does this indicate?
+as a proportion of the overall API.
+Table \ref{tab:rq1} shows the results, indicating that some allocators
+have a broader spread of API calls.
+\emph{What does this imply?}
+\emph{What are the API calls doing?}
 
 
 \begin{table}
@@ -130,24 +142,39 @@ have a broader spread of API calls - what does this indicate?
       Trivial & builtin & 3 & 3/37 \\ \hline
     \end{tabular}
   \end{center}
-  \caption{\label{tab:cheriadaptation}Coverage of CHERI API calls by various allocators}
+  \caption{\label{tab:rq1}Coverage of CHERI API calls by various allocators}
 \end{table}
 
 
 %%%
 
 \subsection{RQ2: CHERI Adaptations}
+\label{sec:rqs:rq2}
 
 Richardson and Watson (cite Capabilities Ltd tech report)
 state that only 0.026\% of a major open source code base requires
-modification. We expect that the proportion of code that
+modification to work on capability hardware.
+We expect that the proportion of code that
 requires changes for CHERI will be significantly higher
 for typical memory manager implementation code, where
 low-level system operations are more densely located in the
 source.
 
-We measure the number of lines of code (SLoC)
-within CHERI conditional preprocessor includes
+To confirm this hypothesis, 
+we measure the number of lines of code (SLoC)
+within CHERI conditional preprocessor includes.
+This is an approximation of the number of
+lines of code that needed to be modified for
+CHERI-specific purposes.
+
+Table \ref{tab:rq2} reports the absolute SLoC wrapped in
+CHERI preprocessor includes (lines changed), the total
+lines of code in the allocator (total SLoC), and the
+percentage of CHERI-specific lines (\% change).
+Even with our approximate counting, we see that the lines affected
+are 1-2 orders of magnitude more than the 0.026\% figure
+quoted by Richardson and Watson (cite).
+\emp{why?}
 
 \begin{table}
   \begin{center}
@@ -159,11 +186,48 @@ libmalloc-simple &  43 & 680 & 6.3\% \\
  newlib stdlib & 83 & 26041 & 0.32\%\\
     \end{tabular}
   \end{center}
-  \caption{\label{tab:cheriadaptation}Source code impact of CHERI modification}
+  \caption{\label{tab:rq2}Source code impact of CHERI modification}
 \end{table}
 
 
 %%%
+
+
+\subsection{RQ3: Design Pattern Changes}
+\label{sec:rqs:rq3}
+
+We are aware of problems with coalescing in Boehm GC ... problems due to
+contiguous but non-overlapping capability bounds for regions from
+distinct mmap calls.
+\emph{anything else?}
+
+
+%%%
+
+
+\subsection{RQ4: Security Properties}
+\label{sec:rqs:rq4}
+
+CHERI hardware supports many and varied security properties -
+require careful coding in software.
+Examples of research prototypes for ... s/w compartmentalization, temporal
+and spatial memory safety on heap and stack (?)
+
+What do allocators `in-the-wild' actually provide?
+Answer - simple spatial mem safety for heap-allocated data.
+Bounded pointers to buffers in heap.
+
+In terms of the Critical Weakness Enumeration (CWE), all the allocators we
+surveyed cope only with
+CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer
+- in particular CWE-125: Out-of-bounds Read and  		
+CWE-787: Out-of-bounds Write
+
+although only for dynamically -allocated memory resident on the
+managed heap.
+
+This is stronger security than their non-CHERI counterparts. 
+
 
 %%%%%
 
