@@ -70,13 +70,13 @@ which uses only capabilities is in \emph{pure capability} mode.
 \label{sec:cheriallocators}
 
 This section surveys the set of presently available open-source allocators that
-have been adapted for CHERI. Although new software is constantly being adapted for CHERI as part of the Digital Security by Design (DSbD) initiative, we feel it is instructive to look at current ports to learn lessons about the complexities of memory management implementation on capability-enabled platforms.
+have been adapted for CHERI. Although new software is constantly being ported to CHERI as part of the Digital Security by Design (DSbD) initiative, we feel it is instructive to look at current projects to learn general lessons about the complexities of memory management implementation on capability-enabled platforms.
 
 \subsection{C Library Implementations}
 
 We examine Kingsley's \textit{BSD malloc} and Evans' \textit{jemalloc}, both of which are
-supported on CHERIBSD and used by many client applications.
-We also consider two embedded C libraries with malloc implementations, \textit{newlib} and \textit{Musl}. These are both available as part of the Morello project.
+supported on CheriBSD and used by many client applications.
+We also consider two embedded C libraries with \texttt{malloc} implementations, \textit{newlib} and \textit{Musl}. These are both available as part of the Morello project.
 For a baseline comparator, we use a trivial \textit{bump-pointer allocator} with
 CHERI support. % this is our own code from cheri-examples
 
@@ -97,9 +97,9 @@ We address the following set of research questions in our attempt to understand 
 \begin{itemize}
 \item \textbf{RQ1}: Which CHERI API calls are most commonly used by memory allocators?
 \item \textbf{RQ2}: How extensive are CHERI adaptations to the code base of a memory allocator?
-\item \textbf{RQ3}: Do any memory management design patterns require substantial modifications for CHERI platforms?
+\item \textbf{RQ3}: Do common memory management design patterns require substantial modifications for CHERI platforms?
 \item \textbf{RQ4}: Do the CHERI versions of memory allocation provide additional security properties relative to equivalent non-CHERI allocation?
-\item \textbf{RQ5}: Are any mis-idioms apparent in CHERI implementations of memory allocation?
+\item \textbf{RQ5}: Are any implementation mis-idioms apparent in CHERI ports of memory allocators?
 \end{itemize}
 
 %%%
@@ -109,22 +109,23 @@ We address the following set of research questions in our attempt to understand 
 
 For system-level C programming, there are two
 distinct CHERI APIs; this is due to the gradual evolution of
-the software ecosystem.
-Older projects use a set of legacy functions from the \texttt{cheric.h}
-header file. 
+the software ecosystem over the past decade.
+Older projects use the legacy \texttt{cheric.h}
+header file, which exposes
+57 CHERI functions to client code.
 Two of the memory allocators we study, i.e.\ BSD malloc and jemalloc,
 make use of this now-deprecated API.
-The \texttt{cheric.h} API exposes 57 CHERI functions to client
-code.
-A newer \texttt{builtin} API relies on LLVM-supported
-\textit{compiler intrinsics}.
-Three of the memory allocators we study, i.e.\ newlib, Musl and trivial, make use of this API.
-This \texttt{builtin} API exposes 37 CHERI functions to client code.
-\emph{why 20 fewer functions???}
 
-For each of the allocators, we inspected the source code
-to count the number of different CHERI API calls. We report these
-as a proportion of the overall API.
+A newer \texttt{builtin} CHERI API relies on LLVM-supported
+\textit{compiler intrinsics}; there are 37 CHERI functions exposed
+as intrinsic functions to client code.
+\emph{why 20 fewer functions???}
+Three of the memory allocators we study, i.e.\ newlib, Musl and trivial, make use of this \texttt{builtin} API.
+
+
+For each of the allocators, we inspect the source code
+to count the number of distinct CHERI API calls. Note that if the same function is called in multiple source code locations, we only count it once.
+This gives us a measure of API coverage, for each allocator.
 Table \ref{tab:rq1} shows the results, indicating that some allocators
 have a broader spread of API calls.
 \emph{What does this imply?}
@@ -134,7 +135,7 @@ have a broader spread of API calls.
 \begin{table}
   \begin{center}
     \begin{tabular}{c|c|r|r} \hline
-      \textbf{allocator} & \textbf{API} & \textbf{\# API calls} & \textbf{\% API coverage} \\ \hline
+      \textbf{allocator} & \textbf{API} & \textbf{\# API calls} & \textbf{API coverage} \\ \hline
       BSD malloc & cheric & 10 & 10/57 \\
       jemalloc & cheric & 11 & 11/57 \\
       Musl & builtin & ?? 22 or 6 ?? & 6/37 \\
@@ -164,7 +165,7 @@ To confirm this hypothesis,
 we measure the number of lines of code (SLoC)
 within CHERI conditional preprocessor includes.
 This is an approximation of the number of
-lines of code that needed to be modified for
+lines of code that need to be modified for
 CHERI-specific purposes.
 
 Table \ref{tab:rq2} reports the absolute SLoC wrapped in
@@ -234,8 +235,8 @@ This is stronger security than their non-CHERI counterparts.
 
 \section{Attacking Pure Capability Memory Allocators}
 
-Conceptually capability memory allocator attacks come in two flavours: the
-allocator can initially hand hand out more permissions than expected; or can
+Conceptually, capability memory allocator attacks come in two flavours: the
+allocator can initially hand out more permissions than expected; or can
 later be tricked in to escalating a capability's privileges. In this section
 we start with three serious attacks in the latter category, before detailing
 one minor `attack' in the former category.
