@@ -125,7 +125,7 @@ Three of the memory allocators we study, i.e.\ newlib, Musl and trivial, make us
 
 For each of the allocators, we inspect the source code
 to count the number of distinct CHERI API calls. Note that if the same function is called in multiple source code locations, we only count it once.
-This gives us a measure of API coverage, for each allocator.
+This gives us a static measure of API coverage, for each allocator.
 Table \ref{tab:rq1} shows the results, indicating that some allocators
 have a broader spread of API calls.
 \emph{What does this imply?}
@@ -158,8 +158,7 @@ modification to work on capability hardware.
 We expect that the proportion of code that
 requires changes for CHERI will be significantly higher
 for typical memory manager implementation code, where
-low-level system operations are more densely located in the
-source.
+low-level system operations are more densely located.
 
 To confirm this hypothesis, 
 we measure the number of lines of code (SLoC)
@@ -173,7 +172,7 @@ CHERI preprocessor includes (lines changed), the total
 lines of code in the allocator (total SLoC), and the
 percentage of CHERI-specific lines (\% change).
 Even with our approximate counting, we see that the lines affected
-are 1-2 orders of magnitude more than the 0.026\% figure
+are between one and two orders of magnitude more than the 0.026\% figure
 quoted by Richardson and Watson (cite).
 \emph{why?}
 
@@ -202,6 +201,13 @@ contiguous but non-overlapping capability bounds for regions from
 distinct mmap calls.
 \emph{anything else?}
 
+Issues of using bitwise arithmetic to synthesize addresses - no longer possible
+- need to offset from capability with valid bounds.
+
+Issue of using an allocator 'header word' one word before the user-visible
+struct pointer ... bounds
+in CHERI cause issue here - unless we expose the metadata in the bounds?
+
 
 %%%
 
@@ -209,25 +215,28 @@ distinct mmap calls.
 \subsection{RQ4: Security Properties}
 \label{sec:rqs:rq4}
 
-CHERI hardware supports many and varied security properties -
-require careful coding in software.
-Examples of research prototypes for ... s/w compartmentalization, temporal
-and spatial memory safety on heap and stack (?)
+The CHERI hardware extensions supports a variety of enforceable security
+policies, but these require careful coding in software.
+For memory allocators, CHERI offers the possibility of:
+\begin{itemize}
+\item lightweight software compartmentalization
+\item temporal memory safety on the heap
+\item spatial memory safety on the heap
+\end{itemize}
 
-What do allocators `in-the-wild' actually provide?
-Answer - simple spatial mem safety for heap-allocated data.
-Bounded pointers to buffers in heap.
+When we survey existing CHERI memory allocators `in-the-wild', we
+see that they currently provide support for spatial memory safety
+on the heap.
 
 In terms of the Critical Weakness Enumeration (CWE), all the allocators we
-surveyed cope only with
-CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer
-- in particular CWE-125: Out-of-bounds Read and  		
-CWE-787: Out-of-bounds Write
+surveyed only mitigate CWE-125: Out-of-bounds Read and  		
+CWE-787: Out-of-bounds Write, for dynamically allocated memory in the managed heap.
 
-although only for dynamically -allocated memory resident on the
-managed heap.
-
-This is stronger security than their non-CHERI counterparts. 
+While this is stronger security than the equivalent non-CHERI versions of
+these allocators, it is apparent that the CHERI allocators do not yet
+take advantage of the full range of security mechanisms afforded by the
+hardware. The next section goes on to explore potential security
+vulnerabilities, mostly concerning temporal memory safety.
 
 
 %%%%%
