@@ -196,17 +196,28 @@ libmalloc-simple &  43 & 680 & 6.3\% \\
 \subsection{RQ3: Design Pattern Changes}
 \label{sec:rqs:rq3}
 
-We are aware of problems with coalescing in Boehm GC ... problems due to
-contiguous but non-overlapping capability bounds for regions from
-distinct mmap calls.
-\emph{anything else?}
+Memory management code needs to be highly efficient, due to the
+frequency of its execution. There are many memory management design
+patterns that recur in a variety of allocators. Jones et al.\ (cite GC handbook)
+outlines many of these patterns from an implementation perspective.
+Due to the constraints of CHERI, some of these memory management design
+patterns no longer work properly. We review three such problematic patterns in this section.
 
-Issues of using bitwise arithmetic to synthesize addresses - no longer possible
-- need to offset from capability with valid bounds.
+Contiguous free buffers in managed memory should be merged to form a larger buffer.
+This \emph{coalescing} pattern will fail on CHERI systems when contiguous
+buffers have non-overlapping bounds, perhaps since the buffers are derived
+from distinct \texttt{mmap} calls.
 
-Issue of using an allocator 'header word' one word before the user-visible
-struct pointer ... bounds
-in CHERI cause issue here - unless we expose the metadata in the bounds?
+Memory managers often use simple bitwise arithmetic to synthesize addresses
+efficiently, e.g.\ for iterating over fixed length buffers.
+Such \emph{address synthesis} is not permitted in CHERI, since
+valid metadata cannot be synthesized. Instead, calculations must be offset from
+a capability with valid bounds. Finding the appropriate capability value is
+generally less efficient than synthesizing it.
+
+Some allocators use a \emph{header word} to store metadata for allocated buffers. The header word is usually located one word before the user-visible
+pointer begins.
+In CHERI, a problem is caused if the metadata word is out-of-bounds for the user-visible pointer --- in which case the memory manager needs to retain a separate, more privileged capability to access the metadata. On the other hand, if the metadata is in-bounds for the user-visible pointer then the metadata could be modified by user code, so CHERI cannot protect against metadata corruption.
 
 
 %%%
