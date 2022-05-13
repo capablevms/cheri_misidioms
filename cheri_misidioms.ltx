@@ -4,6 +4,15 @@
 \begin{document}
 \maketitle
 
+\begin{abstract}
+How difficult is it to adapt a memory allocator for CHERI's pure capability
+mode? In this paper we examine \laurie{four? five?} memory allocators that
+are usable by C programs in CheriBSD. We show that they use a relatively
+small portion of the CHERI C API, require relatively few lines of code to be
+changed, but are vulnerable to simple attacks.
+\end{abstract}
+
+
 \section{Introduction}
 
 CHERI provides and enforces hardware capabilities that allow programmers to
@@ -12,10 +21,16 @@ hardware implementations is that the security features they provide are well
 thought through and robust -- but the programmer then has to work out how to
 use those features to achieve a desired level of security in software.
 
-In this short paper, we investigate a number of memory allocators adapted for
-CHERI from several angles. We show that many do not enforce expected security
-properties. We name and describe several different attacks and possible
-mitigations.
+In this paper we look at several memory allocators have been adapted for pure
+capability CHERI. We split this into two broad categories: an analysis of
+allocator's source code and use of CHERI APIs; and the vulnerability of the
+allocators to CHERI specific attacks. We show that, in common with CHERI pure
+capability porting folklore, relatively few lines of code in the allocators had
+to be changed to port them to CheriBSD. Perhaps surprisingly, given the
+low-level nature of allocators, we show that they use a fairly small subset of
+the CHERI C API. However we show that the allocators are vulnerable to a number
+of simple attacks that mean that they give weaker security guarantees than
+might be assumed.
 
 
 \section{Background}
@@ -38,7 +53,7 @@ We use the term \textit{CHERI} to refer to the `abstract capability machine'
 that software can observe: that is, the combination of a capability hardware
 instruction set, an ABI, and a user-facing library that exposes capability-related functions.
 We refer to specific hardware implementations by their name
-(e.g.~Arm's `Morello', or `CHERI RISC-V').
+(e.g.~Arm's `Morello' or `CHERI RISC-V').
 
 CHERI capabilities are immutable and thus a new \emph{child}
 capability must be derived from one or more \emph{parent} capabilities.
@@ -59,12 +74,15 @@ boolean flags such as whether a capability can read/write to memory addresses
 within its bounds.
 
 As well as capabilities (which on Morello and CHERI RISC-V, for example, are
-implemented as double-width addresses), CHERI also allows `traditional' single-width addresses
-to be used. Conventionally, a program which uses both traditional addresses and
+128 bits), CHERI also allows `traditional' single-width
+pointers-as-addresses (which on Morello and CHERI RISC-V are 64-bit addresses)
+to be used. Although CHERI processors allow both double-width capabilities and
+single-width addresses-as-pointers to exist alongside each other at any time,
+conventionally, a program which uses both traditional addresses and
 capabilities is said to be operating in \emph{hybrid} mode while a program
-which uses only capabilities is in \emph{pure capability} mode.
+which uses only capabilities is in \emph{pure capability} mode. In this paper
+we concentrate on programs which operate solely in pure capability mode.
 
-%%%%%
 
 \section{CHERI Allocators}
 \label{sec:cheriallocators}
