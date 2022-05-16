@@ -141,6 +141,13 @@ as intrinsic functions to client code.
 \emph{why 20 fewer functions???}
 Three of the memory allocators we study, i.e.\ newlib, Musl and trivial, make use of this \texttt{builtin} API.
 
+\jacob{Where does \texttt{cheriintrin.h} fit into that? That's the preferred header today, isn't it?}
+
+\jacob{I would guess that, for our purposes, these APIs overlap significantly,
+amounting to simple renames in most cases. As part of this paper, should we
+determine some sort of mapping to make the comparison easier? It's notable that
+most API calls map to single CHERI instructions, which should make that mapping
+easier.}
 
 For each of the allocators, we inspect the source code
 to count the number of distinct CHERI API calls. Note that if the same function is called in multiple source code locations, we only count it once.
@@ -165,6 +172,20 @@ have a broader spread of API calls.
   \caption{\label{tab:rq1}Coverage of CHERI API calls by various allocators}
 \end{table}
 
+\jacob{Ok, it's time for a difficult question, sorry! Basically, why are we
+asking this question (\textbf{RQ1}), and what are we hoping to learn from it?
+Static API usage is relatively easy to measure, but I'm not sure what~table~\ref{tab:rq1} tells me.
+Dynamic usage is more difficult to measure, but has more obvious uses (e.g.~for performance analysis).
+However, for \emph{security} analysis, we probably want to count uses with the
+vague property of ``sequences that require careful thought''.
+Typically, it seems, these are cases affected by bounds imprecision (where
+simple tests might work even for invalid code). Such sequences require significant work to
+implement, and carry a greater risk of vulnerability.
+For example: the bump allocator required a sequence with a critcial order of
+operations, buT it was probably only a handful of API calls in the end. I think there were similar sequences in BoehmGC too.
+Section~\ref{sec:atk}~goes into more detail there (by counter-example).}
+
+\jacob{What \emph{are} the most common API calls? That was what \textbf{RQ1} asked.}
 
 %%%
 
@@ -273,6 +294,7 @@ vulnerabilities, mostly concerning temporal memory safety.
 
 
 \section{Attacking Pure Capability Memory Allocators}
+\label{sec:atk}
 
 Conceptually, capability memory allocator attacks come in two flavours: the
 allocator can initially hand out more permissions than expected; or can
