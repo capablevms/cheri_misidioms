@@ -310,9 +310,9 @@ impossible to increase a capability's privileges, but software
 components can store high privilege capabilities that can then be used to
 give the appearance of returning a capability with increased privileges.
 
-Functions which take in a low privileged capability and use a higher priviliged
+Functions which take in a low privileged capability and use a higher privileged
 capability\footnote{More formally, which take in a capability \emph{C1} and use
-a capability \emph{C2}, where \emph{C2}'s set of priviliges are not a subset of
+a capability \emph{C2}, where \emph{C2}'s set of privileges are not a subset of
 \emph{C1}'s privileges.} to perform calculations are at risk of privilege
 escalation, and need to be carefully audited for bad idioms.
 
