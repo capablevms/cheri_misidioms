@@ -296,6 +296,24 @@ vulnerabilities, mostly concerning temporal memory safety.
 \section{Attacking Pure Capability Memory Allocators}
 \label{sec:atk}
 
+\begin{table}[t]
+\begin{center}
+\begin{tabular}{lcc}
+  \toprule
+Attack            & BSD simple & jemalloc \\
+\midrule
+narrow            & $\times$   & $\times$ \\
+narrow\_realloc   & $\times$   & $\times$ \\
+narrow\_widen     & $\times$   & $\times$ \\
+privesc           & $\times$   & $\times$ \\
+privesc2          &            & $\times$ \\
+undef             & $\times$   & $\times$ \\
+\bottomrule
+\end{tabular}
+\caption{Attacks which succeed on a given allocator are marked with a $\times$.}
+\end{center}
+\end{table}
+
 Conceptually, capability memory allocator attacks come in two flavours: the
 allocator can initially hand out more permissions than expected; or can
 later be tricked in to escalating a capability's privileges. In this section
