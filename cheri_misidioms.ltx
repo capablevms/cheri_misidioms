@@ -7,9 +7,9 @@
 \begin{abstract}
 How difficult is it to adapt a memory allocator for CHERI's pure capability
 mode? In this paper we examine \laurie{four? five?} memory allocators that
-are usable by C programs in CheriBSD. We show that they use a relatively
-small portion of the CHERI C API, require relatively few lines of code to be
-changed, but are vulnerable to simple attacks.
+are usable by C programs in CheriBSD. We show that adapting a memory
+allocator is relatively easy but that the resulting allocators are
+vulnerable to simple attacks.
 \end{abstract}
 
 
@@ -18,28 +18,28 @@ changed, but are vulnerable to simple attacks.
 CHERI provides and enforces hardware capabilities that allow programmers to
 make strong security guarantees about their programs. Our experience of CHERI
 hardware implementations is that the security features they provide are well
-thought through and robust -- but the programmer then has to work out how to
-use those features to achieve a desired level of security in software.
+thought through and robust -- but the programmer then has their work cut out
+to understand how those features can be used to achieve a desired level of security in software.
 
 In this paper we look at several memory allocators that have been adapted for
-pure capability CHERI. We split this into two broad categories: an analysis of
-allocator's source code and use of CHERI APIs, and the vulnerability of the
+pure capability CHERI. We split this into two broad categories: a manual analysis of
+allocator source code; and the vulnerability of the
 allocators to CHERI-specific attacks. We show that, in common with CHERI pure
 capability porting folklore, relatively few lines of code in the allocators had
 to be changed to port them to CheriBSD. Perhaps surprisingly, given the
 low-level nature of allocators, we show that they use a fairly small subset of
 the CHERI C API. However we show that the allocators are vulnerable to a number
-of simple attacks that mean that they give weaker security guarantees than
+of simple attacks that mean they give weaker security guarantees than
 might be assumed.
 
 
 \section{Background}
 
-We assume high-level familiarity with capabilities\footnote{\cite{levy84capability}
+We assume high-level familiarity with capabilities (\cite{levy84capability})
 provides an approachable historical overview of capability architectures, and
-may usefully be augmented by more recent work such as~\cite{miller06robust}.},
-CHERI generally\footnote{For a useful introduction to CHERI,
-see~\cite{watson20cheriintroduction}.},
+may usefully be augmented by more recent work such as~\cite{miller06robust}),
+CHERI generally (for a useful introduction to CHERI,
+see~\cite{watson20cheriintroduction}),
 the CHERI ABI~\cite{brooks19cheriabi},
 and CHERI C (the dialect of C that CHERI defines)~\cite{watson20chericprogramming}.
 
@@ -61,7 +61,10 @@ capability must be derived from one or more \emph{parent} capabilities.
 We refer to a capability as \emph{authentic} (what CHERI calls
 `tagged' or `valid') if it has been derived from its parents according
 to CHERI's rules, or \emph{inauthentic} (what CHERI calls `untagged' or `invalid')
-otherwise. A capability consists of an \emph{address} in memory
+otherwise. An inauthentic capability may be duplicated at will
+but attempting to use an inauthentic capability in any other way leads to a hardware
+exception.
+A capability consists of an \emph{address} in memory
 and a set of \emph{permissions}. Amongst the permissions are
 \emph{bounds} -- the region of memory an authentic capability is allowed to
 read/write from/to. A capability's bounds are from a \emph{low} (inclusive) to
@@ -82,34 +85,48 @@ single-width addresses-as-pointers to exist alongside each other at any time,
 conventionally, a program which uses both traditional addresses and
 capabilities is said to be operating in \emph{hybrid} mode while a program
 which uses only capabilities is in \emph{pure capability} mode. In this paper
-we concentrate on programs which operate solely in pure capability mode.
+we concentrate exclusively on programs which operate in pure capability mode.
 
 
-\section{CHERI Allocators}
+\section{A Basic Allocator for Pure Capability CHERI}
+
+\laurie{jeremy: why don't we present the absolute most bare bones allocator
+(including free and realloc i guess?) that supports purecap. this would bring
+to life the coalescing stuff, if nothing else.}
+
+It is unlikely that a memory allocator written without capabilities in mind
+will work on pure capability CHERI without some adaption. In this section we
+present the salient points of a simple pure capability allocator.
+
+
+\section{Existing CHERI Allocators}
 \label{sec:cheriallocators}
 
-This section surveys the set of presently available open-source allocators that
-have been adapted for CHERI. Although new software is constantly being ported to CHERI as part of the Digital Security by Design (DSbD) initiative, we feel it is instructive to look at current projects to learn general lessons about the complexities of memory management implementation on capability-enabled platforms.
+\laurie{we need to add citations for the allocators where possible}
 
-\subsection{C Library Implementations}
+In this paper we examine the following memory allocators which have
+been ported to CheriBSD: \textit{jemalloc} (the default allocator on CheriBSD),
+Kingsley's \textit{BSD malloc} (\laurie{say something about it -- I don't even
+know what it is and I'm a fully paid-up member of the BSD cult!}), and the two
+unnamed allocators inside the libc alternatives \textit{newlib} and
+\textit{Musl}. As a baseline we show a trivial \textit{bump-pointer
+allocator} of our own devising.
 
-We examine Kingsley's \textit{BSD malloc} and Evans' \textit{jemalloc}, both of which are
-supported on CheriBSD and used by many client applications.
-We also consider two embedded C libraries with \texttt{malloc} implementations, \textit{newlib} and \textit{Musl}. These are both available as part of the Morello project.
-For a baseline comparator, we use a trivial \textit{bump-pointer allocator} with
-CHERI support. % this is our own code from cheri-examples
-
-\subsection{Managed Runtimes}
-
-To date, relatively few high-level language runtimes have been adapted for
-CHERI platforms. We consider memory allocation within \textit{JavaScriptCore} and \textit{BoehmGC}, however we are aware that these projects have only partial ports to CHERI.
+At least two other memory allocators have been partly ported to CHERI: the
+conservative garbage collector \textit{Boehm-Demers-Weiser} garbage collector
+and the garbage collector inside the JavaScript virtual machine
+\textit{JavaScriptCore}. To the best of our knowledge, neither port is
+yet complete.
 
 
-
-%%%%%
-
-\section{Research Questions}
+\subsection{Research Questions}
 \label{sec:rqs}
+
+\laurie{perhaps one easy way of addressing jacob's later point is that
+"research question" might oversell what we're doing here? in other words, i
+think it's quite useful and interesting to point out how many CHERI APIs an
+allocator uses, but perhaps it would be more appropriate to more briefly
+summarise this information?}
 
 We address the following set of research questions in our attempt to understand the complexities of supporting memory management code on capability platforms.
 
@@ -123,7 +140,7 @@ We address the following set of research questions in our attempt to understand 
 
 %%%
 
-\subsection{RQ1: CHERI API Coverage}
+\subsubsection{RQ1: CHERI API Coverage}
 \label{sec:rqs:rq1}
 
 For system-level C programming, there are two
@@ -189,7 +206,7 @@ Section~\ref{sec:atk}~goes into more detail there (by counter-example).}
 
 %%%
 
-\subsection{RQ2: CHERI Adaptations}
+\subsubsection{RQ2: CHERI Adaptations}
 \label{sec:rqs:rq2}
 
 Richardson and Watson (cite Capabilities Ltd tech report)
@@ -233,7 +250,7 @@ libmalloc-simple &  43 & 680 & 6.3\% \\
 %%%
 
 
-\subsection{RQ3: Design Pattern Changes}
+\subsubsection{RQ3: Design Pattern Changes}
 \label{sec:rqs:rq3}
 
 Memory management code needs to be highly efficient, due to the
@@ -263,7 +280,7 @@ In CHERI, a problem is caused if the metadata word is out-of-bounds for the user
 %%%
 
 
-\subsection{RQ4: Security Properties}
+\subsubsection{RQ4: Security Properties}
 \label{sec:rqs:rq4}
 
 The CHERI hardware extensions supports a variety of enforceable security
@@ -280,7 +297,7 @@ see that they currently provide support for spatial memory safety
 on the heap.
 
 In terms of the Common Weakness Enumeration (CWE, cite), all the allocators we
-surveyed only mitigate CWE-125: Out-of-bounds Read and  		
+surveyed only mitigate CWE-125: Out-of-bounds Read and
 CWE-787: Out-of-bounds Write, for dynamically allocated memory in the managed heap.
 
 While this is stronger security than the equivalent non-CHERI versions of
