@@ -5,21 +5,22 @@
 \maketitle
 
 \begin{abstract}
-How difficult is it to adapt a memory allocator for CHERI's pure capability
-mode? In this paper we examine \laurie{four? five?} memory allocators that
-are usable by C programs in CheriBSD. We show that adapting a memory
-allocator is relatively easy but that the resulting allocators are
-vulnerable to simple attacks.
+We show that while it is relatively easy to adapt a memory allocator for
+pure capability CHERI, it is hard to make it secure. We start with
+a basic memory allocator and show the challenges involved in
+adapting it to pure capability CHERI. We then
+examine \laurie{four? five?} C memory allocators adapted for CheriBSD,
+and show that they are subject to a number of simple attacks.
 \end{abstract}
 
 
 \section{Introduction}
 
 CHERI provides and enforces hardware capabilities that allow programmers to
-make strong security guarantees about their programs. Our experience of CHERI
-hardware implementations is that the security features they provide are well
-thought through and robust -- but the programmer then has their work cut out
-to understand how those features can be used to achieve a desired level of security in software.
+make strong security guarantees about their programs. Available CHERI hardware
+has shown itself to be robust \laurie{cite} but programmers have to work out
+how to best use hardware capabilities to achieve a desired level of security
+in their software.
 
 In this paper we look at several memory allocators that have been adapted for
 pure capability CHERI. We split this into two broad categories: a manual analysis of
