@@ -20,7 +20,8 @@ CHERI provides and enforces hardware capabilities that allow programmers to
 make strong security guarantees about their programs. Available CHERI hardware
 has shown itself to be robust \laurie{cite} but programmers have to work out
 how to best use hardware capabilities to achieve a desired level of security
-in their software.
+in their software. \andrei{maybe emphasise that if capabilities are not used
+correctly at the software level, it undermines any hardware security?}
 
 In this paper we look at several memory allocators that have been adapted for
 pure capability CHERI. We split this into two broad categories: a manual analysis of
@@ -53,30 +54,29 @@ own terminology.
 
 We use the term \textit{CHERI} to refer to the `abstract capability machine'
 that software can observe: that is, the combination of a capability hardware
-instruction set, an ABI, and a user-facing library that exposes capability-related functions.
-We refer to specific hardware implementations by their name
-(e.g.~Arm's `Morello' or `CHERI RISC-V').
+instruction set, an ABI, and a user-facing library that exposes
+capability-related functions.  We refer to specific hardware implementations by
+their name (e.g.~Arm's `Morello' or `CHERI RISC-V').
 
-CHERI capabilities are immutable and thus a new \emph{child}
-capability must be derived from one or more \emph{parent} capabilities.
-We refer to a capability as \emph{authentic} (what CHERI calls
-`tagged' or `valid') if it has been derived from its parents according
-to CHERI's rules, or \emph{inauthentic} (what CHERI calls `untagged' or `invalid')
-otherwise. An inauthentic capability may be duplicated at will
-but attempting to use an inauthentic capability in any other way leads to a hardware
-exception.
-A capability consists of an \emph{address} in memory
-and a set of \emph{permissions}. Amongst the permissions are
-\emph{bounds} -- the region of memory an authentic capability is allowed to
-read/write from/to. A capability's bounds are from a \emph{low} (inclusive) to
-a \emph{high} (exclusive) address and we refer to `a bound of $x$ bytes' to mean
-a capability where $\textit{high}-\textit{low}=x$.
-If a capability's address is contained within its bounds we refer to the capability as
-a whole as \emph{in-bounds} or \emph{out-of-bounds} otherwise
-(see~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
-capability might have an out-of-bounds address). Other permissions include
-boolean flags such as whether a capability can read/write to memory addresses
-within its bounds.
+CHERI capabilities are immutable and thus a new \emph{child} capability must be
+derived from one or more \emph{parent} capabilities.  We refer to a capability
+as \emph{authentic} (what CHERI calls `tagged' or `valid') if it has been
+derived from its parents according to CHERI's rules, or \emph{inauthentic}
+(what CHERI calls `untagged' or `invalid') otherwise. An inauthentic capability
+may be duplicated at will but attempting to use an inauthentic capability in
+any other way leads to a hardware exception.  A capability consists of an
+\emph{address} in memory and a set of \emph{permissions}\andrei{Since this is
+not complete, should we mention we only discuss relevant aspects for the
+paper?}. Amongst the permissions are \emph{bounds} -- the region of memory an
+authentic capability is allowed to read/write from/to. A capability's bounds
+are from a \emph{low} (inclusive) to a \emph{high} (exclusive) address and we
+refer to `a bound of $x$ bytes' to mean a capability where
+$\textit{high}-\textit{low}=x$.  If a capability's address is contained within
+its bounds we refer to the capability as a whole as \emph{in-bounds} or
+\emph{out-of-bounds} otherwise (see~\cite{woodruff19chericoncentrate} for an
+explanation of why an authentic capability might have an out-of-bounds
+address). Other permissions include boolean flags such as whether a capability
+can read/write to memory addresses within its bounds.
 
 As well as capabilities (which on Morello and CHERI RISC-V, for example, are
 128 bits), CHERI also allows `traditional' single-width
@@ -117,7 +117,8 @@ At least two other memory allocators have been partly ported to CHERI: the
 conservative garbage collector \textit{Boehm-Demers-Weiser} garbage collector
 and the garbage collector inside the JavaScript virtual machine
 \textit{JavaScriptCore}. To the best of our knowledge, neither port is
-yet complete.
+yet complete\andrei{I don't know much about gc's, but could we extract either
+some design ideas, or even some functionality to add to our comparison?}.
 
 
 \subsection{Research Questions}
@@ -129,7 +130,11 @@ think it's quite useful and interesting to point out how many CHERI APIs an
 allocator uses, but perhaps it would be more appropriate to more briefly
 summarise this information?}
 
-We address the following set of research questions in our attempt to understand the complexities of supporting memory management code on capability platforms.
+\andrei{I think we should detail better what the singular overarching goal is.
+I feel these 5 RQs are slightly disjoint.}
+
+We address the following set of research questions in our attempt to understand
+the complexities of supporting memory management code on capability platforms.
 
 \begin{itemize}
 \item \textbf{RQ1}: Which CHERI API calls are most commonly used by memory allocators?
@@ -202,6 +207,7 @@ implement, and carry a greater risk of vulnerability.
 For example: the bump allocator required a sequence with a critcial order of
 operations, buT it was probably only a handful of API calls in the end. I think there were similar sequences in BoehmGC too.
 Section~\ref{sec:atk}~goes into more detail there (by counter-example).}
+\andrei{I will second this. My first impression of RQ1 was that it's more to do with performance analysis.}
 
 \jacob{What \emph{are} the most common API calls? That was what \textbf{RQ1} asked.}
 
@@ -217,9 +223,10 @@ We expect that the proportion of code that
 requires changes for CHERI will be significantly higher
 for typical memory manager implementation code, where
 low-level system operations are more densely located.
+\andrei{and because they work with pointers more than usual code?}
 
 To confirm this hypothesis, 
-we measure the number of lines of code (SLoC)
+we measure the number of lines of code (SLoC)\andrei{Where does S come from?}
 within CHERI conditional preprocessor includes.
 This is an approximation of the number of
 lines of code that need to be modified for
@@ -254,17 +261,19 @@ libmalloc-simple &  43 & 680 & 6.3\% \\
 \subsubsection{RQ3: Design Pattern Changes}
 \label{sec:rqs:rq3}
 
-Memory management code needs to be highly efficient, due to the
-frequency of its execution. There are many memory management design
-patterns that recur in a variety of allocators. Jones et al.\ (cite GC handbook)
-outlines many of these patterns from an implementation perspective.
-Due to the constraints of CHERI, some of these memory management design
-patterns no longer work properly. We review three such problematic patterns in this section.
+Memory management code needs to be highly efficient, due to the frequency of
+its execution. There are abundant memory management design patterns that recur
+in a variety of allocators. Jones et al.\ (cite GC handbook) outlines many of
+these patterns from an implementation perspective.  Due to the constraints of
+CHERI, some of these memory management design patterns no longer work properly.
+We review three such problematic patterns in this section.\andrei{Enumerate
+these 3, or paragraphs to emphasise which they are?}
 
-Contiguous free buffers in managed memory should be merged to form a larger buffer.
-This \emph{coalescing} pattern will fail on CHERI systems when contiguous
-buffers have non-overlapping bounds, perhaps since the buffers are derived
-from distinct \texttt{mmap} calls.
+Contiguous free buffers in managed memory should be merged to form a larger
+buffer. This \emph{coalescing} pattern will fail on CHERI systems when
+contiguous buffers have non-overlapping bounds, perhaps since the buffers are
+derived from distinct \texttt{mmap} calls. \andrei{Is it also the case that you
+can't ``combine'' two capabilities to form a larger one?}
 
 Memory managers often use simple bitwise arithmetic to synthesize addresses
 efficiently, e.g.\ for iterating over fixed length buffers.
@@ -273,9 +282,14 @@ valid metadata cannot be synthesized. Instead, calculations must be offset from
 a capability with valid bounds. Finding the appropriate capability value is
 generally less efficient than synthesizing it.
 
-Some allocators use a \emph{header word} to store metadata for allocated buffers. The header word is usually located one word before the user-visible
-pointer begins.
-In CHERI, a problem is caused if the metadata word is out-of-bounds for the user-visible pointer --- in which case the memory manager needs to retain a separate, more privileged capability to access the metadata. On the other hand, if the metadata is in-bounds for the user-visible pointer then the metadata could be modified by user code, so CHERI cannot protect against metadata corruption.
+Some allocators use a \emph{header word} to store metadata for allocated
+buffers. The header word is usually located one word before the user-visible
+pointer begins. In CHERI, a problem is caused if the metadata word is
+out-of-bounds for the user-visible pointer --- in which case the memory manager
+needs to retain a separate, more privileged capability to access the metadata.
+On the other hand, if the metadata is in-bounds for the user-visible pointer
+then the metadata could be modified by user code, so CHERI cannot protect
+against metadata corruption.
 
 
 %%%
@@ -328,15 +342,16 @@ privesc2          &            & $\times$ \\
 undef             & $\times$   & $\times$ \\
 \bottomrule
 \end{tabular}
-\caption{Attacks which succeed on a given allocator are marked with a $\times$.}
+\caption{Attacks which succeed on a given allocator are marked with a $\times$.}\andrei{Missing reference in text}
 \end{center}
 \end{table}
 
-Conceptually, capability memory allocator attacks come in two flavours: the
-allocator can initially hand out more permissions than expected; or can
-later be tricked in to escalating a capability's privileges. In this section
-we start with three serious attacks in the latter category, before detailing
-one minor `attack' in the former category.
+Conceptually, capability memory allocator attacks come in two
+flavours\andrei{Only two, or only two we look at?}: the allocator can initially
+hand out more permissions than expected; or can later be tricked in to
+escalating a capability's privileges. In this section we start with three
+serious attacks in the latter category, before detailing one minor `attack' in
+the former category.
 
 Formally speaking, CHERI capabilities
 have monotonically decreasing privileges: in other words, when taking an existing
@@ -382,9 +397,9 @@ void *realloc(void *cap, size_of size) {
 
 \noindent The crucial optimisation is on line 2: if we already have enough
 memory for the resized block, we simply return a new capability with the same
-address as the original capability but with an upper bound \texttt{size}. By definition, reducing
-the size of a block means that it will always fit within its existing bucket so
-the above optimisation is guaranteed to be correct.
+address as the original capability but with an increased upper bound. By
+definition, reducing the size of a block means that it will always fit within
+its existing bucket so the above optimisation is guaranteed to be correct.
 
 Unfortunately this implementation of \texttt{realloc} is subject to privilege
 escalation. For example, one can pass in a capability with narrow bounds and
@@ -441,9 +456,10 @@ architectures have different bounds representations and permissions.
 \subsection{\narrowwiden: Narrowing then widening}
 
 Assuming that a child capability with narrow bounds has been derived while
-respecting the issues raised in \narrowingdoesnt, it may seem that our issues
-with capability bounds are over. However, if one later widens those bounds
-again, one may unintentionally leak secrets.
+respecting the issues raised in \narrowingdoesnt
+\andrei{should this come after the \narrowingdoesnt{} subsection?}
+, it may seem that our issues with capability bounds are over. However, if one
+later widens those bounds again, one may unintentionally leak secrets.
 
 CheriBSD's default \texttt{realloc} is subject to this problem. The following
 code executes successfully, with the capability returned by \texttt{realloc}
@@ -474,9 +490,10 @@ capability's bounds must be carefully audited.
 \subsection{\myundef: Authentic capabilities from undefined behaviour}
 
 It is easy to assume that authentic capabilities can only be derived if one
-follows CHERI-C's rules correctly. However, it is possible for an attacker to
-use undefined behaviour to derive authentic capabilities. Consider the
-following code:
+follows CHERI-C's
+\andrei{This is the first and only reference to this ``CHERI-C''}
+rules correctly. However, it is possible for an attacker to use undefined
+behaviour to derive authentic capabilities. Consider the following code:
 
 \begin{lstlisting}[language=C]
 uint8_t *c1 = malloc(16);
@@ -515,7 +532,7 @@ observed and tampered with by the attacker.
 A more complete mitigation for the concrete example is for \texttt{free} to
 revoke all references to the capability. In other words, CHERI allows one to
 scan memory looking for all capabilities with bounds encompassing an address
-$p$ and invalidate the capability~\cite{xia19cherivoke}. In this case, this
+$p$ and invalidate the capability~\cite{xia29cherivoke}. In this case, this
 means that the original code will then fail with a \texttt{SIGPROT} when it
 tries to use \emph{C1}, downgrading the security leak into a denial-of-service.
 However, scanning the stack and heap in order to perform revocation is not
@@ -544,7 +561,7 @@ uint8_t *array_with_hidden_secret(size_t size) {
 }
 \end{lstlisting}
 
-\noindent We first \texttt{malloc} an array big enough space to store
+\noindent We first \texttt{malloc} an array with enough space to store
 \texttt{size} bytes (line 2) before creating a child capability
 which prevents access to the array's final byte (line 3). We can verify this
 behaviour by checking the returned capability's length, as in the following
