@@ -471,7 +471,7 @@ hide a secret from another compartment. In such cases, code which can widen a
 capability's bounds must be carefully audited.
 
 
-\subsection{\undef: Authentic capabilities from undefined behaviour}
+\subsection{\myundef: Authentic capabilities from undefined behaviour}
 
 It is easy to assume that authentic capabilities can only be derived if one
 follows CHERI-C's rules correctly. However, it is possible for an attacker to
@@ -506,7 +506,7 @@ and who now has a capability \emph{C3} giving the same access as \emph{C1}.
 
 \subsubsection{Mitigations}
 
-There are no general mitigations for \undef. For the particular concrete
+There are no general mitigations for \myundef. For the particular concrete
 example, a partial mitigation is for \texttt{free} to scrub memory so that, at
 least, whatever was present in the buffer cannot read by the attacker: however,
 since the attack has in effect `aliased' the capability, future writes can be
