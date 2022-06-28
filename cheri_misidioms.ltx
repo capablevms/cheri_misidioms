@@ -95,6 +95,14 @@ we concentrate exclusively on programs which operate in pure capability mode.
 (including free and realloc i guess?) that supports purecap. this would bring
 to life the coalescing stuff, if nothing else.}
 
+\andrei{Instead of having an example allocator with a bunch of source code, how
+about discussing general properties of modern allocators, and potential issues
+in a CHERI context. Properties of interest: coalescing (monotonicity of
+capabilities), free (need for "supercapability"/revocation), allocator metadata.}
+
+\andrei{In addition, are there any further complications from being in a capability
+environment that might affect an allocator, that we can think of?}
+
 It is unlikely that a memory allocator written without capabilities in mind
 will work on pure capability CHERI without some adaption. In this section we
 present the salient points of a simple pure capability allocator.
@@ -225,7 +233,7 @@ for typical memory manager implementation code, where
 low-level system operations are more densely located.
 \andrei{and because they work with pointers more than usual code?}
 
-To confirm this hypothesis, 
+To confirm this hypothesis,
 we measure the number of lines of code (SLoC)\andrei{Where does S come from?}
 within CHERI conditional preprocessor includes.
 This is an approximation of the number of
