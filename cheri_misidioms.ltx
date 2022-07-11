@@ -20,19 +20,17 @@ CHERI provides and enforces hardware capabilities that allow programmers to
 make strong security guarantees about their programs. Available CHERI hardware
 has shown itself to be robust \laurie{cite} but programmers have to work out
 how to best use hardware capabilities to achieve a desired level of security
-in their software. \andrei{maybe emphasise that if capabilities are not used
-correctly at the software level, it undermines any hardware security?}
+in their software. Mistakes made in the use of capabilities can undermine
+the security that software believes it possesses.
 
-In this paper we look at several memory allocators that have been adapted for
-pure capability CHERI. We split this into two broad categories: a manual analysis of
-allocator source code; and the vulnerability of the
-allocators to CHERI-specific attacks. We show that, in common with CHERI pure
-capability porting folklore, relatively few lines of code in the allocators had
-to be changed to port them to CheriBSD. Perhaps surprisingly, given the
-low-level nature of allocators, we show that they use a fairly small subset of
-the CHERI C API. However we show that the allocators are vulnerable to a number
-of simple attacks that mean they give weaker security guarantees than
-might be assumed.
+In this paper we show that it is surprisingly difficult to make a secure memory
+allocator for pure capability CHERI. We first show the basic problems through
+an example of a bump-pointer allocator
+(Section~\ref{sec:bumppointerallocator}). We then examine several existing
+allocators that have been ported to CheriBSD
+(Section~\ref{sec:cheriallocators}). Finally we introduce and name several
+simple `attacks' on pure capability memory allocators, showing that most of the
+allocators are vulnerable to most of the attacks (Section~\ref{sec:atk}).
 
 
 \section{Background}
@@ -65,9 +63,8 @@ derived from its parents according to CHERI's rules, or \emph{inauthentic}
 (what CHERI calls `untagged' or `invalid') otherwise. An inauthentic capability
 may be duplicated at will but attempting to use an inauthentic capability in
 any other way leads to a hardware exception.  A capability consists of an
-\emph{address} in memory and a set of \emph{permissions}\andrei{Since this is
-not complete, should we mention we only discuss relevant aspects for the
-paper?}. Amongst the permissions are \emph{bounds} -- the region of memory an
+\emph{address} in memory and a set of \emph{permissions} (only a subset of
+which we consider in this paper). Amongst the permissions are \emph{bounds} -- the region of memory an
 authentic capability is allowed to read/write from/to. A capability's bounds
 are from a \emph{low} (inclusive) to a \emph{high} (exclusive) address and we
 refer to `a bound of $x$ bytes' to mean a capability where
@@ -90,6 +87,7 @@ we concentrate exclusively on programs which operate in pure capability mode.
 
 
 \section{A Basic Allocator for Pure Capability CHERI}
+\label{sec:bumppointerallocator}
 
 \laurie{jeremy: why don't we present the absolute most bare bones allocator
 (including free and realloc i guess?) that supports purecap. this would bring
