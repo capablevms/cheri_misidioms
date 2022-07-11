@@ -127,8 +127,33 @@ yet complete\andrei{I don't know much about gc's, but could we extract either
 some design ideas, or even some functionality to add to our comparison?}.
 
 
-\subsection{Research Questions}
+\subsection{Examining the Allocators}
 \label{sec:rqs}
+
+\begin{table}[tb]
+  \begin{center}
+    \begin{tabular}{lllll}
+      \toprule
+      Allocator          & Version & SLoC & \multicolumn{2}{c}{Changed} \\
+      \cmidrule(lr){4-5}
+			 &       &        & LoC & \% \\
+      \midrule
+      jemalloc           &       & 39,059 & 116 & 0.30\% \\
+      libmalloc-simple   &       & 680    & 43  & 6.3\% \\
+      musl-libc          &       & 72,177 & 624 & 0.87\% \\
+      newlib stdlib      &       & 26,041 & 83  & 0.32\%\\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \label{tab:rq2}
+  \caption{The allocators we examined, their size in Source Lines of Code
+  (SLoC), and the number of lines changed to adapt them for pure capability
+  CheriBSD.\laurie{jeremy: we need to include the version number for each
+  allocator (or, at least, a git hash or similar) so that people can
+  reproduce our study.}}
+\end{table}
+
+How difficult is it to port a standard memory allocator to CheriBSD?
 
 \laurie{perhaps one easy way of addressing jacob's later point is that
 "research question" might oversell what we're doing here? in other words, i
@@ -247,18 +272,7 @@ are between one and two orders of magnitude more than the 0.026\% figure
 quoted by Richardson and Watson (cite).
 \emph{why?}
 
-\begin{table}
-  \begin{center}
-    \begin{tabular}{c|r|r|r} \hline
-      \textbf{allocator} & \textbf{lines changed} & \textbf{total SLoC} & \textbf{\% change} \\ \hline
-      jemalloc & 116 &  39059 & 0.30\% \\
-libmalloc-simple &  43 & 680 & 6.3\% \\
- musl-libc & 624 & 72177 & 0.87\% \\
- newlib stdlib & 83 & 26041 & 0.32\%\\
-    \end{tabular}
-  \end{center}
-  \caption{\label{tab:rq2}Source code impact of CHERI modification}
-\end{table}
+
 
 
 %%%
