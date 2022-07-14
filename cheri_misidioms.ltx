@@ -20,19 +20,17 @@ CHERI provides and enforces hardware capabilities that allow programmers to
 make strong security guarantees about their programs. Available CHERI hardware
 has shown itself to be robust \laurie{cite} but programmers have to work out
 how to best use hardware capabilities to achieve a desired level of security
-in their software. \andrei{maybe emphasise that if capabilities are not used
-correctly at the software level, it undermines any hardware security?}
+in their software. Mistakes made in the use of capabilities can undermine
+the security that software believes it possesses.
 
-In this paper we look at several memory allocators that have been adapted for
-pure capability CHERI. We split this into two broad categories: a manual analysis of
-allocator source code; and the vulnerability of the
-allocators to CHERI-specific attacks. We show that, in common with CHERI pure
-capability porting folklore, relatively few lines of code in the allocators had
-to be changed to port them to CheriBSD. Perhaps surprisingly, given the
-low-level nature of allocators, we show that they use a fairly small subset of
-the CHERI C API. However we show that the allocators are vulnerable to a number
-of simple attacks that mean they give weaker security guarantees than
-might be assumed.
+In this paper we show that it is surprisingly difficult to make a secure memory
+allocator for pure capability CHERI. We first show the basic problems through
+an example of a bump-pointer allocator
+(Section~\ref{sec:bumppointerallocator}). We then examine several existing
+allocators that have been ported to CheriBSD
+(Section~\ref{sec:cheriallocators}). Finally we introduce and name several
+simple `attacks' on pure capability memory allocators, showing that most of the
+allocators are vulnerable to most of the attacks (Section~\ref{sec:atk}).
 
 
 \section{Background}
@@ -65,9 +63,8 @@ derived from its parents according to CHERI's rules, or \emph{inauthentic}
 (what CHERI calls `untagged' or `invalid') otherwise. An inauthentic capability
 may be duplicated at will but attempting to use an inauthentic capability in
 any other way leads to a hardware exception.  A capability consists of an
-\emph{address} in memory and a set of \emph{permissions}\andrei{Since this is
-not complete, should we mention we only discuss relevant aspects for the
-paper?}. Amongst the permissions are \emph{bounds} -- the region of memory an
+\emph{address} in memory and a set of \emph{permissions} (only a subset of
+which we consider in this paper). Amongst the permissions are \emph{bounds} -- the region of memory an
 authentic capability is allowed to read/write from/to. A capability's bounds
 are from a \emph{low} (inclusive) to a \emph{high} (exclusive) address and we
 refer to `a bound of $x$ bytes' to mean a capability where
@@ -90,14 +87,52 @@ we concentrate exclusively on programs which operate in pure capability mode.
 
 
 \section{A Basic Allocator for Pure Capability CHERI}
+\label{sec:bumppointerallocator}
 
 \laurie{jeremy: why don't we present the absolute most bare bones allocator
 (including free and realloc i guess?) that supports purecap. this would bring
 to life the coalescing stuff, if nothing else.}
 
+\andrei{Instead of having an example allocator with a bunch of source code, how
+about discussing general properties of modern allocators, and potential issues
+in a CHERI context. Properties of interest: coalescing (monotonicity of
+capabilities), free (need for "supercapability"/revocation), allocator metadata.}
+
+\andrei{In addition, are there any further complications from being in a capability
+environment that might affect an allocator, that we can think of?}
+
 It is unlikely that a memory allocator written without capabilities in mind
 will work on pure capability CHERI without some adaption. In this section we
 present the salient points of a simple pure capability allocator.
+
+\laurie{the rest of this comment is text moved from elsewhere that probably
+should end up in this section
+```Memory management code needs to be highly efficient, due to the frequency of
+its execution. There are abundant memory management design patterns that recur
+in a variety of allocators. Jones et al.\ (cite GC handbook) outlines many of
+these patterns from an implementation perspective.  Due to the constraints of
+CHERI, some of these memory management design patterns no longer work properly.
+We review three such problematic patterns in this section.\emph{andrei: Enumerate
+these 3, or paragraphs to emphasise which they are?}
+Contiguous free buffers in managed memory should be merged to form a larger
+buffer. This \emph{coalescing} pattern will fail on CHERI systems when
+contiguous buffers have non-overlapping bounds, perhaps since the buffers are
+derived from distinct \texttt{mmap} calls. \emph{andrei: Is it also the case that you
+can't ``combine'' two capabilities to form a larger one?}
+Memory managers often use simple bitwise arithmetic to synthesize addresses
+efficiently, e.g.\ for iterating over fixed length buffers.
+Such \emph{address synthesis} is not permitted in CHERI, since
+valid metadata cannot be synthesized. Instead, calculations must be offset from
+a capability with valid bounds. Finding the appropriate capability value is
+generally less efficient than synthesizing it.
+Some allocators use a \emph{header word} to store metadata for allocated
+buffers. The header word is usually located one word before the user-visible
+pointer begins. In CHERI, a problem is caused if the metadata word is
+out-of-bounds for the user-visible pointer --- in which case the memory manager
+needs to retain a separate, more privileged capability to access the metadata.
+On the other hand, if the metadata is in-bounds for the user-visible pointer
+then the metadata could be modified by user code, so CHERI cannot protect
+against metadata corruption.'''}
 
 
 \section{Existing CHERI Allocators}
@@ -121,33 +156,55 @@ yet complete\andrei{I don't know much about gc's, but could we extract either
 some design ideas, or even some functionality to add to our comparison?}.
 
 
-\subsection{Research Questions}
+\subsection{Existing CheriBSD allocators}
 \label{sec:rqs}
 
-\laurie{perhaps one easy way of addressing jacob's later point is that
-"research question" might oversell what we're doing here? in other words, i
-think it's quite useful and interesting to point out how many CHERI APIs an
-allocator uses, but perhaps it would be more appropriate to more briefly
-summarise this information?}
+\begin{table}[tb]
+  \begin{center}
+    \begin{tabular}{lllll}
+      \toprule
+      Allocator          & Version & SLoC & \multicolumn{2}{c}{Changed} \\
+      \cmidrule(lr){4-5}
+			 &       &        & LoC & \% \\
+      \midrule
+      jemalloc           &       & 39,059 & 116 & 0.30\% \\
+      libmalloc-simple   &       & 680    & 43  & 6.32\% \\
+      musl-libc          &       & 72,177 & 624 & 0.87\% \\
+      newlib stdlib      &       & 26,041 & 83  & 0.32\%\\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \label{tab:allocator_summary}
+  \caption{The allocators we examined, their size in Source Lines of Code
+  (SLoC), and the number of lines changed to adapt them for pure capability
+  CheriBSD.\laurie{jeremy: we need to include the version number for each
+  allocator (or, at least, a git hash or similar) so that people can
+  reproduce our study.}\laurie{shouldn't bsdmalloc be in this table too?}}
+\end{table}
 
-\andrei{I think we should detail better what the singular overarching goal is.
-I feel these 5 RQs are slightly disjoint.}
+How difficult is it to port a standard memory allocator to pure capability
+CheriBSD? In this section we briefly examine several existing allocators.
+Table~\ref{tab:allocator_summary} shows the allocators we consider, their size,
+and the quantity and proportion of lines changed for the CHERI port.
 
-We address the following set of research questions in our attempt to understand
-the complexities of supporting memory management code on capability platforms.
+As Table~\ref{tab:allocator_summary} shows, with the exception of the extremely
+small libmalloc-simple, the pure capability CheriBSD ports require around
+0.3-0.9\% of lines to be changed. This is an order of magnitude bigger than the
+0.026\% lines changed for porting a desktop environment (including X11 and
+KDE)~\cite{watson21assessing}. Given the lower-level, and thus more platform
+dependent, nature of memory allocators, this relative difference seems
+reasonable.
 
-\begin{itemize}
-\item \textbf{RQ1}: Which CHERI API calls are most commonly used by memory allocators?
-\item \textbf{RQ2}: How extensive are CHERI adaptations to the code base of a memory allocator?
-\item \textbf{RQ3}: Do common memory management design patterns require substantial modifications for CHERI platforms?
-\item \textbf{RQ4}: Do the CHERI versions of memory allocation provide additional security properties relative to equivalent non-CHERI allocation?
-\item \textbf{RQ5}: Are any implementation mis-idioms apparent in CHERI ports of memory allocators?
-\end{itemize}
+\laurie{i don't think we need to go into too much detail, but there is some
+value IMHO in seeing how much of the static API different allocators use.
+unfortunately i don't fully understand some of the original text so the rest of
+this section from this point onwards needs careful consideration.}
+A different proxy for porting complexity is to measure the number of different
+CHERI API calls a ported memory allocator makes use of: broadly speaking, the
+more of the CHERI API is used, the harder the porting effort was likely to have
+been. Comparing across the allocators is somewhat muddied because there are two
+\laurie{or three?} generations of the CHERI API \laurie{cheric.h, cheriintrin.h, and ... ?}
 
-%%%
-
-\subsubsection{RQ1: CHERI API Coverage}
-\label{sec:rqs:rq1}
 
 For system-level C programming, there are two
 distinct CHERI APIs; this is due to the gradual evolution of
@@ -210,86 +267,6 @@ Section~\ref{sec:atk}~goes into more detail there (by counter-example).}
 \andrei{I will second this. My first impression of RQ1 was that it's more to do with performance analysis.}
 
 \jacob{What \emph{are} the most common API calls? That was what \textbf{RQ1} asked.}
-
-%%%
-
-\subsubsection{RQ2: CHERI Adaptations}
-\label{sec:rqs:rq2}
-
-Richardson and Watson (cite Capabilities Ltd tech report)
-state that only 0.026\% of a major open source code base requires
-modification to work on capability hardware.
-We expect that the proportion of code that
-requires changes for CHERI will be significantly higher
-for typical memory manager implementation code, where
-low-level system operations are more densely located.
-\andrei{and because they work with pointers more than usual code?}
-
-To confirm this hypothesis, 
-we measure the number of lines of code (SLoC)\andrei{Where does S come from?}
-within CHERI conditional preprocessor includes.
-This is an approximation of the number of
-lines of code that need to be modified for
-CHERI-specific purposes.
-
-Table \ref{tab:rq2} reports the absolute SLoC wrapped in
-CHERI preprocessor includes (lines changed), the total
-lines of code in the allocator (total SLoC), and the
-percentage of CHERI-specific lines (\% change).
-Even with our approximate counting, we see that the lines affected
-are between one and two orders of magnitude more than the 0.026\% figure
-quoted by Richardson and Watson (cite).
-\emph{why?}
-
-\begin{table}
-  \begin{center}
-    \begin{tabular}{c|r|r|r} \hline
-      \textbf{allocator} & \textbf{lines changed} & \textbf{total SLoC} & \textbf{\% change} \\ \hline
-      jemalloc & 116 &  39059 & 0.30\% \\
-libmalloc-simple &  43 & 680 & 6.3\% \\
- musl-libc & 624 & 72177 & 0.87\% \\
- newlib stdlib & 83 & 26041 & 0.32\%\\
-    \end{tabular}
-  \end{center}
-  \caption{\label{tab:rq2}Source code impact of CHERI modification}
-\end{table}
-
-
-%%%
-
-
-\subsubsection{RQ3: Design Pattern Changes}
-\label{sec:rqs:rq3}
-
-Memory management code needs to be highly efficient, due to the frequency of
-its execution. There are abundant memory management design patterns that recur
-in a variety of allocators. Jones et al.\ (cite GC handbook) outlines many of
-these patterns from an implementation perspective.  Due to the constraints of
-CHERI, some of these memory management design patterns no longer work properly.
-We review three such problematic patterns in this section.\andrei{Enumerate
-these 3, or paragraphs to emphasise which they are?}
-
-Contiguous free buffers in managed memory should be merged to form a larger
-buffer. This \emph{coalescing} pattern will fail on CHERI systems when
-contiguous buffers have non-overlapping bounds, perhaps since the buffers are
-derived from distinct \texttt{mmap} calls. \andrei{Is it also the case that you
-can't ``combine'' two capabilities to form a larger one?}
-
-Memory managers often use simple bitwise arithmetic to synthesize addresses
-efficiently, e.g.\ for iterating over fixed length buffers.
-Such \emph{address synthesis} is not permitted in CHERI, since
-valid metadata cannot be synthesized. Instead, calculations must be offset from
-a capability with valid bounds. Finding the appropriate capability value is
-generally less efficient than synthesizing it.
-
-Some allocators use a \emph{header word} to store metadata for allocated
-buffers. The header word is usually located one word before the user-visible
-pointer begins. In CHERI, a problem is caused if the metadata word is
-out-of-bounds for the user-visible pointer --- in which case the memory manager
-needs to retain a separate, more privileged capability to access the metadata.
-On the other hand, if the metadata is in-bounds for the user-visible pointer
-then the metadata could be modified by user code, so CHERI cannot protect
-against metadata corruption.
 
 
 %%%
