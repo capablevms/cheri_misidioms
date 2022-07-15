@@ -101,9 +101,60 @@ capabilities), free (need for "supercapability"/revocation), allocator metadata.
 \andrei{In addition, are there any further complications from being in a capability
 environment that might affect an allocator, that we can think of?}
 
-It is unlikely that a memory allocator written without capabilities in mind
-will work on pure capability CHERI without some adaption. In this section we
-present the salient points of a simple pure capability allocator.
+Memory allocators are core components in programming, lying at the border
+between user-written programs and the OS kernel. Due to their necessity, a lot
+of work has been put into optimising memory allocators. However, it is unlikely
+that a memory allocator written without capabilities in mind will work on pure
+capability CHERI without some adaption, due to the additional restrictions
+imposed on the system by capabilities. In this section we present the salient
+points of a simple pure capability allocator, emphasising how certain features
+cannot work in the domain of capabilities.
+
+\lstinputlisting[language=C, caption="Example of simple bump allocator", label=lst:bump_alloc]{code/bump_alloc.c}
+
+The simplest memory allocator is an \emph{bump allocator}, illustrated
+in~\ref{lst:bump_alloc}. The \fnc{alloc} function allocates a new section of
+memory, while \fnc{realloc} allows the user to resize that memory, in case it
+is needed. One advantage of using capabilities instead of traditional pointers
+is the additional metadata held within the capability: we are able to get the
+size of the original allocation by querying the bounds of the capability.
+
+However, from a security perspective, after a successful \fnc{realloc} call,
+there still exists in scope a capability pointing to some part of memory (i.e.,
+the source \fnc{realloc} address). This small detail might evade the scrutiny
+of a software developer working with such a simple allocator implementation,
+leading to potential capability leakage, thus undermining the security
+guarantees of capabilities.
+
+There are abundant memory management design patterns that recur in a variety of
+allocators. The addition of capabilities means the design of these features
+must be scrutinized with capabilities in mind, in order to ensure minimal
+burden is placed on developers. Jones et al.\ (cite GC handbook) outlines many
+of these patterns from an implementation perspective. We discuss some of these
+features we have identified to pose potential issues in a capability-aware
+context.
+
+\paragraph{Memory coalescing}
+
+\andrei{can`t combine two capabilities into one, as they are monotonic -
+affects performance. Could potentially use super-capabilities, which might
+undermine security}
+
+\paragraph{Allocator metadata}
+
+\andrei{Some capability metadata is useful (e.g., sizes of allocated memories
+for freeing), but additional potential metadata (e.g. ???) required by the
+allocator / garbage collector would need to either be accessible in whatever
+context, or lie in a privileged space}
+
+\paragraph{Elevated permissions}
+
+While perhaps not as specific as the previous two features, a memory allocator
+must be able to perform operations at a higher privilege level than that of
+normal user code. As capabilities enforce boundaries on what data can be
+accessed or executed, it might break the expectation that memory allocation
+functions can be called from user code, due to them affecting the overall
+system.
 
 \laurie{the rest of this comment is text moved from elsewhere that probably
 should end up in this section
