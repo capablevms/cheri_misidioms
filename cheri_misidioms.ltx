@@ -240,13 +240,16 @@ have a broader spread of API calls.
 
 \begin{table}
   \begin{center}
-    \begin{tabular}{c|c|r|r} \hline
-      \textbf{allocator} & \textbf{API} & \textbf{\# API calls} & \textbf{API coverage} \\ \hline
+    \begin{tabular}{ccrr}
+    \toprule
+      \textbf{allocator} & \textbf{API} & \textbf{\# API calls} & \textbf{API coverage} \\
+      \midrule
       BSD malloc & cheric & 10 & 10/57 \\
       jemalloc & cheric & 11 & 11/57 \\
       Musl & builtin & ?? 22 or 6 ?? & 6/37 \\
       Newlib & builtin & 9 & 9/37 \\
-      Trivial & builtin & 3 & 3/37 \\ \hline
+      Trivial & builtin & 3 & 3/37 \\ 
+      \bottomrule
     \end{tabular}
   \end{center}
   \caption{\label{tab:rq1}Coverage of CHERI API calls by various allocators}
