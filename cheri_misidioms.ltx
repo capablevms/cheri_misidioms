@@ -101,14 +101,14 @@ capabilities), free (need for "supercapability"/revocation), allocator metadata.
 \andrei{In addition, are there any further complications from being in a capability
 environment that might affect an allocator, that we can think of?}
 
-Memory allocators are core components in programming, lying at the border
-between user-written programs and the OS kernel. Due to their necessity, a lot
-of work has been put into optimising memory allocators. However, it is unlikely
-that a memory allocator written without capabilities in mind will work on pure
-capability CHERI without some adaption, due to the additional restrictions
-imposed on the system by capabilities. In this section we present the salient
-points of a simple pure capability allocator, emphasising how certain features
-cannot work in the domain of capabilities.
+Although we rarely think of them as such, memory allocators allow us to write
+programs that are generic over a variety of memory usage patterns. Outside of
+some embedded systems (which preallocate fixed quantities of memory), memory
+allocators are ubiquitous. Because they are critical to software performance,
+modern memory allocators are highly optimised --- and, consequently, often
+difficult to understand in detail. In this section we present a simplistic
+memory allocator \bumpalloc which allows us to explore the major issues
+relevant to this paper.
 
 \lstinputlisting[language=C, caption="Example of simple bump allocator", label=lst:bump_alloc]{code/bump_alloc.c}
 
