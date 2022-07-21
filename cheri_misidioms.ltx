@@ -17,11 +17,11 @@ and show that they are subject to a number of simple attacks.
 \section{Introduction}
 
 CHERI provides and enforces hardware capabilities that allow programmers to
-make strong security guarantees about their programs. Available CHERI hardware
+make strong security guarantees about the memory safety properties of their programs. Available CHERI hardware
 has shown itself to be robust \laurie{cite} but programmers have to work out
-how to best use hardware capabilities to achieve a desired level of security
+how to make best use of hardware capabilities to achieve a desired level of security
 in their software. Mistakes made in the use of capabilities can undermine
-the security that software believes it possesses.
+the security that software believes it possesses. \jeremy{does the software believe it, or the developer?}
 
 In this paper we show that it is surprisingly difficult to make a secure memory
 allocator for pure capability CHERI. We first show the basic problems through
@@ -102,7 +102,7 @@ capabilities), free (need for "supercapability"/revocation), allocator metadata.
 environment that might affect an allocator, that we can think of?}
 
 Outside of some embedded systems (which preallocate fixed quantities of
-memory), memory allocators are ubiquitous because they allow us to write
+memory), dynamic memory allocators are ubiquitous because they allow us to write
 programs that are generic over a variety of memory usage patterns.  Because
 they are critical to software performance,
 modern memory allocators are highly optimised --- and, consequently, often
