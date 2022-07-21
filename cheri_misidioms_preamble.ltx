@@ -24,6 +24,8 @@
     keywordstyle=\textbf,
 }
 
+\newcommand{\fnc}[1]{\texttt{#1}}
+
 % from https://tex.stackexchange.com/questions/264361/skipping-line-numbers-in-lstlisting#264373
 \let\origthelstnumber\thelstnumber
 \makeatletter
@@ -33,6 +35,9 @@
      \advance\c@lstnumber-\@ne\relax%
     }%
 }
+
+
+\newcommand\bumpalloc{\emph{bmpalloc}\xspace}
 
 \newcommand\narrowingdoesnt{\textsc{Narrow}\xspace}
 \newcommand\narrowwiden{\textsc{NarrowWiden}\xspace}
