@@ -6,9 +6,4 @@ void* malloc(size_t size) {
     allocated += size;
     return new_alloc; }
 
-void* realloc(void* ptr, size_t size) {
-    void* new_alloc = malloc(size);
-    memcpy(ptr, new_alloc, ptr->get_bounds());
-    return new_alloc; }
-
 void free(void *ptr) { }
