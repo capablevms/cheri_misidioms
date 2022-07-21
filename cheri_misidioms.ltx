@@ -354,8 +354,11 @@ see that they currently provide support for spatial memory safety
 on the heap.
 
 In terms of the Common Weakness Enumeration (CWE, cite), all the allocators we
-surveyed only mitigate CWE-125: Out-of-bounds Read and
-CWE-787: Out-of-bounds Write, for dynamically allocated memory in the managed heap.
+surveyed only mitigate CWE-125: Out-of-bounds
+Read~\footnote{\url{https://cwe.mitre.org/data/definitions/125.html}} and
+CWE-787: Out-of-bounds
+Write~\footnote{\url{https://cwe.mitre.org/data/definitions/787.html}}, for
+dynamically allocated memory in the managed heap.
 
 While this is stronger security than the equivalent non-CHERI versions of
 these allocators, it is apparent that the CHERI allocators do not yet
