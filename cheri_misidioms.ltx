@@ -426,32 +426,33 @@ escalating a capability's privileges. In this section we start with three
 serious attacks in the latter category, before detailing one minor `attack' in
 the former category.
 
-Formally speaking, CHERI capabilities
-have monotonically decreasing privileges: in other words, when taking an existing
-capability \emph{C1} as input, any capability \emph{C2} we derive from
-\emph{C1} must have the same or fewer privileges. This may seem to make it
-impossible to increase a capability's privileges, but software
-components can store high privilege capabilities that can then be used to
-give the appearance of returning a capability with increased privileges.
+Formally speaking, CHERI capabilities have monotonically decreasing privileges:
+in other words, when taking an existing capability \emph{C1} as input, any
+capability \emph{C2} we derive from \emph{C1} must have the same or fewer
+privileges. This may seem to make it impossible to increase a capability's
+privileges, but software components can store high privilege capabilities that,
+if misused, could give the appearance of returning a capability with increased
+privileges. Due to the nature of memory allocators, they must be able to make
+use of a higher-privileged capability in order to function.
 
 Functions which take in a low privileged capability and use a higher privileged
-capability\footnote{More formally, which take in a capability \emph{C1} and use
-a capability \emph{C2}, where \emph{C2}'s set of privileges are not a subset of
-\emph{C1}'s privileges.} to perform calculations are at risk of privilege
-escalation, and need to be carefully audited for bad idioms.
-
+capability\footnote{More formally, which take as input a capability \emph{C1}
+and make internal use of  a capability \emph{C2}, where \emph{C2}'s set of
+privileges are not a subset of \emph{C1}'s privileges.} to perform calculations
+are at risk of privilege escalation, and need to be carefully audited for bad
+idioms.
 
 \subsection{Insufficient validation of the input capability}
 
-Consider a memory allocator whose \texttt{realloc(cap, size)} function takes in
-a capability \texttt{cap} whose address references the beginning of a block of
+Consider a memory allocator whose \fnc{realloc(cap, size)} function takes in a
+capability \texttt{cap} whose address references the beginning of a block of
 memory and returns a new capability whose address references the beginning of a
-block of memory sufficient for storing \texttt{size} bytes.
-A common \texttt{realloc} optimisation is to avoid moving memory if the
-requested size fits within the `bucket' that the block already resides within.
-We might then write a simple \texttt{realloc} as follows, assuming that we have
-access to a high-privileged capability \texttt{MC} (e.g.~from
-\texttt{mmap}~\cite{brooks19cheriabi}):
+block of memory sufficient for storing \texttt{size} bytes.  A common
+\fnc{realloc} optimisation is to avoid moving memory if the requested size fits
+within the `bucket' that the block already resides within.  We might then write
+a simple \fnc{realloc} as follows, assuming that we have access to a
+high-privileged capability \texttt{MC} (e.g.~from
+\fnc{mmap}~\cite{brooks19cheriabi}):
 
 \begin{lstlisting}[language=C]
 void *realloc(void *cap, size_of size) {
@@ -474,7 +475,7 @@ address as the original capability but with an increased upper bound. By
 definition, reducing the size of a block means that it will always fit within
 its existing bucket so the above optimisation is guaranteed to be correct.
 
-Unfortunately this implementation of \texttt{realloc} is subject to privilege
+Unfortunately this implementation of \fnc{realloc} is subject to privilege
 escalation. For example, one can pass in a capability with narrow bounds and
 receive back a capability with wider bounds:
 
@@ -486,21 +487,20 @@ arr = realloc(arr, 16);
 assert(cheri_tag_get(arr) && cheri_length_get(arr) == 16);
 \end{lstlisting}
 
-We first \texttt{malloc} a block, returning a capability \emph{C1} with bounds
+We first \fnc{malloc} a block, returning a capability \emph{C1} with bounds
 $0\ldots{}n$ bytes (line 1). We then derive a new capability \emph{C2} with
 bounds $0\ldots{}m$ bytes where $m < n$ (lines 2 and 3). We can then use
-\texttt{realloc} to turn \emph{C2} back into \emph{C1} -- even though we had
+\fnc{realloc} to turn \emph{C2} back into \emph{C1} -- even though we had
 lost access to \emph{C1} entirely!
 
-This is not just a theoretical attack: our example \texttt{realloc} is effectively
-a simplified version of CheriBSD's \texttt{realloc}, which (as of
+This is not just a theoretical attack: our example \fnc{realloc} is effectively
+a simplified version of CheriBSD's \fnc{realloc}, which (as of
 2021-08-18\footnote{\href{https://github.com/CTSRD-CHERI/cheribsd/issues/1065}{https://github.com/CTSRD-CHERI/cheribsd/issues/1065}})
-is vulnerable to this attack. Any capability whose bounds contain the base address of
-a memory block can potentially have its privileges escalated, with
-\texttt{realloc} returning a capability with the same permissions as the memory
+is vulnerable to this attack. Any capability whose bounds contain the base
+address of a memory block can potentially have its privileges escalated, with
+\fnc{realloc} returning a capability with the same permissions as the memory
 system's main capability (as well as widening bounds, this allows
 e.g.~upgrading a read-only capability to a read/write capability).
-
 
 \subsubsection{Mitigations}
 
@@ -511,16 +511,16 @@ which is why it is easy to get wrong.
 
 In most, perhaps all, reasonable cases, the input CHERI capability should be
 authentic and the capability's address in-bounds. However, as our
-\texttt{realloc} attack shows, these two conditions are necessary but not
-sufficient.  For example, one solution to the \texttt{realloc} attack is to
-check that \texttt{cap}'s address refers to the start of a memory block and
+\fnc{realloc} attack shows, these two conditions are necessary but not
+sufficient.  For example, one solution to the \fnc{realloc} attack is to
+check that \fnc{cap}'s address refers to the start of a memory block and
 that the capability's permissions are equal to the permissions returned by the
-most recent \texttt{malloc} or \texttt{realloc} for that memory block. This
+most recent \fnc{malloc} or \fnc{realloc} for that memory block. This
 implies that the memory allocator must either store, or be able to derive by
-other means, the capability returned by the most recent \texttt{malloc} or
-\texttt{realloc} call.
+other means, the capability returned by the most recent \fnc{malloc} or
+\fnc{realloc} call.
 
-However, it may be too restrictive to restrict \texttt{realloc} to precisely
+However, it may be too restrictive to restrict \fnc{realloc} to precisely
 equal capabilities: one may wish to allow \emph{compatible} capabilities. The
 definition of compatibility is then crucial, particularly as different CHERI
 architectures have different bounds representations and permissions.
@@ -534,10 +534,10 @@ respecting the issues raised in \narrowingdoesnt
 , it may seem that our issues with capability bounds are over. However, if one
 later widens those bounds again, one may unintentionally leak secrets.
 
-CheriBSD's default \texttt{realloc} is subject to this problem. The following
-code executes successfully, with the capability returned by \texttt{realloc}
-giving access to the same range of memory as the original \texttt{malloc}. Note
-that \texttt{realloc} does not move, or scrub, memory in such a case. Thus, if
+CheriBSD's default \fnc{realloc} is subject to this problem. The following
+code executes successfully, with the capability returned by \fnc{realloc}
+giving access to the same range of memory as the original \fnc{malloc}. Note
+that \fnc{realloc} does not move, or scrub, memory in such a case. Thus, if
 the user expected the setting of bounds to protect a secret, this code will not
 give the protection expected.
 
@@ -553,7 +553,7 @@ for (uint8_t i = 0; i < 255; i++) assert(arr[i] == i);
 
 \subsubsection{Mitigations}
 
-In the specific example above, \texttt{realloc} should scrub memory when the
+In the specific example above, \fnc{realloc} should scrub memory when the
 size of a memory block is being narrowed. However, this may not be appropriate
 in all cases, particularly where capability bounds narrowing is being used to
 hide a secret from another compartment. In such cases, code which can widen a
@@ -581,8 +581,8 @@ assert(cheri_address_get(c3) == c1_addr);
 
 In this example, we first derive a capability \emph{C1} with bounds of 16 bytes
 (line 1) before deriving a narrower capability \emph{C2} from it (line 3). It
-is then possible that after \texttt{free}ing the block of memory addressed by \emph{C1},
-a subsequent \texttt{malloc} of 16 bytes returns a
+is then possible that after \fnc{free}ing the block of memory addressed by \emph{C1},
+a subsequent \fnc{malloc} of 16 bytes returns a
 capability \emph{C3} that is identical to \emph{C1}. This attack relies
 on the underlying memory allocator reusing memory blocks, which many do in a
 predictable fashion: this example runs successfully on CheriBSD (as of
@@ -634,7 +634,7 @@ uint8_t *array_with_hidden_secret(size_t size) {
 }
 \end{lstlisting}
 
-\noindent We first \texttt{malloc} an array with enough space to store
+\noindent We first \fnc{malloc} an array with enough space to store
 \texttt{size} bytes (line 2) before creating a child capability
 which prevents access to the array's final byte (line 3). We can verify this
 behaviour by checking the returned capability's length, as in the following
@@ -693,15 +693,15 @@ First, one can check whether the narrowed bounds do/would capture only the
 desired region of memory and if they don't/wouldn't, move the secret data to a
 (probably new) non-overlapping region of memory. One can check whether bounds
 will be adequately narrowed in advance using
-\texttt{cheri\_representable\_length} or retrospectively by querying the
-narrowed capability with \texttt{cheri\_length\_get}.
+\fnc{cheri\_representable\_length} or retrospectively by querying the
+narrowed capability with \fnc{cheri\_length\_get}.
 
-Second, one can lay out memory in advance such that, no matter what
-imprecise bounds are used, secrets will not leak. In essence, this requires
-adding padding to each object to take account of imprecise bounds. One could rewrite
-\texttt{array\_with\_hidden\_secret} using this technique, provided that the
-number of secret items at the end of the array does not vary after array creation
-time.
+Second, one can lay out memory in advance such that, no matter what imprecise
+bounds are used, secrets will not leak. In essence, this requires adding
+padding to each object to take account of imprecise bounds. One could rewrite
+\fnc{array\_with\_hidden\_secret} using this technique, provided that the
+number of secret items at the end of the array does not vary after array
+creation time.
 
 These two approaches have different costs. The first approach requires users
 only to pay for the cost of wasted memory if it is needed. However, at best
@@ -713,10 +713,10 @@ up-front costs, but requires wasting memory for every object, even if no
 future capability will ever have bounds covering it.
 
 Third, one can abort execution if bounds cannot be precisely represented. The
-\texttt{cheri\_bounds\_set\_exact} is a `safe` variant of
-\texttt{cheri\_bounds\_set} which raises an error if bounds cannot be precisely
+\fnc{cheri\_bounds\_set\_exact} is a `safe` variant of
+\fnc{cheri\_bounds\_set} which raises an error if bounds cannot be precisely
 represented. We would prefer to see this be the standard bounds-setting
-function, with a \texttt{cheri\_bounds\_set\_unsafe} variant allowing the
+function, with a \fnc{cheri\_bounds\_set\_unsafe} variant allowing the
 programmer to bypass bounds precision checks (because they are confident that
 either: their bounds request can be precisely represented; or their code works
 correctly with any resulting imprecision).
