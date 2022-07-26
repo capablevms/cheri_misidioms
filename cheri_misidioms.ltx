@@ -46,7 +46,7 @@ hardware security guarantees provided by CHERI. We note that while these issues
 were relatively easy to identify, it did require careful inspection of the
 code, as well as in-depth understanding of capabilities.
 
-In this paper we show that it is surprisingly difficult to make a secure memory
+In this paper, we show that it is surprisingly difficult to make a secure memory
 allocator for pure capability CHERI. We first show the basic problems through
 an example of a bump-pointer allocator
 (Section~\ref{sec:bumppointerallocator}). We then examine~\alloccount{} existing
@@ -225,6 +225,9 @@ against metadata corruption.'''}
 \label{sec:cheriallocators}
 
 \laurie{we need to add citations for the allocators where possible}
+\andrei{Currently this section talks about porting effort, some assorted
+properties, and then security properties. Is this sufficient, or is there
+something else?}
 
 In this paper we examine the following memory allocators which have
 been ported to CheriBSD: \textit{jemalloc} (the default allocator on CheriBSD),
@@ -284,12 +287,13 @@ reasonable.
 \laurie{i don't think we need to go into too much detail, but there is some
 value IMHO in seeing how much of the static API different allocators use.
 unfortunately i don't fully understand some of the original text so the rest of
-this section from this point onwards needs careful consideration.}
-A different proxy for porting complexity is to measure the number of different
-CHERI API calls a ported memory allocator makes use of: broadly speaking, the
-more of the CHERI API is used, the harder the porting effort was likely to have
-been. Comparing across the allocators is somewhat muddied because there are two
-\laurie{or three?} generations of the CHERI API \laurie{cheric.h, cheriintrin.h, and ... ?}
+this section from this point onwards needs careful consideration.} A different
+proxy for porting complexity is to measure the number of different CHERI API
+calls a ported memory allocator makes use of: broadly speaking, the more of the
+CHERI API is used, the harder the porting effort was likely to have been.
+Comparing across the allocators is somewhat muddied because there are two
+\laurie{or three?} generations of the CHERI API \laurie{cheric.h,
+cheriintrin.h, and ... ?}
 
 
 For system-level C programming, there are two
@@ -361,7 +365,7 @@ Section~\ref{sec:atk}~goes into more detail there (by counter-example).}
 %%%
 
 
-\subsubsection{RQ4: Security Properties}
+\subsection{Security Properties}
 \label{sec:rqs:rq4}
 
 The CHERI hardware extensions supports a variety of enforceable security
