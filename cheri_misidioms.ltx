@@ -5,12 +5,21 @@
 \maketitle
 
 \begin{abstract}
-We show that while it is relatively easy to adapt a memory allocator for
-pure capability CHERI, it is hard to make it secure. We start with
-a basic memory allocator and show the challenges involved in
-adapting it to pure capability CHERI. We then
-examine \laurie{four? five?} C memory allocators adapted for CheriBSD,
-and show that they are subject to a number of simple attacks.
+While CHERI provides additional security at the hardware layer, this comes at
+the cost of ensuring certain properties are maintained in the software layer.
+Memory allocators are core components residing at the boundary between hardware
+and software. While these allocators are relatively easy to adapt to CHERI,
+enforcing security is harder. We show details of adapting a basic memory
+allocator, emphasising challenges involved. Then, we examine \laurie{four?
+five?} C memory allocators adapted for CheriBSD, and show that they are subject
+to a number of simple attacks.
+
+%We show that while it is relatively easy to adapt a memory allocator for
+%pure capability CHERI, it is hard to make it secure. We start with
+%a basic memory allocator and show the challenges involved in
+%adapting it to pure capability CHERI. We then
+%examine \laurie{four? five?} C memory allocators adapted for CheriBSD,
+%and show that they are subject to a number of simple attacks.
 \end{abstract}
 
 
