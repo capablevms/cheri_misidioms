@@ -15,40 +15,29 @@ simple (mostly, but not exclusively, temporal) vulnerabilities.
 
 Capability Hardware Enhanced RISC Instructions
 (CHERI)~\cite{watson20cheriintroduction} provides and enforces hardware
-\emph{capabilities} that allow programmers to make strong security guarantees
+capabilities that allow programmers to make strong security guarantees
 about the memory safety properties of their programs. While available CHERI
 hardware has shown itself to be robust \laurie{cite}, programmers have to work
 out how to make best use of hardware capabilities to achieve a desired level of
-security in their software. Mistakes made in the use of capabilities at the
-software level can undermine the security offered at the hardware level,
-therefore undermining the security programmers believe their code possesses.
-\jeremy{does the software believe it, or the developer?}
+security in their software. Mistakes made in the use of capabilities
+undermine the security programmers believe their code possesses.
 
-While concerns regarding correct capability usage are present throughout any
-capability-aware code, it is an even greater consideration for components lying
-at the boundary between the hardware and the software. One such example is
-memory allocators~\andrei{cite?}. By their nature, these components must
-perform privileged actions (as they must be able to issue system calls to
-affect physical memory), while also providing some degree of control to users
-(as certain applications might require fine-grained access of the visible
-memory space). Thus, issues present in a memory allocator can easily propagate
-into all code making use of the allocator, therefore undermining the supposed
-security guarantees believed to be present.
+In this paper we examine one of the most fundamental software components:
+memory allocators (henceforth just ``allocators''). Apart from some embedded
+systems (which preallocate fixed quantities of memory), allocators are
+ubiquitous because they allow us to write programs that are generic over a
+variety of memory usage patterns. Security flaws in allocators thus tend
+to have significant and widespread consequences.
 
-We have investigated~\alloccount{} memory allocators ported to CHERI, and were
-able to identify~\allocbugs{} bugs across them. All of these bugs undermine the
-hardware security guarantees provided by CHERI. We note that while these issues
-were relatively easy to identify, it did require careful inspection of the
-code, as well as in-depth understanding of capabilities.
-
-In this paper, we show that it is surprisingly difficult to make a secure memory
-allocator for pure capability CHERI. We first show the basic problems through
-an example of a bump-pointer allocator
+We show that it is surprisingly difficult to make a `secure'
+allocator for pure capability CHERI. We first show the basic problems with
+a simple bump-pointer allocator example
 (Section~\ref{sec:bumppointerallocator}). We then examine~\alloccount{} existing
 allocators that have been ported to CHERI
 (Section~\ref{sec:cheriallocators}). Finally we introduce and name~\allocbugs{}
 simple `attacks' on pure capability memory allocators, showing that most of the
 allocators are vulnerable to most of the attacks (Section~\ref{sec:atk}).
+
 
 \section{Background}
 
@@ -102,8 +91,6 @@ capabilities is said to be operating in \emph{hybrid} mode while a program
 which uses only capabilities is in \emph{pure capability} mode. In this paper
 we concentrate exclusively on programs which operate in pure capability mode.
 
-\andrei{Introduce CHERIbsd here briefly}
-
 
 \section{A Basic Allocator for Pure Capability CHERI}
 \label{sec:bumppointerallocator}
@@ -120,13 +107,10 @@ capabilities), free (need for "supercapability"/revocation), allocator metadata.
 \andrei{In addition, are there any further complications from being in a capability
 environment that might affect an allocator, that we can think of?}
 
-Outside of some embedded systems (which preallocate fixed quantities of
-memory), dynamic memory allocators are ubiquitous because they allow us to write
-programs that are generic over a variety of memory usage patterns.  Because
-they are critical to software performance,
+Since they are critical to software performance,
 modern memory allocators are highly optimised --- and, consequently, often
-difficult to understand in detail. In this section we present a simplistic
-memory allocator \bumpalloc which allows us to explore the major issues
+difficult to understand in detail. In this section we present a simple
+allocator \bumpalloc which allows us to explore the major issues
 relevant to this paper.
 
 \lstinputlisting[language=C, caption={A very basic, but usable, non-capability
