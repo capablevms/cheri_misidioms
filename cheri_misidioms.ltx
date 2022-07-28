@@ -5,14 +5,9 @@
 \maketitle
 
 \begin{abstract}
-While CHERI provides additional security at the hardware layer, this comes at
-the cost of ensuring certain properties are maintained in the software layer.
-Memory allocators are core components residing at the boundary between hardware
-and software. While these allocators are relatively easy to adapt to CHERI,
-enforcing security is harder. We show details of adapting a basic memory
-allocator, emphasising challenges involved. Then, we examine \laurie{four?
-five?} C memory allocators adapted for CheriBSD, and show that they are subject
-to a number of simple attacks.
+Several memory allocators have been ported to CHERI, a hardware capability
+platform. We show that these allocators are subject to a number of
+simple (mostly, but not exclusively, temporal) vulnerabilities.
 \end{abstract}
 
 
