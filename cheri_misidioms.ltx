@@ -130,7 +130,7 @@ When this allocator code is executed on a capability platform, the values return
 capability returned by the original \texttt{mmap} call.
 We can tighten the bounds for each \texttt{malloc} return value by
 deriving a new capability with updated base and bounds. 
-using intrinsic functions like \texttt{{cheri\_address\_set} and \texttt{cheri\_bounds\_set}.
+using intrinsic functions like \texttt{cheri\_address\_set} and \texttt{cheri\_bounds\_set}.
 
 Listing \jeremy{FIXME} shows how such derived capabilities can be calculated.
 Note the complex logic required to ensure the bounds are representable as a
