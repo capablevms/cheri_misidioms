@@ -107,21 +107,34 @@ capabilities), free (need for "supercapability"/revocation), allocator metadata.
 \andrei{In addition, are there any further complications from being in a capability
 environment that might affect an allocator, that we can think of?}
 
-Since they are critical to software performance,
-modern memory allocators are highly optimised --- and, consequently, often
-difficult to understand in detail. In this section we present a simple
+Since modern memory allocators are critical to software performance,
+they are highly optimised --- and, consequently, often
+difficult to understand in detail. In this section we present a trivial
 allocator \bumpalloc which allows us to explore the major issues
-relevant to this paper.
+relevant to this paper, in terms of capabilities.
 
 \lstinputlisting[language=C, caption={A very basic, but usable, non-capability
-bump pointer allocator.\laurie{the mmap call here doesn't make sense: we should
-flesh this out so that it really can be used properly. ideally we'd actually
+bump pointer allocator.\laurie{ideally we'd actually
 have running test code for each example to keep us honest.}},
 label=lst:bump_alloc]{listings/bump_alloc1.c}
 
-A very basic version of \bumpalloc is shown in Figure~\ref{lst:bump_alloc}.
-\texttt{malloc} always returns a new chunk of memory and \texttt{free} is a
-no-op. How should we adapt this for capabilities? \laurie{cheri\_address\_set and cheri\_bounds\_set}
+A very basic version of \bumpalloc is shown in Listing~\ref{lst:bump_alloc}.
+\texttt{malloc} always returns a new chunk of memory, \texttt{free} is a
+no-op and \texttt{realloc} is aliased to \texttt{malloc}. \jeremy{add this in C source fragment.}
+
+This code initially reserves a large chunk of memory using a single \texttt{mmap} call then doles out successive small chunks on \texttt{malloc}
+calls. The bump pointer moves through the initially allocated chunk until
+it reaches the upper limit.
+
+When this allocator code is executed on a capability platform, the values returned by \texttt{malloc} will share the same capability metadata as the
+capability returned by the original \texttt{mmap} call.
+We can tighten the bounds for each \texttt{malloc} return value by
+deriving a new capability with updated base and bounds. 
+using intrinsic functions like \texttt{{cheri\_address\_set} and \texttt{cheri\_bounds\_set}.
+
+Listing \jeremy{FIXME} shows how such derived capabilities can be calculated.
+Note the complex logic required to ensure the bounds are representable as a
+compressed capability. We pad to ensure the malloc buffer is at least as large as it needs to be.
 
 
 \laurie{the rest of the text in this section is unaltered}
