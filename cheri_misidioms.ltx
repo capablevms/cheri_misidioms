@@ -95,6 +95,9 @@ we concentrate exclusively on programs which operate in pure capability mode.
 \section{A Basic Allocator for Pure Capability CHERI}
 \label{sec:bumppointerallocator}
 
+
+
+
 \laurie{jeremy: why don't we present the absolute most bare bones allocator
 (including free and realloc i guess?) that supports purecap. this would bring
 to life the coalescing stuff, if nothing else.}
@@ -107,11 +110,25 @@ capabilities), free (need for "supercapability"/revocation), allocator metadata.
 \andrei{In addition, are there any further complications from being in a capability
 environment that might affect an allocator, that we can think of?}
 
+%% general intro text
+
 Since modern memory allocators are critical to software performance,
 they are highly optimised --- and, consequently, often
-difficult to understand in detail. In this section we present a trivial
-allocator \bumpalloc which allows us to explore the major issues
+difficult to understand in detail. In this section we explore a trivial
+allocator \bumpalloc which allows us to consider the major
+implementation issues
 relevant to this paper, in terms of capabilities.
+
+Some memory management design patterns recur in a wide variety of
+allocators. The addition of capabilities means the incorporation of these patterns
+must be scrutinized with capabilities in mind, in order to ensure minimal
+burden is placed on developers. Jones et al.\ (cite GC handbook) outlines many
+of these design patterns from a pragmatic perspective.
+In this section, we discuss some of these
+features we have identified and how they might cause potential
+challenges in a capability-aware context.
+
+\subsection{Bare-bones Bump Pointer}
 
 \lstinputlisting[language=C, caption={A very basic, but usable, non-capability
 bump pointer allocator.\laurie{ideally we'd actually
@@ -119,47 +136,35 @@ have running test code for each example to keep us honest.}},
 label=lst:bump_alloc]{listings/bump_alloc1.c}
 
 A very basic version of \bumpalloc is shown in Listing~\ref{lst:bump_alloc}.
-\texttt{malloc} always returns a new chunk of memory, \texttt{free} is a
+\texttt{malloc} always returns a new chunk if memory is available, otherwise it returns \texttt{NULL}, while \texttt{free} is a
 no-op and \texttt{realloc} is aliased to \texttt{malloc}. \jeremy{add this in C source fragment.}
 
 This code initially reserves a large chunk of memory using a single \texttt{mmap} call then doles out successive small chunks on \texttt{malloc}
 calls. The bump pointer moves through the initially allocated chunk until
-it reaches the upper limit.
+it reaches the upper limit at which point the memory is exhausted.
 
-When this allocator code is executed on a capability platform, the values returned by \texttt{malloc} will share the same capability metadata as the
-capability returned by the original \texttt{mmap} call.
+
+\subsection{Capability Bounds}
+
+When this allocator code is compiled and executed on a capability platform, the values returned by \texttt{malloc} will share the same capability metadata as the
+capability returned by the original \texttt{mmap} call, in particular the page-granular bounds.
 We can tighten the bounds for each \texttt{malloc} return value by
 deriving a new capability with updated base and bounds. 
 using intrinsic functions like \texttt{cheri\_address\_set} and \texttt{cheri\_bounds\_set}.
 
 Listing \jeremy{FIXME} shows how such derived capabilities can be calculated.
-Note the complex logic required to ensure the bounds are representable as a
+Note there is complex capability value logic required to ensure the bounds are representable as a
 compressed capability. We pad to ensure the malloc buffer is at least as large as it needs to be.
 
 
-\laurie{the rest of the text in this section is unaltered}
-
-The simplest memory allocator is an \emph{bump allocator}, illustrated
-in~\ref{lst:bump_alloc}. The \fnc{alloc} function allocates a new section of
-memory, while \fnc{realloc} allows the user to resize that memory, in case it
-is needed. One advantage of using capabilities instead of traditional pointers
-is the additional metadata held within the capability: we are able to get the
-size of the original allocation by querying the bounds of the capability.
-
-However, from a security perspective, after a successful \fnc{realloc} call,
+\subsection{Temporal Safety Issues}
+From a security perspective, after a successful \fnc{realloc} call,
 there still exists in scope a capability pointing to some part of memory (i.e.,
-the source \fnc{realloc} address). This small detail might evade the scrutiny
+the source \fnc{realloc} address). This small detail might evade the attention
 of a software developer working with such a simple allocator implementation,
 leading to potential capability leakage, thus undermining the security
 guarantees of capabilities.
 
-There are abundant memory management design patterns that recur in a variety of
-allocators. The addition of capabilities means the design of these features
-must be scrutinized with capabilities in mind, in order to ensure minimal
-burden is placed on developers. Jones et al.\ (cite GC handbook) outlines many
-of these patterns from an implementation perspective. We discuss some of these
-features we have identified to pose potential issues in a capability-aware
-context.
 
 \paragraph{Memory coalescing}
 
@@ -167,12 +172,40 @@ context.
 affects performance. Could potentially use super-capabilities, which might
 undermine security}
 
-\paragraph{Allocator metadata}
 
-\andrei{Some capability metadata is useful (e.g., sizes of allocated memories
-for freeing), but additional potential metadata (e.g. ???) required by the
-allocator / garbage collector would need to either be accessible in whatever
-context, or lie in a privileged space}
+\subsection{Richer Metadata}
+
+One advantage of using capabilities instead of traditional pointers
+is the additional metadata held within the capability.
+For example, we are able to fetch the
+size of the original allocation by querying the bounds of the capability
+value --- if we assume that the capability bounds map directly onto the
+allocated buffer size.
+
+In many allocators, this size metadata is crucial for ensuring the correct
+behaviour of \texttt{free} - which might need to query the size of its
+capability argument in order to determine which free list this buffer should
+be appended to, or how many words of memory can be marked as unused.
+
+Classical allocators such as \textit{dlmalloc} actually store this size metadata
+inline with the pointer - at a fixed offset from the pointer base. This is
+a constant space overhead for each allocation. Now with capability metadata,
+allocator metadata can be `shared' with capability metadata, so long as the size matches the bounds.
+
+This assumption could be violated in certain circumstances, for instance:
+\begin{itemize}
+\item if the allocated buffer size is not properly representable in the capability metadata, because of the CHERI compression scheme. The solution to this problem is to ensure that all allocatable sizes are representable, which might mean padding some allocations to a larger representable size.
+\item if the client code (the malloc caller) is able to modify the capability metadata, perhaps to reduce the bounds of the capability value. The solution is to ensure that only capability values returned directly from malloc are allowed to be arguments to free calls. (Indeed, this is the standard assumption in existing non-capability C programs.)
+\end{itemize}
+
+
+Sometimes, additional potential metadata (e.g.\ marking colour data)
+required by the memory manager (garbage collector)
+cannot be represented directly as capability metadata and would need
+to be accessible via the base capability value, or in a separate privileged space.
+There might be a security problem if this metadata is accessible (and modifiable) by client code.
+However if the capability bounds restrict access to this metadata, then there is a performance problem since the memory management subsystem somehow needs to upgrade user-visible capabilities in order to access metadata fields.
+\jeremy{Is this what snmalloc does?}
 
 \paragraph{Elevated permissions}
 
@@ -181,7 +214,7 @@ must be able to perform operations at a higher privilege level than that of
 normal user code. As capabilities enforce boundaries on what data can be
 accessed or executed, it might break the expectation that memory allocation
 functions can be called from user code, due to them affecting the overall
-system.
+system. \jeremy{what does this mean? Can we have an example please?}
 
 \laurie{the rest of this comment is text moved from elsewhere that probably
 should end up in this section
