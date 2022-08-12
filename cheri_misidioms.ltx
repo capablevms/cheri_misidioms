@@ -316,33 +316,37 @@ this section from this point onwards needs careful consideration.} A different
 proxy for porting complexity is to measure the number of different CHERI API
 calls a ported memory allocator makes use of: broadly speaking, the more of the
 CHERI API is used, the harder the porting effort was likely to have been.
-Comparing across the allocators is somewhat muddied because there are two
-\laurie{or three?} generations of the CHERI API \laurie{cheric.h,
-cheriintrin.h, and ... ?}
-
-
-For system-level C programming, there are two
-distinct CHERI APIs; this is due to the gradual evolution of
+Comparing across the allocators is somewhat muddied because there are (at
+least) three CHERI APIs in common use. This is due to the gradual evolution of
 the software ecosystem over the past decade.
-Older projects use the legacy \texttt{cheric.h}
-header file, which exposes
-57 CHERI functions to client code.
-Two of the memory allocators we study, i.e.\ BSD malloc and jemalloc,
-make use of this now-deprecated API.
 
-A newer \texttt{builtin} CHERI API relies on LLVM-supported
-\textit{compiler intrinsics}; there are 37 CHERI functions exposed
-as intrinsic functions to client code.
-\emph{why 20 fewer functions???}
-Three of the memory allocators we study, i.e.\ newlib, Musl and trivial, make use of this \texttt{builtin} API.
+The most fundamental C-level API is provided by compiler builtins, such as
+\texttt{\_\_builtin\_cheri\_base\_get}. There are currently 39 such builtins,
+plus another four that are Morello-specific. In addition, the CHERI port of
+LLVM introduces three generic builtins for managing alignment, which we do not
+count as CHERI features for this analysis. Three of the memory allocators we
+study -- newlib, Musl and Trivial -- make use of this
+"builtin" API.
 
-\jacob{Where does \texttt{cheriintrin.h} fit into that? That's the preferred header today, isn't it?}
+Another API is provided by \texttt{cheric.h}. This is considered to be a
+legacy, deprecated API. However, it is still in use, including by two of the
+memory allocators we study (BSD malloc and jemalloc). \texttt{cheric.h}
+provides 63 functions (or function-like macros), 29 of which are implemented as
+trivial pass-throughs to compiler builtins. Several of the remaining 34
+functions are fairly complicated compound operations. For example,
+\texttt{cheri\_is\_subset} involves eight unique calls to four other functions.
+\texttt{cheric.h} also provides some additional utilities for kernel use
+(\texttt{cheri\_kern\_*}), and exposes some implementation details
+(\texttt{\_\_cheri\_*}), but we disregard both subsets for this analysis.
 
-\jacob{I would guess that, for our purposes, these APIs overlap significantly,
-amounting to simple renames in most cases. As part of this paper, should we
-determine some sort of mapping to make the comparison easier? It's notable that
-most API calls map to single CHERI instructions, which should make that mapping
-easier.}
+\jacob{We should analyse how many of the cheric.h calls are to pass-through
+functions, because they'll be easy to compare with cheriintrin.h etc.}
+
+The current preferred API is \texttt{cheriintrin.h}, which provides 34
+functions (or function-like macros), of which the vast majority (30) map
+directly onto builtins, and the remaining four are very simple wrappers.
+
+\jacob{Do we study anything using \texttt{cheriintrin.h}?}
 
 For each of the allocators, we inspect the source code
 to count the number of distinct CHERI API calls. Note that if the same function is called in multiple source code locations, we only count it once.
