@@ -1,0 +1,235 @@
+# The builtin names and prototypes described in this file come from the CHERI
+# and Morello ports of LLVM (cited in the "reference" section below). These are
+# copyrighted, and used under the terms of the "Apache-2.0 WITH LLVM-exception"
+# licence (as given in the accompanying LICENSE.txt).
+#
+# Modifications, including the structured representation and annotations, are
+# provided under the same licence, with copyright held as follows:
+#
+# SPDX-FileCopyrightText: Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+[apis.builtins]
+name = "LLVM Builtins (Morello)"
+project = { name = "LLVM (Morello)", url = "https://git.morello-project.org/morello/llvm-project" }
+licence = "Apache-2.0 WITH LLVM-exception"
+reference = [
+    "https://git.morello-project.org/morello/llvm-project/-/blob/4f78985b2783297718f95bf4542e907f1295758f/clang/include/clang/Basic/BuiltinsAArch64.def#L72-L82",
+    "https://git.morello-project.org/morello/llvm-project/-/blob/4f78985b2783297718f95bf4542e907f1295758f/clang/include/clang/Basic/Builtins.def#L1591-L1636",
+]
+
+[apis.builtins.fns.__builtin_cheri_address_get]
+ret = 'size_t'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_address_set]
+ret = 'void * __capability'
+args = ['void const * __capability', 'size_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_base_get]
+ret = 'size_t'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_bounds_set]
+ret = 'void * __capability'
+args = ['void const * __capability', 'size_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_bounds_set_exact]
+ret = 'void * __capability'
+args = ['void const * __capability', 'size_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_equal_exact]
+ret = 'bool'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_flags_set]
+ret = 'void * __capability'
+args = ['void const * __capability', 'size_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_flags_get]
+ret = 'size_t'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_length_get]
+ret = 'size_t'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_offset_get]
+ret = 'size_t'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_offset_increment]
+ret = 'void * __capability'
+args = ['void const * __capability', 'size_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_offset_set]
+ret = 'void * __capability'
+args = ['void const * __capability', 'ptrdiff_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_perms_and]
+ret = 'void * __capability'
+args = ['void const * __capability', 'size_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_perms_check]
+ret = 'void'
+args = ['void const * __capability const', 'size_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_perms_get]
+ret = 'size_t'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_seal]
+ret = 'void * __capability'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_seal_entry]
+ret = 'void * __capability'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_sealed_get]
+ret = 'bool'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_subset_test]
+ret = 'bool'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_tag_clear]
+ret = 'void * __capability'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_tag_get]
+ret = 'bool'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_type_check]
+ret = 'void'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_type_get]
+ret = 'ptrdiff_t'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_unseal]
+ret = 'void * __capability'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_callback_create]
+ret = 'void'
+args = ['...']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_cap_load_tags]
+ret = 'size_t'
+args = ['void const *']
+cxx_attrs = ['noexcept']
+
+[apis.builtins.fns.__builtin_cheri_round_representable_length]
+ret = 'size_t'
+args = ['size_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_representable_alignment_mask]
+ret = 'size_t'
+args = ['size_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_copy_from_high]
+ret = 'size_t'
+args = ['void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_copy_to_high]
+ret = 'void * __capability'
+args = ['void const * __capability', 'size_t']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_global_data_get]
+ret = 'void * __capability'
+args = []
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_program_counter_get]
+ret = 'void * __capability'
+args = []
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_stack_get]
+ret = 'void * __capability'
+args = []
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_cap_from_pointer]
+ret = 'void * __capability'
+args = ['void const * __capability', 'void const *']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_cap_from_pointer_nonnull_zero]
+ret = 'void * __capability'
+args = ['void const * __capability', 'void const *']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_cap_to_pointer]
+ret = 'void *'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_cap_build]
+ret = 'void * __capability'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_cap_type_copy]
+ret = 'void * __capability'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_cheri_conditional_seal]
+ret = 'void * __capability'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_morello_chkssu]
+ret = 'void * __capability'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_morello_subset_test_unseal_or_null]
+ret = 'void * __capability'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_morello_cvt]
+ret = 'size_t'
+args = ['void const * __capability', 'void const * __capability']
+cxx_attrs = ['noexcept', 'const']
+
+[apis.builtins.fns.__builtin_morello_cvtz]
+ret = 'void * __capability'
+args = ['void const * __capability', 'size_t']
+cxx_attrs = ['noexcept', 'const']

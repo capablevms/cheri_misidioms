@@ -1,0 +1,285 @@
+# The function names and prototypes described in this file come from the
+# CheriBSD system headers cited in the "reference" section below. These are used
+# here under the terms of the "BSD-2-Clause" licence.
+#
+# Copyright statements from respective files:
+#
+#   ==== cheri/cheric.h ====
+#   Copyright (c) 2013-2016 Robert N. M. Watson
+#   All rights reserved.
+#
+#   ==== cheri/cherireg.h ====
+#   Copyright (c) 2011-2018 Robert N. M. Watson
+#   All rights reserved.
+#   Copyright (c) 2020 John Baldwin
+#
+#   ==== arm64/include/cheric.h ====
+#   Copyright (c) 2020 John Baldwin
+#
+#   ==== arm64/include/cherireg.h ====
+#   Copyright (c) 2011-2017 Robert N. M. Watson
+#   Copyright (c) 2016-2020 Andrew Turner
+#   All rights reserved.
+#
+# Licence text (common to all included files):
+#
+#   Redistribution and use in source and binary forms, with or without
+#   modification, are permitted provided that the following conditions
+#   are met:
+#   1. Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#   2. Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#
+#   THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+#   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#   ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+#   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+#   OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+#   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+#   SUCH DAMAGE.
+#
+# Modifications, including the structured representation and annotations, are
+# provided under the same licence, with copyright held as follows:
+#
+# SPDX-FileCopyrightText: Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
+[apis.cheric]
+name = "cheric.h"
+project = { name = "CheriBSD", url = "https://github.com/CTSRD-CHERI/cheribsd" }
+licence = "BSD-2-Clause"
+reference = [
+    "https://github.com/CTSRD-CHERI/cheribsd/blob/d3d85fefa5be117458bc629411e4a5f8acb8b23a/sys/cheri/cheric.h",
+    "https://github.com/CTSRD-CHERI/cheribsd/blob/d3d85fefa5be117458bc629411e4a5f8acb8b23a/sys/cheri/cherireg.h",
+    "https://github.com/CTSRD-CHERI/cheribsd/blob/d3d85fefa5be117458bc629411e4a5f8acb8b23a/sys/arm64/include/cheric.h",
+    "https://github.com/CTSRD-CHERI/cheribsd/blob/d3d85fefa5be117458bc629411e4a5f8acb8b23a/sys/arm64/include/cherireg.h",
+]
+dependencies = [ "builtins" ]
+
+[apis.cheric.fns.cheri_getlen]
+equiv = "__builtin_cheri_length_get"
+
+[apis.cheric.fns.cheri_getlength]
+equiv = "__builtin_cheri_length_get"
+
+[apis.cheric.fns.cheri_getbase]
+equiv = "__builtin_cheri_base_get"
+
+[apis.cheric.fns.cheri_getoffset]
+equiv = "__builtin_cheri_offset_get"
+
+[apis.cheric.fns.cheri_getaddress]
+equiv = "__builtin_cheri_address_get"
+
+[apis.cheric.fns.cheri_getflags]
+equiv = "__builtin_cheri_flags_get"
+
+[apis.cheric.fns.cheri_getperm]
+equiv = "__builtin_cheri_perms_get"
+
+[apis.cheric.fns.cheri_getsealed]
+equiv = "__builtin_cheri_sealed_get"
+
+[apis.cheric.fns.cheri_gettag]
+equiv = "__builtin_cheri_tag_get"
+
+[apis.cheric.fns.cheri_gettype]
+equiv = "__builtin_cheri_type_get"
+notes = "Adds lossless cast to `long`."
+
+[apis.cheric.fns.cheri_andperm]
+equiv = "__builtin_cheri_perms_and"
+
+[apis.cheric.fns.cheri_clearperm]
+basis = ["__builtin_cheri_perms_and"]
+notes = "Inverts argument."
+
+[apis.cheric.fns.cheri_cleartag]
+equiv = "__builtin_cheri_tag_clear"
+
+[apis.cheric.fns.cheri_incoffset]
+equiv = "__builtin_cheri_offset_increment"
+
+[apis.cheric.fns.cheri_setoffset]
+equiv = "__builtin_cheri_offset_set"
+
+[apis.cheric.fns.cheri_setaddress]
+equiv = "__builtin_cheri_address_set"
+
+[apis.cheric.fns.cheri_setflags]
+equiv = "__builtin_cheri_flags_set"
+
+[apis.cheric.fns.cheri_seal]
+equiv = "__builtin_cheri_seal"
+
+[apis.cheric.fns.cheri_unseal]
+equiv = "__builtin_cheri_unseal"
+
+[apis.cheric.fns.cheri_sealentry]
+equiv = "__builtin_cheri_seal_entry"
+
+[apis.cheric.fns.cheri_ccheckperm]
+equiv = "__builtin_cheri_perms_check"
+
+[apis.cheric.fns.cheri_cchecktype]
+equiv = "__builtin_cheri_type_check"
+
+[apis.cheric.fns.cheri_getdefault]
+equiv = "__builtin_cheri_global_data_get"
+
+[apis.cheric.fns.cheri_getpcc]
+equiv = "__builtin_cheri_program_counter_get"
+
+[apis.cheric.fns.cheri_getstack]
+equiv = "__builtin_cheri_stack_get"
+
+[apis.cheric.fns.cheri_local]
+basis = ["cheri_andperm"]
+notes = "Shorthand case."
+
+[apis.cheric.fns.cheri_setbounds]
+equiv = "__builtin_cheri_bounds_set"
+
+[apis.cheric.fns.cheri_setboundsexact]
+equiv = "__builtin_cheri_bounds_set_exact"
+
+[apis.cheric.fns.cheri_equal_exact]
+equiv = "__builtin_cheri_equal_exact"
+
+[apis.cheric.fns.cheri_ptr_equal_exact]
+basis = ["cheri_equal_exact"]
+notes = "Works with pointers in both hybrid and purecap."
+
+[apis.cheric.fns.cheri_is_subset]
+basis = ["cheri_gettag", "cheri_getbase", "cheri_gettop", "cheri_getperm"]
+notes = "Compound operation, similar to __builtin_morello_chkssu."
+
+[apis.cheric.fns.cheri_is_null_derived]
+basis = ["__builtin_cheri_equal_exact"]
+
+[apis.cheric.fns.cheri_fromint]
+basis = ["cheri_incoffset"]
+
+[apis.cheric.fns.cheri_copyaddress]
+basis = ["cheri_setaddress", "cheri_getaddress"]
+notes = "Compound operation."
+
+[apis.cheric.fns.cheri_gettop]
+basis = ["cheri_getbase", "cheri_getlen"]
+notes = "Compound operation. Note incorrect results if top == 2^64."
+
+[apis.cheric.fns.cheri_is_address_inbounds]
+basis = ["cheri_getbase", "cheri_gettop"]
+notes = "Compound operation."
+
+[apis.cheric.fns.cheri_codeptr]
+basis = ["cheri_setbounds", "__builtin_cheri_cap_from_pointer", "cheri_getpcc"]
+notes = "Derive a capability from PCC and a pointer, like Morello's 'cvtp'."
+
+[apis.cheric.fns.cheri_codeptrperm]
+basis = ["cheri_andperm", "cheri_codeptr"]
+notes = "As cheri_codeptr, but with limited permissions."
+
+[apis.cheric.fns.cheri_ptr]
+basis = ["cheri_setbounds"]
+notes = "Derive a capability from DDC and a pointer, like Morello's 'cvtd'."
+
+[apis.cheric.fns.cheri_ptrperm]
+basis = ["cheri_andperm", "cheri_ptr"]
+notes = "As cheri_ptr, but with limited permissions."
+
+[apis.cheric.fns.cheri_ptrpermoff]
+basis = ["cheri_setoffset", "cheri_ptrperm"]
+notes = "As cheri_ptrperm, but with an offset."
+
+[apis.cheric.fns.cheri_maketype]
+basis = ["cheri_setoffset", "cheri_setbounds", "cheri_andperm"]
+notes = "Utility for making sealing capabilities."
+
+[apis.cheric.fns.cheri_zerocap]
+basis = []
+notes = "Returns nullptr (or similar)."
+
+[apis.cheric.fns.cheri_bytes_remaining]
+basis = ["cheri_getoffset", "cheri_getlen"]
+notes = "Offset to limit, rather than from base."
+
+[apis.cheric.fns.cheri_ptr_to_bounded_cap]
+basis = ["cheri_ptr"]
+
+[apis.cheric.fns.cheri_cap_to_ptr]
+basis = ["cheri_gettag", "cheri_bytes_remaining"]
+notes = "Compound operation."
+
+[apis.cheric.fns.cheri_cap_to_typed_ptr]
+basis = ["cheri_cap_to_ptr"]
+
+# ... Kernel utilities (`cheri_kern_*`) omitted.
+# ... __cheri_* implementation helpers omitted.
+
+[apis.cheric.fns.cheri_get_low_ptr_bits]
+basis = []
+notes = "Simple bitwise operation, with checks."
+
+[apis.cheric.fns.cheri_set_low_ptr_bits]
+basis = []
+notes = "Simple bitwise operation, with checks."
+
+[apis.cheric.fns.cheri_clear_low_ptr_bits]
+basis = []
+notes = "Simple bitwise operation, with checks."
+
+[apis.cheric.fns.CHERI_REPRESENTABLE_LENGTH]
+equiv = "__builtin_cheri_round_representable_length"
+notes = "Provides fallback in case capabilities are unsupported."
+
+[apis.cheric.fns.CHERI_REPRESENTABLE_ALIGNMENT_MASK]
+equiv = "__builtin_cheri_representable_alignment_mask"
+notes = "Provides fallback in case capabilities are unsupported."
+
+[apis.cheric.fns.CHERI_ALIGN_SHIFT]
+basis = ["CHERI_REPRESENTABLE_ALIGNMENT_MASK"]
+notes = "Provides fallback in case capabilities are unsupported."
+
+[apis.cheric.fns.CHERI_SEAL_ALIGN_SHIFT]
+basis = ["CHERI_SEALABLE_ALIGNMENT_MASK"]
+notes = "Provides fallback in case capabilities are unsupported."
+
+[apis.cheric.fns.CHERI_REPRESENTABLE_ALIGNMENT]
+basis = ["CHERI_REPRESENTABLE_ALIGNMENT_MASK"]
+
+[apis.cheric.fns.CHERI_REPRESENTABLE_BASE]
+basis = ["CHERI_REPRESENTABLE_ALIGNMENT_MASK"]
+
+[apis.cheric.fns.CHERI_SEALABLE_LENGTH]
+basis = ["CHERI_REPRESENTABLE_LENGTH"]
+
+[apis.cheric.fns.CHERI_SEALABLE_ALIGNMENT_MASK]
+basis = ["CHERI_REPRESENTABLE_ALIGNMENT_MASK"]
+
+[apis.cheric.fns.CHERI_SEALABLE_ALIGNMENT]
+basis = ["CHERI_REPRESENTABLE_ALIGNMENT"]
+
+[apis.cheric.fns.CHERI_SEALABLE_BASE]
+basis = ["CHERI_REPRESENTABLE_BASE"]
+
+[apis.cheric.fns.CHERI_SEAL_ALIGN_MASK]
+basis = ["CHERI_SEALABLE_ALIGNMENT_MASK"]
+
+[apis.cheric.fns.CHERI_ALIGN_MASK]
+basis = ["CHERI_REPRESENTABLE_ALIGNMENT_MASK"]
+
+# Morello-specific API included as: <machine/cheric.h>
+
+# ... Kernel utility (`trapframe_set_elr`) omitted.
+
+[apis.cheric.fns.cheri_capmode]
+basis = []
+notes = "Sets bit 0, forcing an unsealed executable capability to target C64."
