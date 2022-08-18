@@ -152,7 +152,12 @@ We can tighten the bounds for each \texttt{malloc} return value by
 deriving a new capability with updated base and bounds. 
 using intrinsic functions like \texttt{cheri\_address\_set} and \texttt{cheri\_bounds\_set}.
 
-Listing \jeremy{FIXME} shows how such derived capabilities can be calculated.
+\lstinputlisting[language=C, caption={Bump pointer allocator that returns bounded capability values to client code.\laurie{ideally we'd actually
+have running test code for each example to keep us honest.}},
+label=lst:bump_alloc2]{listings/bump_alloc2.c}
+
+
+Listing \ref{lst:bump_alloc2} shows how such derived capabilities can be calculated.
 Note there is complex capability value logic required to ensure the bounds are representable as a
 compressed capability. We pad to ensure the malloc buffer is at least as large as it needs to be.
 
