@@ -30,7 +30,7 @@ variety of memory usage patterns. Security flaws in allocators thus tend
 to have significant and widespread consequences.
 
 We show that it is surprisingly difficult to make a `secure'
-allocator for pure capability CHERI. We first show the basic problems with
+allocator for pure capability CHERI\@. We first show the basic problems with
 a simple bump-pointer allocator example
 (Section~\ref{sec:bumppointerallocator}). We then examine~\alloccount{} existing
 allocators that have been ported to CHERI
@@ -266,7 +266,9 @@ Kingsley's \textit{BSD malloc} (\laurie{say something about it -- I don't even
 know what it is and I'm a fully paid-up member of the BSD cult!}), and the two
 unnamed allocators inside the libc alternatives \textit{newlib} and
 \textit{Musl}. As a baseline we show a trivial \textit{bump-pointer
-allocator} of our own devising.
+allocator} of our own devising.\andrei{Is `snmalloc` not part of this
+experiment? I think they have a decent CHERI port. Also, can I find the
+data/scripts for this experiment somewhere?}
 
 At least two other memory allocators have been partly ported to CHERI: the
 conservative garbage collector \textit{Boehm-Demers-Weiser} garbage collector
@@ -288,7 +290,7 @@ some design ideas, or even some functionality to add to our comparison?}.
 			 &       &        & LoC & \multicolumn{1}{c}{\%} \\
       \midrule
       jemalloc           &       & 39,059 & 116 & 0.30\% \\
-      libmalloc-simple   &       & 680    & 43  & 6.32\% \\
+      libmalloc-simple\andrei{Is this BSD malloc?}   &       & 680    & 43  & 6.32\% \\
       musl-libc          &       & 72,177 & 624 & 0.87\% \\
       newlib stdlib      &       & 26,041 & 83  & 0.32\%\\
       \bottomrule
@@ -299,11 +301,12 @@ some design ideas, or even some functionality to add to our comparison?}.
   (SLoC), and the number of lines changed to adapt them for pure capability
   CheriBSD.\laurie{jeremy: we need to include the version number for each
   allocator (or, at least, a git hash or similar) so that people can
-  reproduce our study.}\laurie{shouldn't bsdmalloc be in this table too?}}
+  reproduce our study.}\laurie{shouldn't bsdmalloc be in this table
+too?}}
 \end{table}
 
 How difficult is it to port a standard memory allocator to pure capability
-CheriBSD? In this section we briefly examine several existing allocators.
+CheriBSD\@? In this section we briefly examine several existing allocators.
 Table~\ref{tab:allocator_summary} shows the allocators we consider, their size,
 and the quantity and proportion of lines changed for the CHERI port.
 
@@ -332,10 +335,10 @@ plus another four that are Morello-specific. In addition, the CHERI port of
 LLVM introduces three generic builtins for managing alignment, which we do not
 count as CHERI features for this analysis. Three of the memory allocators we
 study -- newlib, Musl and Trivial -- make use of this
-"builtin" API.
+"builtin" API\@.
 
-Another API is provided by \texttt{cheric.h}. This is considered to be a
-legacy, deprecated API. However, it is still in use, including by two of the
+Another API is provided by \filename{cheric.h}. This is considered to be a
+legacy, deprecated API\@. However, it is still in use, including by two of the
 memory allocators we study (BSD malloc and jemalloc). \texttt{cheric.h}
 provides 63 functions (or function-like macros), 29 of which are implemented as
 trivial pass-throughs to compiler builtins. Several of the remaining 34
@@ -348,19 +351,18 @@ functions are fairly complicated compound operations. For example,
 \jacob{We should analyse how many of the cheric.h calls are to pass-through
 functions, because they'll be easy to compare with cheriintrin.h etc.}
 
-The current preferred API is \texttt{cheriintrin.h}, which provides 34
+The current preferred API is \filename{cheriintrin.h}, which provides 34
 functions (or function-like macros), of which the vast majority (30) map
 directly onto builtins, and the remaining four are very simple wrappers.
 
 \jacob{Do we study anything using \texttt{cheriintrin.h}?}
 
-For each of the allocators, we inspect the source code
-to count the number of distinct CHERI API calls. Note that if the same function is called in multiple source code locations, we only count it once.
-This gives us a static measure of API coverage, for each allocator.
-Table \ref{tab:rq1} shows the results, indicating that some allocators
-have a broader spread of API calls.
-\emph{What does this imply?}
-\emph{What are the API calls doing?}
+For each of the allocators, we inspect the source code to count the number of
+distinct CHERI API calls. Note that if the same function is called in multiple
+source code locations, we only count it once.  This gives us a static measure
+of API coverage, for each allocator. Table~\ref{tab:rq1} shows the results,
+indicating that some allocators have a broader spread of API calls. \emph{What
+does this imply?} \emph{What are the API calls doing?}
 
 
 \begin{table}
@@ -756,7 +758,7 @@ up-front costs, but requires wasting memory for every object, even if no
 future capability will ever have bounds covering it.
 
 Third, one can abort execution if bounds cannot be precisely represented. The
-\fnc{cheri\_bounds\_set\_exact} is a `safe` variant of
+\fnc{cheri\_bounds\_set\_exact} is a `safe' variant of
 \fnc{cheri\_bounds\_set} which raises an error if bounds cannot be precisely
 represented. We would prefer to see this be the standard bounds-setting
 function, with a \fnc{cheri\_bounds\_set\_unsafe} variant allowing the
@@ -776,7 +778,7 @@ permitted, so we can write assertions in our \texttt{realloc} implementation, et
 \laurie{is this possible?}
 \jacob{Not when used in the obvious way (e.g. dereferencing), but extreme
 (65-bit) bounds behave in non-portable ways when queried explicitly, e.g.
-saturating on Morello, and this isn't obvious in the CHERI API. This makes
+saturating on Morello, and this isn't obvious in the CHERI API\@. This makes
 manually testing the bounds difficult.}
 \laurie{interesting! can we make a simple code example which shows this?}
 
