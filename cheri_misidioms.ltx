@@ -135,12 +135,12 @@ bump pointer allocator.},
 label=lst:bump_alloc]{listings/bump_alloc1.c}
 
 A very basic version of \bumpalloc is shown in Listing~\ref{lst:bump_alloc}.
-\texttt{malloc} always returns a new chunk if memory is available, otherwise it
-returns \texttt{NULL}, while \texttt{free} is a no-op and \texttt{realloc} is
-aliased to \texttt{malloc}.
+\fnc{malloc} always returns a new chunk if memory is available, otherwise it
+returns \texttt{NULL}, while \texttt{free} is a no-op and \fnc{realloc} is
+aliased to \fnc{malloc}.
 
 This code initially reserves a large chunk of memory using a single
-\texttt{mmap} call then doles out successive small chunks on \texttt{malloc}
+\fnc{mmap} call then doles out successive small chunks on \fnc{malloc}
 calls. The bump pointer moves through the initially allocated chunk until it
 reaches the upper limit at which point the memory is exhausted.
 
@@ -148,11 +148,11 @@ reaches the upper limit at which point the memory is exhausted.
 \subsection{Capability Bounds}
 
 When this allocator code is compiled and executed on a capability platform, the
-values returned by \texttt{malloc} will share the same capability metadata as
-the capability returned by the original \texttt{mmap} call, in particular the
-page-granular bounds.  We can tighten the bounds for each \texttt{malloc}
-return value by deriving a new capability with updated base and bounds.  using
-CHERI intrinsic functions.
+values returned by \fnc{malloc} will share the same capability metadata as the
+capability returned by the original \fnc{mmap} call, in particular the
+page-granular bounds.  We can tighten the bounds for each \fnc{malloc} return
+value by deriving a new capability with updated base and bounds.
+% using CHERI intrinsic functions.
 % like \texttt{cheri\_address\_set} and \texttt{cheri\_bounds\_set}.
 
 \lstinputlisting[language=C, caption={Bump pointer allocator that returns
@@ -172,16 +172,27 @@ of a software developer working with such a simple allocator implementation,
 leading to potential capability leakage, thus undermining the security
 guarantees of capabilities.
 
+One method of overcoming temporal issues could be \emph{capability revocation}.
+Ideally, we could revoke a capability that has gone ``out of scope'' (perhaps
+by invalidating the tag bit), such that any attempt to use that capability
+would lead to a trap. However, as there is no record of how capabilities are
+used and copied, there is no way of tracking where capabilities that have to be
+revoked end up, without fully scanning memory. As this is a fairly expensive
+operation, alternative measures need to be found to enhance temporal safety.
 
-\paragraph{Memory coalescing}
-
-\andrei{can`t combine two capabilities into one, as they are monotonic -
-affects performance. Could potentially use super-capabilities, which might
-undermine security}
-
+\subsection{Memory coalescing}
+One important functionality of memory allocators is \emph{memory coalescing}.
+As a program operates, deallocating objects leads to there being unused gaps in
+memory. In order to maximize memory access performance, via locality and cache
+coherence, it is desirable to have memory usage be as dense as possible. Thus,
+an allocator would like to move objects in memory to maximize density. However,
+after allocation, an object only has access to the initial allocated memory
+space. In order for an allocator to move the object, it would need to generate
+itself a new capability. This would mean giving the allocator greater
+permissions to memory, which could undermine security if the allocator itself
+would become the target of an adversary.
 
 \subsection{Richer Metadata}
-
 One advantage of using capabilities instead of traditional pointers
 is the additional metadata held within the capability.
 For example, we are able to fetch the
@@ -194,24 +205,33 @@ behaviour of \texttt{free} - which might need to query the size of its
 capability argument in order to determine which free list this buffer should
 be appended to, or how many words of memory can be marked as unused.
 
-Classical allocators such as \textit{dlmalloc} actually store this size metadata
-inline with the pointer - at a fixed offset from the pointer base. This is
-a constant space overhead for each allocation. Now with capability metadata,
-allocator metadata can be `shared' with capability metadata, so long as the size matches the bounds.
+Classical allocators, such as \textit{dlmalloc}, actually store this size
+metadata in-line with the pointer - at a fixed offset from the pointer base.
+This is a constant space overhead for each allocation. Now with capability
+metadata, allocator metadata can be `shared' with capability metadata, so long
+as the size matches the bounds.
 
 This assumption could be violated in certain circumstances, for instance:
 \begin{itemize}
-\item if the allocated buffer size is not properly representable in the capability metadata, because of the CHERI compression scheme. The solution to this problem is to ensure that all allocatable sizes are representable, which might mean padding some allocations to a larger representable size.
-\item if the client code (the malloc caller) is able to modify the capability metadata, perhaps to reduce the bounds of the capability value. The solution is to ensure that only capability values returned directly from malloc are allowed to be arguments to free calls. (Indeed, this is the standard assumption in existing non-capability C programs.)
+\item if the allocated buffer size is not properly representable in the
+    capability metadata, because of the CHERI compression scheme. The solution
+    to this problem is to ensure that all allocatable sizes are representable,
+    which might mean padding some allocations to a larger representable size.
+\item if the client code (the \fnc{malloc} caller) is able to modify the
+    capability metadata, perhaps to reduce the bounds of the capability value.
+    The solution is to ensure that only capability values returned directly
+    from \fnc{malloc} are allowed to be arguments to free calls. (Indeed, this
+    is the standard assumption in existing non-capability C programs.)
 \end{itemize}
 
-
-Sometimes, additional potential metadata (e.g.\ marking colour data)
-required by the memory manager (garbage collector)
-cannot be represented directly as capability metadata and would need
-to be accessible via the base capability value, or in a separate privileged space.
-There might be a security problem if this metadata is accessible (and modifiable) by client code.
-However if the capability bounds restrict access to this metadata, then there is a performance problem since the memory management subsystem somehow needs to upgrade user-visible capabilities in order to access metadata fields.
+Sometimes, additional potential metadata (e.g.\ marking colour data) required
+by the memory manager (garbage collector) cannot be represented directly as
+capability metadata and would need to be accessible via the base capability
+value, or in a separate privileged space.  There might be a security problem if
+this metadata is accessible (and modifiable) by client code. However if the
+capability bounds restrict access to this metadata, then there is a performance
+problem since the memory management subsystem somehow needs to upgrade
+user-visible capabilities in order to access metadata fields.
 \jeremy{Is this what snmalloc does?}
 
 \paragraph{Elevated permissions}
@@ -350,13 +370,15 @@ functions are fairly complicated compound operations. For example,
 (\texttt{\_\_cheri\_*}), but we disregard both subsets for this analysis.
 
 \jacob{We should analyse how many of the cheric.h calls are to pass-through
-functions, because they'll be easy to compare with cheriintrin.h etc.}
+functions, because they'll be easy to compare with cheriintrin.h
+etc.}\andrei{What is a pass-through function? I can have a look}
 
 The current preferred API is \filename{cheriintrin.h}, which provides 34
 functions (or function-like macros), of which the vast majority (30) map
 directly onto builtins, and the remaining four are very simple wrappers.
 
 \jacob{Do we study anything using \texttt{cheriintrin.h}?}
+\andrei{Add links/versions of these CHERI APIs we mention}
 
 For each of the allocators, we inspect the source code to count the number of
 distinct CHERI API calls. Note that if the same function is called in multiple
