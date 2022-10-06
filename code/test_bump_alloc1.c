@@ -1,3 +1,5 @@
+// gcc -I../listings ./test_bump_alloc1.c
+
 #include <assert.h>
 #include <stddef.h>
 #include <sys/mman.h>

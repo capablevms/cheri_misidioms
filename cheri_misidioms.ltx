@@ -131,26 +131,28 @@ challenges in a capability-aware context.
 \subsection{Bare-bones Bump Pointer}
 
 \lstinputlisting[language=C, caption={A very basic, but usable, non-capability
-bump pointer allocator.\laurie{ideally we'd actually
-have running test code for each example to keep us honest.}},
+bump pointer allocator.},
 label=lst:bump_alloc]{listings/bump_alloc1.c}
 
 A very basic version of \bumpalloc is shown in Listing~\ref{lst:bump_alloc}.
-\texttt{malloc} always returns a new chunk if memory is available, otherwise it returns \texttt{NULL}, while \texttt{free} is a
-no-op and \texttt{realloc} is aliased to \texttt{malloc}.
+\texttt{malloc} always returns a new chunk if memory is available, otherwise it
+returns \texttt{NULL}, while \texttt{free} is a no-op and \texttt{realloc} is
+aliased to \texttt{malloc}.
 
-This code initially reserves a large chunk of memory using a single \texttt{mmap} call then doles out successive small chunks on \texttt{malloc}
-calls. The bump pointer moves through the initially allocated chunk until
-it reaches the upper limit at which point the memory is exhausted.
+This code initially reserves a large chunk of memory using a single
+\texttt{mmap} call then doles out successive small chunks on \texttt{malloc}
+calls. The bump pointer moves through the initially allocated chunk until it
+reaches the upper limit at which point the memory is exhausted.
 
 
 \subsection{Capability Bounds}
 
-When this allocator code is compiled and executed on a capability platform, the values returned by \texttt{malloc} will share the same capability metadata as the
-capability returned by the original \texttt{mmap} call, in particular the page-granular bounds.
-We can tighten the bounds for each \texttt{malloc} return value by
-deriving a new capability with updated base and bounds. 
-using CHERI intrinsic functions.
+When this allocator code is compiled and executed on a capability platform, the
+values returned by \texttt{malloc} will share the same capability metadata as
+the capability returned by the original \texttt{mmap} call, in particular the
+page-granular bounds.  We can tighten the bounds for each \texttt{malloc}
+return value by deriving a new capability with updated base and bounds.  using
+CHERI intrinsic functions.
 % like \texttt{cheri\_address\_set} and \texttt{cheri\_bounds\_set}.
 
 \lstinputlisting[language=C, caption={Bump pointer allocator that returns bounded capability values to client code.\laurie{ideally we'd actually

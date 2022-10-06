@@ -1,3 +1,5 @@
+// <CHERI_OUTPUT_DIR>/morello-sdk/bin/clang --config cheribsd-morello-purecap.cfg ./test_bump_alloc2.c
+
 #include <assert.h>
 #include <stddef.h>
 #include <sys/mman.h>
