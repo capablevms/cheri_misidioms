@@ -29,14 +29,13 @@ ubiquitous because they allow us to write programs that are generic over a
 variety of memory usage patterns. Security flaws in allocators thus tend
 to have significant and widespread consequences.
 
-We show that it is surprisingly difficult to make a `secure'
-allocator for pure capability CHERI\@. We first show the basic problems with
-a simple bump-pointer allocator example
-(Section~\ref{sec:bumppointerallocator}). We then examine~\alloccount{} existing
-allocators that have been ported to CHERI
-(Section~\ref{sec:cheriallocators}). Finally we introduce and name~\allocbugs{}
+We show that it is surprisingly difficult to make a `secure' allocator for pure
+capability CHERI\@. We first show the basic problems with a simple bump-pointer
+allocator example (\autoref{sec:bumppointerallocator}). We then
+examine~\alloccount{} existing allocators that have been ported to CHERI
+(\autoref{sec:cheriallocators}). Finally we introduce and name~\allocbugs{}
 simple `attacks' on pure capability memory allocators, showing that most of the
-allocators are vulnerable to most of the attacks (Section~\ref{sec:atk}).
+allocators are vulnerable to most of the attacks (\autoref{sec:atk}).
 
 
 \section{Background}
@@ -112,21 +111,19 @@ environment that might affect an allocator, that we can think of?}
 
 %% general intro text
 
-Since modern memory allocators are critical to software performance,
-they are highly optimised --- and, consequently, often
-difficult to understand in detail. In this section we explore a trivial
-allocator \bumpalloc which allows us to consider the major
-implementation issues
-relevant to this paper, in terms of capabilities.
+Since modern memory allocators are critical to software performance, they are
+highly optimised --- and, consequently, often difficult to understand in
+detail. In this section we explore a trivial allocator \bumpalloc which allows
+us to consider the major implementation issues relevant to this paper, in terms
+of capabilities.
 
-Some memory management design patterns recur in a wide variety of
-allocators. The complexity of capabilities means the incorporation of these patterns
-must be scrutinized with capabilities in mind, in order to ensure minimal
-burden is placed on developers. Jones et al.\ (cite GC handbook) outline many
-of these design patterns from a pragmatic perspective.
-In this section, we discuss some of the
-issues we have identified and how they might cause potential
-challenges in a capability-aware context.
+Some memory management design patterns recur in a wide variety of allocators.
+The complexity of capabilities means the incorporation of these patterns must
+be scrutinized with capabilities in mind, in order to ensure minimal burden is
+placed on developers. Jones et al.\ (cite GC handbook) outline many of these
+design patterns from a pragmatic perspective.  In this section, we discuss some
+of the issues we have identified and how they might cause potential challenges
+in a capability-aware context.
 
 \subsection{Bare-bones Bump Pointer}
 
@@ -134,10 +131,10 @@ challenges in a capability-aware context.
 bump pointer allocator.},
 label=lst:bump_alloc]{listings/bump_alloc1.c}
 
-A very basic version of \bumpalloc is shown in Listing~\ref{lst:bump_alloc}.
-\fnc{malloc} always returns a new chunk if memory is available, otherwise it
-returns \texttt{NULL}, while \texttt{free} is a no-op and \fnc{realloc} is
-aliased to \fnc{malloc}.
+A very basic version of \bumpalloc is shown in~\autoref{lst:bump_alloc}.  In
+this implementation, \fnc{malloc} always returns a new chunk if memory is
+available, otherwise it returns \texttt{NULL}, while \texttt{free} is a no-op
+and \fnc{realloc} is aliased to \fnc{malloc}.
 
 This code initially reserves a large chunk of memory using a single
 \fnc{mmap} call then doles out successive small chunks on \fnc{malloc}
@@ -159,8 +156,8 @@ value by deriving a new capability with updated base and bounds.
 bounded capability values to client code.},
 label=lst:bump_alloc2]{listings/bump_alloc2.c}
 
-Listing \ref{lst:bump_alloc2} shows how such derived capabilities can be
-calculated.  Note there is complex capability value logic required to ensure
+\autoref{lst:bump_alloc2} shows how such derived capabilities can be
+calculated. Note there is complex capability value logic required to ensure
 the bounds are representable as a compressed capability. We pad to ensure the
 malloc buffer is at least as large as it needs to be.
 
@@ -317,21 +314,22 @@ some design ideas, or even some functionality to add to our comparison?}.
       \bottomrule
     \end{tabular}
   \end{center}
-  \label{tab:allocator_summary}
   \caption{The allocators we examined, their size in Source Lines of Code
   (SLoC), and the number of lines changed to adapt them for pure capability
   CheriBSD.\laurie{jeremy: we need to include the version number for each
   allocator (or, at least, a git hash or similar) so that people can
   reproduce our study.}\laurie{shouldn't bsdmalloc be in this table
-too?}}
+    too?}}
+  \label{tab:allocator_summary}
 \end{table}
 
 How difficult is it to port a standard memory allocator to pure capability
-CheriBSD\@? In this section we briefly examine several existing allocators.
-Table~\ref{tab:allocator_summary} shows the allocators we consider, their size,
-and the quantity and proportion of lines changed for the CHERI port.
+CheriBSD\@? In this section we briefly examine several existing allocators. We
+show the allocators we consider in \autoref{tab:allocator_summary}, as well as
+their size, and the quantity and proportion of lines changed for the CHERI
+port.
 
-As Table~\ref{tab:allocator_summary} shows, with the exception of the extremely
+As \autoref{tab:allocator_summary} shows, with the exception of the extremely
 small libmalloc-simple, the pure capability CheriBSD ports require around
 0.3-0.9\% of lines to be changed. This is an order of magnitude bigger than the
 0.026\% lines changed for porting a desktop environment (including X11 and
@@ -383,7 +381,7 @@ directly onto builtins, and the remaining four are very simple wrappers.
 For each of the allocators, we inspect the source code to count the number of
 distinct CHERI API calls. Note that if the same function is called in multiple
 source code locations, we only count it once.  This gives us a static measure
-of API coverage, for each allocator. Table~\ref{tab:rq1} shows the results,
+of API coverage, for each allocator. \autoref{tab:rq1} shows the results,
 indicating that some allocators have a broader spread of API calls. \emph{What
 does this imply?} \emph{What are the API calls doing?}
 
@@ -441,8 +439,8 @@ When we survey existing CHERI memory allocators `in-the-wild', we
 see that they currently provide support for spatial memory safety
 on the heap.
 
-In terms of the Common Weakness Enumeration (CWE, cite), all the allocators we
-surveyed only mitigate CWE-125: Out-of-bounds
+In terms of the Common Weakness Enumeration (CWE \andrei{cite}), all the
+allocators we surveyed only mitigate CWE-125: Out-of-bounds
 Read~\footnote{\url{https://cwe.mitre.org/data/definitions/125.html}} and
 CWE-787: Out-of-bounds
 Write~\footnote{\url{https://cwe.mitre.org/data/definitions/787.html}}, for
@@ -484,7 +482,7 @@ We audited the default memory allocator on CheriBSD, \emph{jemalloc}, as well
 as Kingsley`s simple BSD allocator \andrei{Is this what `BSD simple` in the
 table means?}. We were able to identify \allocbugs{} bugs with respect to
 including capabilities in the two allocators. The presence of these bugs in
-both of the allocators is shown in~\ref{tab:atks}.
+both of the allocators is shown in~\autoref{tab:atks}.
 
 Conceptually, the capability memory allocator vulnerabilities we identified
 come in two flavours: the allocator can initially hand out more permissions
@@ -597,7 +595,7 @@ architectures have different bounds representations and permissions.
 \subsection{\narrowwiden: Narrowing then widening}
 
 Assuming that a child capability with narrow bounds has been derived while
-respecting the issues raised in \narrowingdoesnt (\ref{sec:narrow}), it may
+respecting the issues raised in \narrowingdoesnt (\autoref{sec:narrow}), it may
 seem that our issues with capability bounds are over. However, if one later
 widens those bounds again, one may unintentionally leak secrets.
 
