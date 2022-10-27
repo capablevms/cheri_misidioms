@@ -23,4 +23,5 @@ void* malloc(size_t size) {
 
 void free(void *ptr) { }
 
-void* realloc(size_t size) { return malloc(size); }
+// FIXME - this is incorrect semantics!
+void* realloc(void *ptr, size_t size) { return malloc(size); }
