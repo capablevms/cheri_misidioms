@@ -138,6 +138,7 @@ label=lst:bump_alloc]{listings/bump_alloc1.c}
 A very basic version of \bumpalloc is shown in Listing~\ref{lst:bump_alloc}.
 \texttt{malloc} always returns a new chunk if memory is available, otherwise it returns \texttt{NULL}, while \texttt{free} is a
 no-op and \texttt{realloc} is aliased to \texttt{malloc}.
+\jeremy{FIXME - realloc semantics incorrect}
 
 This code initially reserves a large chunk of memory using a single \texttt{mmap} call then doles out successive small chunks on \texttt{malloc}
 calls. The bump pointer moves through the initially allocated chunk until
@@ -149,7 +150,7 @@ it reaches the upper limit at which point the memory is exhausted.
 When this allocator code is compiled and executed on a capability platform, the values returned by \texttt{malloc} will share the same capability metadata as the
 capability returned by the original \texttt{mmap} call, in particular the page-granular bounds.
 We can tighten the bounds for each \texttt{malloc} return value by
-deriving a new capability with updated base and bounds. 
+deriving a new capability with updated base and bounds,
 using CHERI intrinsic functions.
 % like \texttt{cheri\_address\_set} and \texttt{cheri\_bounds\_set}.
 
@@ -172,11 +173,16 @@ leading to potential capability leakage, thus undermining the security
 guarantees of capabilities.
 
 
-\paragraph{Memory coalescing}
+\subsection{Memory coalescing}
 
 \andrei{can`t combine two capabilities into one, as they are monotonic -
 affects performance. Could potentially use super-capabilities, which might
 undermine security}
+
+Give source code - if we own two capabilities that are adjacent in memory,
+it is not possible to combine them into a single capability ...
+Problem - leads to fragmentation. (Give example from Boehm GC, simplified
+source code.)
 
 
 \subsection{Richer Metadata}
@@ -187,6 +193,7 @@ For example, we are able to fetch the
 size of the original allocation by querying the bounds of the capability
 value --- if we assume that the capability bounds map directly onto the
 allocated buffer size.
+\jeremy{also mention spare bits in object field? Can we use these?}
 
 In many allocators, this size metadata is crucial for ensuring the correct
 behaviour of \texttt{free} - which might need to query the size of its
@@ -211,7 +218,8 @@ cannot be represented directly as capability metadata and would need
 to be accessible via the base capability value, or in a separate privileged space.
 There might be a security problem if this metadata is accessible (and modifiable) by client code.
 However if the capability bounds restrict access to this metadata, then there is a performance problem since the memory management subsystem somehow needs to upgrade user-visible capabilities in order to access metadata fields.
-\jeremy{Is this what snmalloc does?}
+\jeremy{Is this what snmalloc does? - Yes, David Chisnall refers to this as
+\emph{amplification}}
 
 \paragraph{Elevated permissions}
 
