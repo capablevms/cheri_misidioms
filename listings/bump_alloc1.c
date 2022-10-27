@@ -10,8 +10,8 @@ void* malloc(size_t size) {
         heap_start = mmap(NULL, HEAP_SIZE,
                 PROT_READ | PROT_WRITE,
                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	heap_current = heap_start;
-	heap_end = heap_start + HEAP_SIZE;
+        heap_current = heap_start;
+        heap_end = heap_start + HEAP_SIZE;
     }
     // FIXME - should we check mmap returns valid pointer?
     if (heap_current+size < heap_end) {
@@ -21,7 +21,7 @@ void* malloc(size_t size) {
     return new_ptr;
 }
 
-void free(void *ptr) { }
+void free(void *ptr) { assert(0); }
 
-// FIXME - this is incorrect semantics!
-void* realloc(void *ptr, size_t size) { return malloc(size); }
+void* realloc(void* p, size_t size) { return malloc(size); }
+

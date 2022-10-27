@@ -29,14 +29,13 @@ ubiquitous because they allow us to write programs that are generic over a
 variety of memory usage patterns. Security flaws in allocators thus tend
 to have significant and widespread consequences.
 
-We show that it is surprisingly difficult to make a `secure'
-allocator for pure capability CHERI. We first show the basic problems with
-a simple bump-pointer allocator example
-(Section~\ref{sec:bumppointerallocator}). We then examine~\alloccount{} existing
-allocators that have been ported to CHERI
-(Section~\ref{sec:cheriallocators}). Finally we introduce and name~\allocbugs{}
+We show that it is surprisingly difficult to make a `secure' allocator for pure
+capability CHERI\@. We first show the basic problems with a simple bump-pointer
+allocator example (\autoref{sec:bumppointerallocator}). We then
+examine~\alloccount{} existing allocators that have been ported to CHERI
+(\autoref{sec:cheriallocators}). Finally we introduce and name~\allocbugs{}
 simple `attacks' on pure capability memory allocators, showing that most of the
-allocators are vulnerable to most of the attacks (Section~\ref{sec:atk}).
+allocators are vulnerable to most of the attacks (\autoref{sec:atk}).
 
 
 \section{Background}
@@ -112,57 +111,56 @@ environment that might affect an allocator, that we can think of?}
 
 %% general intro text
 
-Since memory allocators are critical to modern software performance,
-they are highly optimised --- and, consequently, often
-difficult to understand in detail. In this section we explore a trivial
-allocator \bumpalloc which allows us to consider the major
-implementation issues
-relevant to this paper, in terms of capabilities.
+Since modern memory allocators are critical to software performance, they are
+highly optimised --- and, consequently, often difficult to understand in
+detail. In this section we explore a trivial allocator \bumpalloc which allows
+us to consider the major implementation issues relevant to this paper, in terms
+of capabilities.
 
-Some memory management design patterns recur in a wide variety of
-allocators. The complexity of capabilities means the incorporation of these patterns
-must be scrutinized with capabilities in mind, in order to ensure minimal
-burden is placed on developers. Jones et al.\ (cite GC handbook) outline many
-of these design patterns from a pragmatic perspective.
-In this section, we discuss some of the
-issues we have identified and how they might cause potential
-challenges in a capability-aware context.
+Some memory management design patterns recur in a wide variety of allocators.
+The complexity of capabilities means the incorporation of these patterns must
+be scrutinized with capabilities in mind, in order to ensure minimal burden is
+placed on developers. Jones et al.\ (cite GC handbook) outline many of these
+design patterns from a pragmatic perspective.  In this section, we discuss some
+of the issues we have identified and how they might cause potential challenges
+in a capability-aware context.
 
 \subsection{Bare-bones Bump Pointer}
 
 \lstinputlisting[language=C, caption={A very basic, but usable, non-capability
-bump pointer allocator.\laurie{ideally we'd actually
-have running test code for each example to keep us honest.}},
+bump pointer allocator.},
 label=lst:bump_alloc]{listings/bump_alloc1.c}
 
-A very basic version of \bumpalloc is shown in Listing~\ref{lst:bump_alloc}.
-\texttt{malloc} always returns a new chunk if memory is available, otherwise it returns \texttt{NULL}, while \texttt{free} is a
-no-op and \texttt{realloc} is aliased to \texttt{malloc}.
-\jeremy{FIXME - realloc semantics incorrect}
+A very basic version of \bumpalloc is shown in~\autoref{lst:bump_alloc}.  In
+this implementation, \fnc{malloc} always returns a new chunk if memory is
+available, otherwise it returns \texttt{NULL}, while \texttt{free} is a no-op
+and \fnc{realloc} is aliased to \fnc{malloc}.
+%% FIXME realloc semantics incorrect!
 
-This code initially reserves a large chunk of memory using a single \texttt{mmap} call then doles out successive small chunks on \texttt{malloc}
-calls. The bump pointer moves through the initially allocated chunk until
-it reaches the upper limit at which point the memory is exhausted.
+This code initially reserves a large chunk of memory using a single
+\fnc{mmap} call then doles out successive small chunks on \fnc{malloc}
+calls. The bump pointer moves through the initially allocated chunk until it
+reaches the upper limit at which point the memory is exhausted.
 
 
 \subsection{Capability Bounds}
 
-When this allocator code is compiled and executed on a capability platform, the values returned by \texttt{malloc} will share the same capability metadata as the
-capability returned by the original \texttt{mmap} call, in particular the page-granular bounds.
-We can tighten the bounds for each \texttt{malloc} return value by
-deriving a new capability with updated base and bounds,
-using CHERI intrinsic functions.
+When this allocator code is compiled and executed on a capability platform, the
+values returned by \fnc{malloc} will share the same capability metadata as the
+capability returned by the original \fnc{mmap} call, in particular the
+page-granular bounds.  We can tighten the bounds for each \fnc{malloc} return
+value by deriving a new capability with updated base and bounds.
+% using CHERI intrinsic functions.
 % like \texttt{cheri\_address\_set} and \texttt{cheri\_bounds\_set}.
 
-\lstinputlisting[language=C, caption={Bump pointer allocator that returns bounded capability values to client code.\laurie{ideally we'd actually
-have running test code for each example to keep us honest.}},
+\lstinputlisting[language=C, caption={Bump pointer allocator that returns
+bounded capability values to client code.},
 label=lst:bump_alloc2]{listings/bump_alloc2.c}
 
-
-Listing \ref{lst:bump_alloc2} shows how such derived capabilities can be calculated.
-Note there is complex capability value logic required to ensure the bounds are representable as a
-compressed capability. We pad to ensure the malloc buffer is at least as large as it needs to be.
-
+\autoref{lst:bump_alloc2} shows how such derived capabilities can be
+calculated. Note there is complex capability value logic required to ensure
+the bounds are representable as a compressed capability. We pad to ensure the
+malloc buffer is at least as large as it needs to be.
 
 \subsection{Temporal Safety Issues}
 From a security perspective, after a successful \fnc{realloc} call,
@@ -172,21 +170,28 @@ of a software developer working with such a simple allocator implementation,
 leading to potential capability leakage, thus undermining the security
 guarantees of capabilities.
 
+One method of overcoming temporal issues could be \emph{capability revocation}.
+Ideally, we could revoke a capability that has gone ``out of scope'' (perhaps
+by invalidating the tag bit), such that any attempt to use that capability
+would lead to a trap. However, as there is no record of how capabilities are
+used and copied, there is no way of tracking where capabilities that have to be
+revoked end up, without fully scanning memory. As this is a fairly expensive
+operation, alternative measures need to be found to enhance temporal safety.
 
 \subsection{Memory coalescing}
 
-\andrei{can`t combine two capabilities into one, as they are monotonic -
-affects performance. Could potentially use super-capabilities, which might
-undermine security}
-
-Give source code - if we own two capabilities that are adjacent in memory,
-it is not possible to combine them into a single capability ...
-Problem - leads to fragmentation. (Give example from Boehm GC, simplified
-source code.)
-
+One important functionality of memory allocators is \emph{memory coalescing}.
+As a program operates, deallocating objects leads to there being unused gaps in
+memory. In order to maximize memory access performance, via locality and cache
+coherence, it is desirable to have memory usage be as dense as possible. Thus,
+an allocator would like to move objects in memory to maximize density. However,
+after allocation, an object only has access to the initial allocated memory
+space. In order for an allocator to move the object, it would need to generate
+itself a new capability. This would mean giving the allocator greater
+permissions to memory, which could undermine security if the allocator itself
+would become the target of an adversary.
 
 \subsection{Richer Metadata}
-
 One advantage of using capabilities instead of traditional pointers
 is the additional metadata held within the capability.
 For example, we are able to fetch the
@@ -200,26 +205,36 @@ behaviour of \texttt{free} - which might need to query the size of its
 capability argument in order to determine which free list this buffer should
 be appended to, or how many words of memory can be marked as unused.
 
-Classical allocators such as \textit{dlmalloc} actually store this size metadata
-inline with the pointer - at a fixed offset from the pointer base. This is
-a constant space overhead for each allocation. Now with capability metadata,
-allocator metadata can be `shared' with capability metadata, so long as the size matches the bounds.
+Classical allocators, such as \textit{dlmalloc}, actually store this size
+metadata in-line with the pointer - at a fixed offset from the pointer base.
+This is a constant space overhead for each allocation. Now with capability
+metadata, allocator metadata can be `shared' with capability metadata, so long
+as the size matches the bounds.
 
 This assumption could be violated in certain circumstances, for instance:
 \begin{itemize}
-\item if the allocated buffer size is not properly representable in the capability metadata, because of the CHERI compression scheme. The solution to this problem is to ensure that all allocatable sizes are representable, which might mean padding some allocations to a larger representable size.
-\item if the client code (the malloc caller) is able to modify the capability metadata, perhaps to reduce the bounds of the capability value. The solution is to ensure that only capability values returned directly from malloc are allowed to be arguments to free calls. (Indeed, this is the standard assumption in existing non-capability C programs.)
+\item if the allocated buffer size is not properly representable in the
+    capability metadata, because of the CHERI compression scheme. The solution
+    to this problem is to ensure that all allocatable sizes are representable,
+    which might mean padding some allocations to a larger representable size.
+\item if the client code (the \fnc{malloc} caller) is able to modify the
+    capability metadata, perhaps to reduce the bounds of the capability value.
+    The solution is to ensure that only capability values returned directly
+    from \fnc{malloc} are allowed to be arguments to free calls. (Indeed, this
+    is the standard assumption in existing non-capability C programs.)
 \end{itemize}
 
-
-Sometimes, additional potential metadata (e.g.\ marking colour data)
-required by the memory manager (garbage collector)
-cannot be represented directly as capability metadata and would need
-to be accessible via the base capability value, or in a separate privileged space.
-There might be a security problem if this metadata is accessible (and modifiable) by client code.
-However if the capability bounds restrict access to this metadata, then there is a performance problem since the memory management subsystem somehow needs to upgrade user-visible capabilities in order to access metadata fields.
+Sometimes, additional potential metadata (e.g.\ marking colour data) required
+by the memory manager (garbage collector) cannot be represented directly as
+capability metadata and would need to be accessible via the base capability
+value, or in a separate privileged space.  There might be a security problem if
+this metadata is accessible (and modifiable) by client code. However if the
+capability bounds restrict access to this metadata, then there is a performance
+problem since the memory management subsystem somehow needs to upgrade
+user-visible capabilities in order to access metadata fields.
 \jeremy{Is this what snmalloc does? - Yes, David Chisnall refers to this as
 \emph{amplification}}
+
 
 \paragraph{Elevated permissions}
 
@@ -274,7 +289,9 @@ Kingsley's \textit{BSD malloc} (\laurie{say something about it -- I don't even
 know what it is and I'm a fully paid-up member of the BSD cult!}), and the two
 unnamed allocators inside the libc alternatives \textit{newlib} and
 \textit{Musl}. As a baseline we show a trivial \textit{bump-pointer
-allocator} of our own devising.
+allocator} of our own devising.\andrei{Is `snmalloc` not part of this
+experiment? I think they have a decent CHERI port. Also, can I find the
+data/scripts for this experiment somewhere?}
 
 At least two other memory allocators have been partly ported to CHERI: the
 conservative garbage collector \textit{Boehm-Demers-Weiser} garbage collector
@@ -296,26 +313,28 @@ some design ideas, or even some functionality to add to our comparison?}.
 			 &       &        & LoC & \multicolumn{1}{c}{\%} \\
       \midrule
       jemalloc           &       & 39,059 & 116 & 0.30\% \\
-      libmalloc-simple   &       & 680    & 43  & 6.32\% \\
+      libmalloc-simple\andrei{Is this BSD malloc?}   &       & 680    & 43  & 6.32\% \\
       musl-libc          &       & 72,177 & 624 & 0.87\% \\
       newlib stdlib      &       & 26,041 & 83  & 0.32\%\\
       \bottomrule
     \end{tabular}
   \end{center}
-  \label{tab:allocator_summary}
   \caption{The allocators we examined, their size in Source Lines of Code
   (SLoC), and the number of lines changed to adapt them for pure capability
   CheriBSD.\laurie{jeremy: we need to include the version number for each
   allocator (or, at least, a git hash or similar) so that people can
-  reproduce our study.}\laurie{shouldn't bsdmalloc be in this table too?}}
+  reproduce our study.}\laurie{shouldn't bsdmalloc be in this table
+    too?}}
+  \label{tab:allocator_summary}
 \end{table}
 
 How difficult is it to port a standard memory allocator to pure capability
-CheriBSD? In this section we briefly examine several existing allocators.
-Table~\ref{tab:allocator_summary} shows the allocators we consider, their size,
-and the quantity and proportion of lines changed for the CHERI port.
+CheriBSD\@? In this section we briefly examine several existing allocators. We
+show the allocators we consider in \autoref{tab:allocator_summary}, as well as
+their size, and the quantity and proportion of lines changed for the CHERI
+port.
 
-As Table~\ref{tab:allocator_summary} shows, with the exception of the extremely
+As \autoref{tab:allocator_summary} shows, with the exception of the extremely
 small libmalloc-simple, the pure capability CheriBSD ports require around
 0.3-0.9\% of lines to be changed. This is an order of magnitude bigger than the
 0.026\% lines changed for porting a desktop environment (including X11 and
@@ -340,10 +359,10 @@ plus another four that are Morello-specific. In addition, the CHERI port of
 LLVM introduces three generic builtins for managing alignment, which we do not
 count as CHERI features for this analysis. Three of the memory allocators we
 study -- newlib, Musl and Trivial -- make use of this
-"builtin" API.
+"builtin" API\@.
 
-Another API is provided by \texttt{cheric.h}. This is considered to be a
-legacy, deprecated API. However, it is still in use, including by two of the
+Another API is provided by \filename{cheric.h}. This is considered to be a
+legacy, deprecated API\@. However, it is still in use, including by two of the
 memory allocators we study (BSD malloc and jemalloc). \texttt{cheric.h}
 provides 63 functions (or function-like macros), 29 of which are implemented as
 trivial pass-throughs to compiler builtins. Several of the remaining 34
@@ -354,21 +373,22 @@ functions are fairly complicated compound operations. For example,
 (\texttt{\_\_cheri\_*}), but we disregard both subsets for this analysis.
 
 \jacob{We should analyse how many of the cheric.h calls are to pass-through
-functions, because they'll be easy to compare with cheriintrin.h etc.}
+functions, because they'll be easy to compare with cheriintrin.h
+etc.}\andrei{What is a pass-through function? I can have a look}
 
-The current preferred API is \texttt{cheriintrin.h}, which provides 34
+The current preferred API is \filename{cheriintrin.h}, which provides 34
 functions (or function-like macros), of which the vast majority (30) map
 directly onto builtins, and the remaining four are very simple wrappers.
 
 \jacob{Do we study anything using \texttt{cheriintrin.h}?}
+\andrei{Add links/versions of these CHERI APIs we mention}
 
-For each of the allocators, we inspect the source code
-to count the number of distinct CHERI API calls. Note that if the same function is called in multiple source code locations, we only count it once.
-This gives us a static measure of API coverage, for each allocator.
-Table \ref{tab:rq1} shows the results, indicating that some allocators
-have a broader spread of API calls.
-\emph{What does this imply?}
-\emph{What are the API calls doing?}
+For each of the allocators, we inspect the source code to count the number of
+distinct CHERI API calls. Note that if the same function is called in multiple
+source code locations, we only count it once.  This gives us a static measure
+of API coverage, for each allocator. \autoref{tab:rq1} shows the results,
+indicating that some allocators have a broader spread of API calls. \emph{What
+does this imply?} \emph{What are the API calls doing?}
 
 
 \begin{table}
@@ -424,8 +444,8 @@ When we survey existing CHERI memory allocators `in-the-wild', we
 see that they currently provide support for spatial memory safety
 on the heap.
 
-In terms of the Common Weakness Enumeration (CWE, cite), all the allocators we
-surveyed only mitigate CWE-125: Out-of-bounds
+In terms of the Common Weakness Enumeration (CWE \andrei{cite}), all the
+allocators we surveyed only mitigate CWE-125: Out-of-bounds
 Read~\footnote{\url{https://cwe.mitre.org/data/definitions/125.html}} and
 CWE-787: Out-of-bounds
 Write~\footnote{\url{https://cwe.mitre.org/data/definitions/787.html}}, for
@@ -467,7 +487,7 @@ We audited the default memory allocator on CheriBSD, \emph{jemalloc}, as well
 as Kingsley`s simple BSD allocator \andrei{Is this what `BSD simple` in the
 table means?}. We were able to identify \allocbugs{} bugs with respect to
 including capabilities in the two allocators. The presence of these bugs in
-both of the allocators is shown in~\ref{tab:atks}.
+both of the allocators is shown in~\autoref{tab:atks}.
 
 Conceptually, the capability memory allocator vulnerabilities we identified
 come in two flavours: the allocator can initially hand out more permissions
@@ -580,7 +600,7 @@ architectures have different bounds representations and permissions.
 \subsection{\narrowwiden: Narrowing then widening}
 
 Assuming that a child capability with narrow bounds has been derived while
-respecting the issues raised in \narrowingdoesnt (\ref{sec:narrow}), it may
+respecting the issues raised in \narrowingdoesnt (\autoref{sec:narrow}), it may
 seem that our issues with capability bounds are over. However, if one later
 widens those bounds again, one may unintentionally leak secrets.
 
@@ -764,7 +784,7 @@ up-front costs, but requires wasting memory for every object, even if no
 future capability will ever have bounds covering it.
 
 Third, one can abort execution if bounds cannot be precisely represented. The
-\fnc{cheri\_bounds\_set\_exact} is a `safe` variant of
+\fnc{cheri\_bounds\_set\_exact} is a `safe' variant of
 \fnc{cheri\_bounds\_set} which raises an error if bounds cannot be precisely
 represented. We would prefer to see this be the standard bounds-setting
 function, with a \fnc{cheri\_bounds\_set\_unsafe} variant allowing the
@@ -784,7 +804,7 @@ permitted, so we can write assertions in our \texttt{realloc} implementation, et
 \laurie{is this possible?}
 \jacob{Not when used in the obvious way (e.g. dereferencing), but extreme
 (65-bit) bounds behave in non-portable ways when queried explicitly, e.g.
-saturating on Morello, and this isn't obvious in the CHERI API. This makes
+saturating on Morello, and this isn't obvious in the CHERI API\@. This makes
 manually testing the bounds difficult.}
 \laurie{interesting! can we make a simple code example which shows this?}
 

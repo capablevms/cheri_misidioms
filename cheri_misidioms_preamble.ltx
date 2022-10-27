@@ -27,6 +27,7 @@
 \newcommand{\fnc}[1]{\texttt{#1}}
 \newcommand{\alloccount}{{\color{red} TODO}}
 \newcommand{\allocbugs}{{\color{red} TODO}}
+\newcommand{\filename}[1]{\texttt{#1}}
 
 % from https://tex.stackexchange.com/questions/264361/skipping-line-numbers-in-lstlisting#264373
 \let\origthelstnumber\thelstnumber
@@ -38,6 +39,7 @@
     }%
 }
 
+\renewcommand{\sectionautorefname}{Section}
 
 \newcommand\bumpalloc{\emph{bmpalloc}\xspace}
 
@@ -47,4 +49,4 @@
 \newcommand\myundef{\textsc{Undef}\xspace}
 
 \title{Pure Capability Memory Allocators Are Hard to Secure}
-\author{Jacob Bramley, Jeremy Singer, Laurence Tratt}
+\author{Jacob Bramley, Andrei Lascu, Jeremy Singer, Laurence Tratt}
