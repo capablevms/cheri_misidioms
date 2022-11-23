@@ -1,0 +1,11 @@
+{
+    "install":
+    {
+        "mode": "cheribuild",
+        "target": "cheribsd-morello-purecap",
+        "source": "$HOME/cheri/cheribsd/contrib/jemalloc"
+    },
+    "repo": "https://github.com/CTSRD-CHERI/cheribsd",
+    "commit": "cc4e4c0553bb375d14f3c2e2513c20404fc2a748",
+    "date": "2022-11-21"
+}

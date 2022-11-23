@@ -1,0 +1,12 @@
+{
+    "install":
+    {
+        "mode": "pkg64c",
+        "target": "ptmalloc",
+        "version": "3.0_2",
+        "lib_file": "/usr/local/lib/libptmalloc.so.3"
+    },
+    "repo": "https://github.com/CTSRD-CHERI/cheribsd-ports/tree/main/devel/ptmalloc",
+    "commit": "90f12ce9319dcbda9d3403fb3dd2bab585c7f7bb",
+    "date": "2022-10-20"
+}

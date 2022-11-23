@@ -1,0 +1,13 @@
+{
+    "install":
+    {
+        "mode": "cheribuild",
+        "target": "cheribsd-morello-purecap",
+        "source": "$HOME/cheri/cheribsd/lib/libmalloc_simple",
+        "lib_file": "/usr/lib/libmalloc_simple.so.1",
+        "no_copy": true
+    },
+    "repo": "https://github.com/CTSRD-CHERI/cheribsd",
+    "commit": "621751074f8feaafb270c4699a7f1380bca41f23",
+    "date": "2022-11-21"
+}

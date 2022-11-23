@@ -1,6 +1,0 @@
-# Get SLoC
-cd <alloc_dir> && cloc
-
-# Get LoC diff
-cd <alloc_dir> && cloc --diff <base_commit> <cheri_commit>
-

@@ -1,0 +1,11 @@
+{
+    "install":
+    {
+        "mode": "repo",
+        "repo": "https://git.morello-project.org/morello/newlib/",
+        "commit": "67fd37136e44556cd0395a3b8ccdad81766e5622",
+        "lib_file": false,
+        "build_file": false
+    },
+    "date": "2022-10-27"
+}

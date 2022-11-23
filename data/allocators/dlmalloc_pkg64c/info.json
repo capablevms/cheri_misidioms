@@ -1,0 +1,12 @@
+{
+    "install":
+    {
+        "mode": "pkg64c",
+        "target": "dlmalloc",
+        "version": "2.8.6",
+        "lib_file": "/usr/local/lib/libdlmalloc.so.2"
+    },
+    "repo": "https://github.com/CTSRD-CHERI/cheribsd-ports/tree/main/devel/dlmalloc",
+    "commit": "90f12ce9319dcbda9d3403fb3dd2bab585c7f7bb",
+    "date": "2022-10-20"
+}

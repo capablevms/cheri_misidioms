@@ -1,0 +1,17 @@
+{
+    "install":
+    {
+        "mode": "cheribuild",
+        "target": "dlmalloc-morello-purecap",
+        "source": "$HOME/cheri/dlmalloc/",
+        "commit": "9cfbb1697b369ee6827684091eb3d8f26903e27d",
+        "lib_file": "libdlmalloc_nonreuse.so",
+        "build_file": "build.sh"
+    },
+    "file": "pycheribuild/projects/cross/dlmalloc.py",
+    "repo": "https://github.com/CTSRD-CHERI/cheribsd-ports/tree/main/devel/libdlmalloc",
+    "commit": "9cfbb1697b369ee6827684091eb3d8f26903e27d",
+    "date": "2022-11-11"
+}
+
+
