@@ -1,3 +1,7 @@
+#include <assert.h>
+#include <stddef.h>
+#include <sys/mman.h>
+
 void* heap_start = NULL; // FIXME - do we need to retain start address?
 void* heap_current = NULL; // the bump pointer
 void* heap_end = NULL;
