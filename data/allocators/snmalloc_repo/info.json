@@ -4,8 +4,8 @@
         "mode": "repo",
         "repo": "https://github.com/microsoft/snmalloc",
         "commit": "0a5eb403adf85b3e04ad90e6b44e0cb1de99ba38",
-        "lib_file": false,
-        "build_file": false
+        "lib_file": "./build/libsnmallocshim.so",
+        "build_file": "build.sh"
     },
     "date": "2022-11-21"
 }

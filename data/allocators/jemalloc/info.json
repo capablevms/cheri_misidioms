@@ -3,7 +3,9 @@
     {
         "mode": "cheribuild",
         "target": "cheribsd-morello-purecap",
-        "source": "$HOME/cheri/cheribsd/contrib/jemalloc"
+        "commit": "cc4e4c0553bb375d14f3c2e2513c20404fc2a748",
+        "source": "$HOME/cheri/cheribsd/contrib/jemalloc",
+        "lib_file": "$WORK/cheribuild/output/rootfs-morello-purecap/usr/lib64/libc.so.7"
     },
     "repo": "https://github.com/CTSRD-CHERI/cheribsd",
     "commit": "cc4e4c0553bb375d14f3c2e2513c20404fc2a748",

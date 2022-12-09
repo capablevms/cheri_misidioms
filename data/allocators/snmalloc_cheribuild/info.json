@@ -5,7 +5,7 @@
         "target": "snmalloc-morello-purecap",
         "source": "$HOME/cheri/snmalloc/",
         "commit": "888d182baccb3288e41172fec3e0501158418613",
-        "lib_file": "build/libsnmallocshim.so",
+        "lib_file": "./build/libsnmallocshim.so",
         "build_file": "build.sh"
     },
     "file": "pycheribuild/projects/cross/snmalloc.py",

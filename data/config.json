@@ -9,7 +9,6 @@
     "cheri_api_path": "/home/cheriworker/workspace/mem_alloc/apis.json",
     "cheri_qemu_port": 10086,
     "cheri_qemu_test_folder": "/root/tests",
-    "cheri_qemu_test_exec_template": "exec_XXX",
     "cheri_qemu_test_script_path": "/home/cheriworker/workspace/mem_alloc/run_tests.sh",
     "data_get_script_path": "./get_data.py",
     "tests_folder": "/home/cheriworker/workspace/mem_alloc/code",
