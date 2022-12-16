@@ -1,0 +1,154 @@
+# The builtin names and prototypes described in this file come from the CHERI
+# port of LLVM (cited in the "reference" section below). These are used under
+# the terms of the "BSD-2-Clause" licence.
+#
+# Copyright statements from respective files:
+#
+#   ==== cheriintrin.h ====
+#   Copyright 2018-2020 Alex Richardson
+#   All rights reserved.
+#
+# Licence text (common to all included files):
+#
+#   Redistribution and use in source and binary forms, with or without
+#   modification, are permitted provided that the following conditions
+#   are met:
+#   1. Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#   2. Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#
+#   THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+#   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#   ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+#   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+#   OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+#   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+#   SUCH DAMAGE.
+#
+# Modifications, including the structured representation and annotations, are
+# provided under the same licence, with copyright held as follows:
+#
+# SPDX-FileCopyrightText: Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
+[apis.cheriintrin]
+name = "cheriintrin.h"
+project = { name = "LLVM (CHERI)", url = "https://github.com/CTSRD-CHERI/llvm-project" }
+licence = "BSD-2-Clause"
+reference = [
+    "https://github.com/CTSRD-CHERI/llvm-project/blob/9b0de986344f291265c48249e4cb420bf948305c/clang/lib/Headers/cheriintrin.h",
+]
+dependencies = [ "builtins" ]
+
+[apis.cheriintrin.fns.cheri_address_get]
+equiv = "__builtin_cheri_address_get"
+
+[apis.cheriintrin.fns.cheri_address_set]
+equiv = "__builtin_cheri_address_set"
+
+[apis.cheriintrin.fns.cheri_base_get]
+equiv = "__builtin_cheri_base_get"
+
+[apis.cheriintrin.fns.cheri_length_get]
+equiv = "__builtin_cheri_length_get"
+
+[apis.cheriintrin.fns.cheri_offset_get]
+equiv = "__builtin_cheri_offset_get"
+
+[apis.cheriintrin.fns.cheri_offset_set]
+equiv = "__builtin_cheri_offset_set"
+
+[apis.cheriintrin.fns.cheri_tag_clear]
+equiv = "__builtin_cheri_tag_clear"
+
+[apis.cheriintrin.fns.cheri_tag_get]
+equiv = "__builtin_cheri_tag_get"
+
+[apis.cheriintrin.fns.cheri_is_valid]
+equiv = "__builtin_cheri_tag_get"
+
+[apis.cheriintrin.fns.cheri_is_invalid]
+basis = [ "cheri_is_valid" ]
+notes = "Simple inversion."
+
+[apis.cheriintrin.fns.cheri_is_equal_exact]
+equiv = "__builtin_cheri_equal_exact"
+
+[apis.cheriintrin.fns.cheri_is_subset]
+equiv = "__builtin_cheri_subset_test"
+
+[apis.cheriintrin.fns.cheri_representable_length]
+equiv = "__builtin_cheri_round_representable_length"
+
+[apis.cheriintrin.fns.cheri_representable_alignment_mask]
+equiv = "__builtin_cheri_representable_alignment_mask"
+
+[apis.cheriintrin.fns.cheri_bounds_set]
+equiv = "__builtin_cheri_bounds_set"
+
+[apis.cheriintrin.fns.cheri_bounds_set_exact]
+equiv = "__builtin_cheri_bounds_set_exact"
+
+[apis.cheriintrin.fns.cheri_type_get]
+equiv = "__builtin_cheri_type_get"
+
+[apis.cheriintrin.fns.cheri_is_sealed]
+equiv = "__builtin_cheri_sealed_get"
+
+[apis.cheriintrin.fns.cheri_is_sentry]
+basis = [ "__builtin_cheri_type_get" ]
+
+[apis.cheriintrin.fns.cheri_is_unsealed]
+basis = [ "__builtin_cheri_sealed_get" ]
+
+[apis.cheriintrin.fns.cheri_sentry_create]
+equiv = "__builtin_cheri_seal_entry"
+
+[apis.cheriintrin.fns.cheri_seal]
+equiv = "__builtin_cheri_seal"
+
+[apis.cheriintrin.fns.cheri_unseal]
+equiv = "__builtin_cheri_unseal"
+
+[apis.cheriintrin.fns.cheri_perms_get]
+equiv = "__builtin_cheri_perms_get"
+notes = "Adds lossless cast to `cheri_perms_t`."
+
+[apis.cheriintrin.fns.cheri_perms_and]
+equiv = "__builtin_cheri_perms_and"
+notes = "Adds argument cast, lossless for all valid values."
+
+[apis.cheriintrin.fns.cheri_perms_clear]
+basis = ["__builtin_cheri_perms_and"]
+notes = "Inverts (and casts) arguemnt."
+
+[apis.cheriintrin.fns.cheri_ddc_get]
+equiv = "__builtin_cheri_global_data_get"
+
+[apis.cheriintrin.fns.cheri_pcc_get]
+equiv = "__builtin_cheri_program_counter_get"
+
+[apis.cheriintrin.fns.cheri_flags_get]
+equiv = "__builtin_cheri_flags_get"
+
+[apis.cheriintrin.fns.cheri_flags_set]
+equiv = "__builtin_cheri_flags_set"
+
+[apis.cheriintrin.fns.cheri_tags_load]
+equiv = "__builtin_cheri_cap_load_tags"
+
+[apis.cheriintrin.fns.cheri_align_up]
+equiv = "__builtin_align_up"
+
+[apis.cheriintrin.fns.cheri_align_down]
+equiv = "__builtin_align_down"
+
+[apis.cheriintrin.fns.cheri_is_aligned]
+equiv = "__builtin_is_aligned"
