@@ -3,10 +3,9 @@
     {
         "mode": "cheribuild",
         "target": "snmalloc-morello-purecap",
-        "source": "$HOME/cheri/snmalloc/",
+        "source": "$WORK/cheribuild/snmalloc/",
         "commit": "888d182baccb3288e41172fec3e0501158418613",
-        "lib_file": "./build/libsnmallocshim.so",
-        "build_file": "build.sh"
+        "lib_file": "$WORK/cheribuild/build/snmalloc-morello-purecap-build/libsnmallocshim.so"
     },
     "file": "pycheribuild/projects/cross/snmalloc.py",
     "repo": "https://github.com/nwf/snmalloc",

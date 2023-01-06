@@ -1,17 +1,14 @@
 {
-    "cheribsd_cc": "$HOME/cheri/output/morello-sdk/bin/clang",
+    "cheribsd_cc": "$WORK/cheribuild/output/morello-sdk/bin/clang",
     "cheribsd_cflags": "--config cheribsd-morello-purecap",
-    "cheribsd_cxx": "$HOME/cheri/output/morello-sdk/bin/clang++",
+    "cheribsd_cxx": "$WORK/cheribuild/output/morello-sdk/bin/clang++",
     "cheribsd_cxxflags": "--config cheribsd-morello-purecap",
-    "cheribsd_ld": "$HOME/cheri/output/morello-sdk/bin/clang",
+    "cheribsd_ld": "$HOME/cheribuild/output/morello-sdk/bin/clang",
     "cheribuild_folder": "/home/cheriworker/cheribuild",
-    "cheribuild_output_folder": "/home/cheriworker/cheri/output",
-    "cheri_api_path": "/home/cheriworker/workspace/mem_alloc/apis.json",
+    "cheri_api_path": "$CWD/apis.json",
     "cheri_qemu_port": 10086,
     "cheri_qemu_test_folder": "/root/tests",
-    "cheri_qemu_test_script_path": "/home/cheriworker/workspace/mem_alloc/run_tests.sh",
-    "data_get_script_path": "./get_data.py",
-    "tests_folder": "/home/cheriworker/workspace/mem_alloc/code",
-    "allocators_folder": "/home/cheriworker/workspace/mem_alloc"
-
+    "data_get_script_path": "$CWD/get_data.py",
+    "tests_folder": "$CWD/code",
+    "allocators_folder": "$CWD/allocators"
 }
