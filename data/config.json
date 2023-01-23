@@ -4,7 +4,7 @@
     "cheribsd_cxx": "$WORK/cheribuild/output/morello-sdk/bin/clang++",
     "cheribsd_cxxflags": "--config cheribsd-morello-purecap",
     "cheribsd_ld": "$HOME/cheribuild/output/morello-sdk/bin/clang",
-    "cheribuild_folder": "/home/cheriworker/cheribuild",
+    "cheribuild_folder": "$HOME/cheribuild",
     "cheri_api_path": "$CWD/apis.json",
     "cheri_qemu_port": 10086,
     "cheri_qemu_test_folder": "/root/tests",

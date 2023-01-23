@@ -1,0 +1,16 @@
+\begin{table}[t]
+\begin{center}
+\begin{tabular}{lcccccccc}
+\toprule
+ & \tblnarrowrealloc & \tblvalidate & \tblunrepresentablelength & \tblnarrow & \tblprivesctwo & \tblnarrowwiden & \tblundef & \tblprivesc\\
+\midrule
+jemalloc & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark\\
+libmalloc-simple & \checkmark & \checkmark & \checkmark & \checkmark & $\times$ & \checkmark & \checkmark & \checkmark\\
+libxalloc & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark\\
+dlmalloc-cheribuild & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & $\times$ & \checkmark
+\\ \bottomrule
+\end{tabular}
+\caption{Attacks which succeed on a given allocator are marked with a $\times$.}
+\label{tab:atks}
+\end{center}
+\end{table}

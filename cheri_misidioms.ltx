@@ -37,7 +37,6 @@ examine~\alloccount{} existing allocators that have been ported to CHERI
 simple `attacks' on pure capability memory allocators, showing that most of the
 allocators are vulnerable to most of the attacks (\autoref{sec:atk}).
 
-
 \section{Background}
 
 We assume high-level familiarity with capabilities (\cite{levy84capability}
@@ -304,29 +303,31 @@ some design ideas, or even some functionality to add to our comparison?}.
 \subsection{Existing CheriBSD allocators}
 \label{sec:rqs}
 
-\begin{table}[tb]
-  \begin{center}
-    \begin{tabular}{lllll}
-      \toprule
-      Allocator          & Version & SLoC & \multicolumn{2}{c}{Changed} \\
-      \cmidrule(lr){4-5}
-			 &       &        & LoC & \multicolumn{1}{c}{\%} \\
-      \midrule
-      jemalloc           &       & 39,059 & 116 & 0.30\% \\
-      libmalloc-simple\andrei{Is this BSD malloc?}   &       & 680    & 43  & 6.32\% \\
-      musl-libc          &       & 72,177 & 624 & 0.87\% \\
-      newlib stdlib      &       & 26,041 & 83  & 0.32\%\\
-      \bottomrule
-    \end{tabular}
-  \end{center}
-  \caption{The allocators we examined, their size in Source Lines of Code
-  (SLoC), and the number of lines changed to adapt them for pure capability
-  CheriBSD.\laurie{jeremy: we need to include the version number for each
-  allocator (or, at least, a git hash or similar) so that people can
-  reproduce our study.}\laurie{shouldn't bsdmalloc be in this table
-    too?}}
-  \label{tab:allocator_summary}
-\end{table}
+\input{./data/results/slocs.tex}
+
+%\begin{table}[tb]
+  %\begin{center}
+    %\begin{tabular}{lllll}
+      %\toprule
+      %Allocator          & Version & SLoC & \multicolumn{2}{c}{Changed} \\
+      %\cmidrule(lr){4-5}
+			 %&       &        & LoC & \multicolumn{1}{c}{\%} \\
+      %\midrule
+      %jemalloc           &       & 39,059 & 116 & 0.30\% \\
+      %libmalloc-simple\andrei{Is this BSD malloc?}   &       & 680    & 43  & 6.32\% \\
+      %musl-libc          &       & 72,177 & 624 & 0.87\% \\
+      %newlib stdlib      &       & 26,041 & 83  & 0.32\%\\
+      %\bottomrule
+    %\end{tabular}
+  %\end{center}
+  %\caption{The allocators we examined, their size in Source Lines of Code
+  %(SLoC), and the number of lines changed to adapt them for pure capability
+  %CheriBSD.\laurie{jeremy: we need to include the version number for each
+  %allocator (or, at least, a git hash or similar) so that people can
+  %reproduce our study.}\laurie{shouldn't bsdmalloc be in this table
+    %too?}}
+  %\label{tab:allocator_summary}
+%\end{table}
 
 How difficult is it to port a standard memory allocator to pure capability
 CheriBSD\@? In this section we briefly examine several existing allocators. We
@@ -390,23 +391,24 @@ of API coverage, for each allocator. \autoref{tab:rq1} shows the results,
 indicating that some allocators have a broader spread of API calls. \emph{What
 does this imply?} \emph{What are the API calls doing?}
 
+\input{./data/results/cheri_api.tex}
 
-\begin{table}
-  \begin{center}
-    \begin{tabular}{ccrr}
-    \toprule
-      \textbf{allocator} & \textbf{API} & \textbf{\# API calls} & \textbf{API coverage} \\
-      \midrule
-      BSD malloc & cheric & 10 & 10/57 \\
-      jemalloc & cheric & 11 & 11/57 \\
-      Musl & builtin & ?? 22 or 6 ?? & 6/37 \\
-      Newlib & builtin & 9 & 9/37 \\
-      Trivial & builtin & 3 & 3/37 \\ 
-      \bottomrule
-    \end{tabular}
-  \end{center}
-  \caption{\label{tab:rq1}Coverage of CHERI API calls by various allocators}
-\end{table}
+%\begin{table}
+  %\begin{center}
+    %\begin{tabular}{ccrr}
+    %\toprule
+      %\textbf{allocator} & \textbf{API} & \textbf{\# API calls} & \textbf{API coverage} \\
+      %\midrule
+      %BSD malloc & cheric & 10 & 10/57 \\
+      %jemalloc & cheric & 11 & 11/57 \\
+      %Musl & builtin & ?? 22 or 6 ?? & 6/37 \\
+      %Newlib & builtin & 9 & 9/37 \\
+      %Trivial & builtin & 3 & 3/37 \\ 
+      %\bottomrule
+    %\end{tabular}
+  %\end{center}
+  %\caption{\label{tab:rq1}Coverage of CHERI API calls by various allocators}
+%\end{table}
 
 \jacob{Ok, it's time for a difficult question, sorry! Basically, why are we
 asking this question (\textbf{RQ1}), and what are we hoping to learn from it?
@@ -464,24 +466,26 @@ vulnerabilities, mostly concerning temporal memory safety.
 \section{Attacking Pure Capability Memory Allocators}
 \label{sec:atk}
 
-\begin{table}[t]
-\begin{center}
-\begin{tabular}{lcc}
-  \toprule
-Attack            & BSD simple & jemalloc \\
-\midrule
-narrow            & $\times$   & $\times$ \\
-narrow\_realloc   & $\times$   & $\times$ \\
-narrow\_widen     & $\times$   & $\times$ \\
-privesc           & $\times$   & $\times$ \\
-privesc2          &            & $\times$ \\
-undef             & $\times$   & $\times$ \\
-\bottomrule
-\end{tabular}
-\caption{Attacks which succeed on a given allocator are marked with a $\times$.}
-\label{tab:atks}
-\end{center}
-\end{table}
+\input{./data/results/tests.tex}
+
+%\begin{table}[t]
+%\begin{center}
+%\begin{tabular}{lcc}
+%  \toprule
+%Attack            & BSD simple & jemalloc \\
+%\midrule
+%narrow            & $\times$   & $\times$ \\
+%narrow\_realloc   & $\times$   & $\times$ \\
+%narrow\_widen     & $\times$   & $\times$ \\
+%privesc           & $\times$   & $\times$ \\
+%privesc2          &            & $\times$ \\
+%undef             & $\times$   & $\times$ \\
+%\bottomrule
+%\end{tabular}
+%\caption{Attacks which succeed on a given allocator are marked with a $\times$.}
+%\label{tab:atks}
+%\end{center}
+%\end{table}
 
 We audited the default memory allocator on CheriBSD, \emph{jemalloc}, as well
 as Kingsley`s simple BSD allocator \andrei{Is this what `BSD simple` in the

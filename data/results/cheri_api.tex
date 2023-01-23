@@ -1,0 +1,21 @@
+\begin{table}[t]
+\begin{center}
+\begin{tabular}{lcrr}
+\toprule
+allocator & API & \# API calls & \# builtin calls \\
+\midrule
+musl-huawei & cheric & 40 & 24\\
+musl-morello & builtin & 22 & 22\\
+newlib & builtin & 8 & 8\\
+jemalloc & cheric & 12 & 0\\
+snmalloc-cheribuild & builtin & 7 & 7\\
+bump-alloc & cheriintrin & 10 & 8\\
+libmalloc-simple & cheric & 9 & 0\\
+snmalloc-repo & builtin & 9 & 9\\
+dlmalloc-cheribuild & builtin & 10 & 10
+\\ \bottomrule
+\end{tabular}
+\caption{\label{tab:rq1}Coverage of CHERI API calls by various allocators}
+\label{tab:atks}
+\end{center}
+\end{table}

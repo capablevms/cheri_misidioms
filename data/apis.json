@@ -1,19 +1,25 @@
 {
     "cheric":
     {
-        "path": [ "/home/cheriworker/output/morello-sdk/sysroot-morello-purecap/usr/include/cheri/cheric.h" ],
+        "path":
+        [
+            "$WORK/cheribuild/output/morello-sdk/sysroot-morello-purecap/usr/include/cheri/cheric.h"
+        ],
         "date": "2022-11-10"
     },
     "cheriintrin":
     {
-        "path": [ "/home/cheriworker/output/morello-sdk/lib/clang/13.0.0/include/cheriintrin.h" ],
+        "path":
+        [
+            "$WORK/cheribuild/output/morello-sdk/lib/clang/13.0.0/include/cheriintrin.h"
+        ],
         "date": "2022-11-10"
     },
     "builtin":
     {
         "path":
         [
-            "/home/cheriworker/cheri/morello-llvm-project/clang/include/clang/Basic/Builtins.def"
+            "$WORK/cheribuild/morello-llvm-project/clang/include/clang/Basic/Builtins.def"
         ],
         "date": "2022-11-11"
     }

@@ -10,7 +10,6 @@ import shlex
 import re
 import tempfile
 import time
-import signal
 import sys
 
 from fabric import Connection
@@ -35,10 +34,14 @@ cheri_builtin_fn_call_grep_pattern = "__builtin_cheri[[:alnum:]_]\+"
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--alloc", type=str, action='store', required=False,
         help="Optional path to allocator. If not given, runs over all allocators given in `config.json`.")
-arg_parser.add_argument("--local-dir", type=str, action='store', required=False,
+arg_parser.add_argument("--local-dir", type=str, action='store', default=None, required=False, metavar="path",
         help="Where to store local data, instead of generating a folder.")
-arg_parser.add_argument("--log-file", type=str, action='store', default='cheri_alloc.log',
+arg_parser.add_argument("--log-file", type=str, action='store', default='cheri_alloc.log', metavar="path",
         help="File to store log data to")
+arg_parser.add_argument("--no-build-cheri", action="store_true",
+        help="Whether to build CheriBSD and the QEMU image from scratch. Only set if `local-dir` is set with a pre-existing build within.")
+arg_parser.add_argument("--parse-data-only", action='store', default="", type=str, metavar="path",
+        help="Parse given results file to generate LaTeX tables.")
 args = arg_parser.parse_args()
 
 ################################################################################
@@ -71,6 +74,8 @@ def make_replace(path):
 
 def prepare_tests(tests_path, dest_path):
     test_sources = glob.glob(os.path.join(tests_path, "*.c"))
+    test_sources = [x for x in test_sources if not "test_bump_alloc" in x]
+    log_message(f"Found tests in {tests_path}: {test_sources}")
     assert(test_sources)
     tests = []
     compile_cmd = f"{os.path.join(work_dir_local, 'cheribuild', 'output', 'morello-sdk', 'bin', 'clang')} --std=c11 -Wall --config cheribsd-morello-purecap.cfg"
@@ -79,7 +84,6 @@ def prepare_tests(tests_path, dest_path):
         subprocess.run(shlex.split(compile_cmd) + ['-o', test, source])
         tests.append(test)
     subprocess.run(make_scp_cmd(" ".join(tests), f"{dest_path}"), check = True)
-    # subprocess.run(make_scp_cmd(f"{config['cheri_qemu_test_script_path']}", f"{config['cheri_qemu_test_folder']}"), check = True)
     return tests
 
 def get_config(to_get):
@@ -108,6 +112,11 @@ def read_apis(apis_path):
             else:
                 pattern = cheri_fn_grep_pattern
             for api_file in api_info[api]['path']:
+                api_file = parse_path(api_file)
+                if not os.path.exists(api_file):
+                    print(f"Could not find file {api_file}; exiting...")
+                    sys.exit(1)
+                log_message(f"Checking API file {api_file} for API {api}.")
                 fns = subprocess.check_output(make_grep_pattern_cmd(pattern, api_file), encoding = "UTF-8")
                 fns = fns.strip().split(os.linesep)
                 if api == "builtin":
@@ -119,19 +128,20 @@ def read_apis(apis_path):
 
 def log_message(msg):
     print(msg)
-    log_fd.write(msg)
-
-def ttou_handler(signum, frame):
-    print("Saw SIGTTOU; ignoring...")
+    log_fd.write(msg + '\n')
 
 ################################################################################
 # Main
 ################################################################################
 
 def prepare_cheri():
-    log_message(f"Building new QEMU instance in {work_dir_local}")
-    cmd = shlex.split(f"./cheribuild.py -d -f --source-root {work_dir_local}/cheribuild qemu disk-image-morello-purecap")
-    subprocess.run(cmd, cwd = get_config('cheribuild_folder'))
+    if args.no_build_cheri:
+        assert(args.local_dir)
+        assert(os.path.exists(args.local_dir))
+    else:
+        log_message(f"Building new QEMU instance in {work_dir_local}")
+        cmd = shlex.split(f"./cheribuild.py -d -f --source-root {work_dir_local}/cheribuild qemu disk-image-morello-purecap")
+        subprocess.run(cmd, cwd = get_config('cheribuild_folder'))
     artifact_path = os.path.join(work_dir_local, "cheribuild")
     assert(os.path.exists(os.path.join(artifact_path, "output", "sdk", "bin", "qemu-system-morello")))
     port = config['cheri_qemu_port']
@@ -144,7 +154,7 @@ def prepare_cheri():
         -netdev 'user,id=net0,smb={artifact_path}<<<source_root@ro:{artifact_path}/build<<<build_root:{artifact_path}/output<<<output_root@ro:{artifact_path}/output/rootfs-morello-purecap<<<rootfs,hostfwd=tcp::{port}-:22'
         -device virtio-rng-pci
     """
-    print(re.compile(r'\s+').sub(' ', qemu_cmd))
+    log_message(re.compile(r'\s+').sub(' ', qemu_cmd))
     with open(os.path.join(work_dir_local, "qemu_child.log"), 'w') as qemu_child_log:
         qemu_child = subprocess.Popen(shlex.split(qemu_cmd), stdin = subprocess.PIPE, stdout = qemu_child_log, stderr = qemu_child_log)
     print("Waiting for emulator...")
@@ -164,14 +174,14 @@ def prepare_cheri():
 
 def do_install(info, compile_env):
     if info['mode'] == 'cheribuild':
-        os.chdir(get_config['cheribuild_folder'])
+        os.chdir(get_config('cheribuild_folder'))
         subprocess.run(make_cheribuild_cmd(info['target'], "--configure-only"), stdout = None)
         repo_path = parse_path(info['source'])
         assert('commit' in info)
         repo = git.Repo(path = subprocess.check_output(shlex.split("git rev-parse --show-toplevel"), cwd = repo_path, encoding = 'UTF-8').strip())
         repo.git.fetch("origin", info['commit'])
         repo.git.checkout(info['commit'])
-        subprocess.run(make_cheribuild_cmd(info['target']), stdout = None)
+        subprocess.run(make_cheribuild_cmd(info['target'], "-c"), stdout = None)
         if 'build_file' in info and info['build_file']:
             subprocess.run(os.path.join(base_cwd, alloc_folder, info['build_file']), env = compile_env, cwd = repo_path)
         os.chdir(base_cwd)
@@ -186,7 +196,7 @@ def do_install(info, compile_env):
         repo.git.checkout(info['commit'])
         if 'build_file' in info and info['build_file']:
             os.chdir(alloc_path)
-            subprocess.run(os.path.join(base_cwd, alloc_folder, info['build_file']), env = compile_env)
+            subprocess.run([os.path.join(base_cwd, alloc_folder, info['build_file']), work_dir_local], env = compile_env)
             os.chdir(base_cwd)
         if 'lib_file' in info and info['lib_file'] and not 'no_copy' in info:
             subprocess.run(make_scp_cmd(os.path.join(alloc_path, info['lib_file']), work_dir_remote), check = True)
@@ -203,10 +213,6 @@ def do_line_count(source_path):
 def do_cheri_line_count(alloc_path):
     data = subprocess.check_output([get_config('data_get_script_path'), "cheri-line-count", alloc_path], encoding = 'UTF-8')
     return int(re.search(cheri_lines_pattern, data).group(1))
-    # if proc.returncode == 0:
-        # with open(f"count_{alloc_data['name']}", 'w') as line_fd:
-            # line_fd.write(proc.stdout)
-        # alloc_data['cheri-lines'] = int(re.search(cheri_lines_pattern, proc.stdout).string().rsplit(' ', 1)[0])
 
 def do_tests(tests, lib_path):
     results = {}
@@ -218,6 +224,7 @@ def do_tests(tests, lib_path):
         if lib_path:
             print(f"-- with `LD_PRELOAD` at {lib_path}")
             remote_env = { 'LD_PRELOAD' : lib_path }
+        log_message(f"RUN {cmd} WITH ENV {remote_env}")
         test_res = test_conn.run(cmd, env = remote_env, warn = True)
         if "validate" in test:
             validated = test_res.exited == 0
@@ -253,7 +260,7 @@ def do_cheri_api(source_dir, apis_info):
     return found_apis, not_found_funcs
 
 def do_table_cheri_api(results):
-    preamble = [r'\begin{table}', r'\begin{center}', r'\begin{tabular}{ccrr}']
+    preamble = [r'\begin{table}[t]', r'\begin{center}', r'\begin{tabular}{lcrr}']
     preamble += [r'\toprule', r'allocator & API & \# API calls & \# builtin calls \\']
     preamble += [r'\midrule']
     entries = []
@@ -272,21 +279,39 @@ def do_table_cheri_api(results):
     table = '\n'.join(['\n'.join(preamble), '\\\\\n'.join(entries), '\n'.join(epilogue)])
     return table
 
+def do_table_tests_entries(result, test_names):
+    new_entry = []
+    if args.parse_data_only:
+        for test in result["results"]:
+            if "test_bump_alloc" in test:
+                continue
+            assert(os.path.basename(test) in test_names)
+            if result["results"][test]["exit_code"] == 0:
+                new_entry.append(r'\checkmark')
+            else:
+                new_entry.append(r'$\times$')
+    else:
+        for test in tests:
+            if result["results"][test]["exit_code"] == 0:
+                new_entry.append(r'\checkmark')
+            else:
+                new_entry.append(r'$\times$')
+    return new_entry
+
+
 def do_table_tests(results):
-    sanitize = lambda x : x.replace('_', '-')
-    preamble = [r'\begin{table}', r'\begin{center}', r'\begin{tabular}{ccrr}']
-    preamble += [r'\toprule', r' & ' + ' & '.join(map(sanitize, map(os.path.basename, tests))) + r'\\']
+    latexify = lambda x : r'\tbl' + x.replace('_', '').replace('2', "two")
+    header_fields = len(tests) * 'c'
+    test_names = [os.path.splitext(x)[0] for x in map(os.path.basename, tests)]
+    preamble = [r'\begin{table}[t]', r'\begin{center}', r'\begin{tabular}{l' + header_fields + r'}']
+    preamble += [r'\toprule', r' & ' + ' & '.join(map(latexify, test_names)) + r'\\']
     preamble += [r'\midrule']
     entries = []
     for result in results:
         if not result['results'] or not result['validated']:
             continue
         entry = [result['name']]
-        for test in tests:
-            if result['results'][test] == 0:
-                entry.append(r'\checkmark')
-            else:
-                entry.append(r'$\times$')
+        entry.extend(do_table_tests_entries(result, test_names))
         entries.append(' & '.join(entry))
     epilogue = [r'\\ \bottomrule', r'\end{tabular}']
     epilogue += [r'\caption{Attacks which succeed on a given allocator are marked with a $\times$.}']
@@ -295,7 +320,7 @@ def do_table_tests(results):
     return table
 
 def do_table_slocs(results):
-    preamble = [r'\begin{table}[tb]', r'\begin{center}', r'\begin{tabular}{lllll}']
+    preamble = [r'\begin{table}[tb]', r'\begin{center}', r'\begin{tabular}{lcrrr}']
     preamble += [r'\toprule', ' & '.join(['Allocator', 'Version', 'SLoC', r'\multicolumn{2}{c}{Changed}']) + r'\\']
     preamble += [r'\cmidrule(lr){4-5}', ' & '.join([' ', ' ', ' ', 'LoC', r'\multicolumn{1}{c}{\%}']) + r'\\']
     preamble += [r'\midrule']
@@ -303,10 +328,10 @@ def do_table_slocs(results):
     for result in results:
         if 'sloc' in result:
             entry = [result['name']]
-            entry.append(result['version'])
+            entry.append(r'\small{' + result['version'] + r'}')
             entry.append(result['sloc'])
             entry.append(result['cheri_loc'])
-            entry.append("{:.2f}%".format(result['cheri_loc'] * 100 / result['sloc']))
+            entry.append("{:.2f}\%".format(result['cheri_loc'] * 100 / result['sloc']))
             entries.append(' & '.join(map(str, entry)))
     epilogue = [r'\\ \bottomrule', r'\end{tabular}', r'\end{center}']
     epilogue += [r'\caption{The allocators we examined, their size in Source Lines of Code (SLoC), and the number of lines changed to adapt them for pure capability CheriBSD.}']
@@ -314,7 +339,13 @@ def do_table_slocs(results):
     table = '\n'.join(['\n'.join(preamble), '\\\\\n'.join(entries), '\n'.join(epilogue)])
     return table
 
-# signal.signal(signal.SIGTTOU, ttou_handler)
+def do_all_tables(results):
+    with open(os.path.join(work_dir_local, "cheri_api.tex"), 'w') as cheri_api_fd:
+        cheri_api_fd.write(do_table_cheri_api(results))
+    with open(os.path.join(work_dir_local, "tests.tex"), 'w') as tests_fd:
+        tests_fd.write(do_table_tests(results))
+    with open(os.path.join(work_dir_local, "slocs.tex"), 'w') as slocs_fd:
+        slocs_fd.write(do_table_slocs(results))
 
 # Initial setup
 config_path = "./config.json"
@@ -335,8 +366,18 @@ if args.local_dir:
     work_dir_local = os.path.abspath(args.local_dir)
 else:
     work_dir_local = tempfile.mkdtemp(prefix = work_dir_prefix, dir = os.getcwd())
+
 log_fd = open(os.path.join(work_dir_local, args.log_file), 'w')
 log_message(f"Set local work directory to {work_dir_local}")
+
+if args.parse_data_only:
+    log_message(f"Parsing results file at {args.parse_data_only}.")
+    with open(args.parse_data_only, 'r') as results_fd:
+        results = json.load(results_fd)
+    tests = [x for x in glob.glob(os.path.join(get_config('tests_folder'), "*.c")) if not "test_bump_alloc" in x]
+    api_fns = read_apis(get_config('cheri_api_path'))
+    do_all_tables(results)
+    sys.exit(0)
 
 # Symlink last execution work directory
 symlink_name = f"{work_dir_prefix}last"
@@ -348,9 +389,10 @@ os.symlink(work_dir_local, symlink_name)
 qemu_child = prepare_cheri()
 if not qemu_child:
     log_message("Unable to build or run QEMU instance; exiting...")
+    sys.exit(1)
 
 # Prepare remote work directories
-subprocess.run(make_ssh_cmd(f"mkdir -p {get_config['cheri_qemu_test_folder']}"), check = True)
+subprocess.run(make_ssh_cmd(f"mkdir -p {get_config('cheri_qemu_test_folder')}"), check = True)
 work_dir_remote = subprocess.check_output(make_ssh_cmd(f"mktemp -d {config['cheri_qemu_test_folder']}/{work_dir_prefix}XXX"), encoding = "UTF-8")
 work_dir_remote = work_dir_remote.strip()
 log_message(f"Set remote work directory to {work_dir_remote}")
@@ -372,7 +414,9 @@ compile_env = {
 results = []
 for alloc_folder in allocators:
     log_message(f"=== PARSING {alloc_folder}")
-    assert(os.path.exists(f"{alloc_folder}/info.json"))
+    if not os.path.exists(f"{alloc_folder}/info.json"):
+        log_message("No `info.json` found; skipping...")
+        continue
     with open(f"{alloc_folder}/info.json", 'r') as alloc_info_json:
         alloc_info = json.load(alloc_info_json)
     alloc_data = {}
@@ -424,17 +468,12 @@ for alloc_folder in allocators:
     log_message(f"=== DONE {alloc_folder}")
 
 # Terminate QEMU instance
-# subprocess.run(make_ssh_cmd('shutdown -p now'))
 qemu_child.kill()
 
-with open(os.path.join(work_dir_local, "cheri_api.tex"), 'w') as cheri_api_fd:
-    cheri_api_fd.write(do_table_cheri_api(results))
-with open(os.path.join(work_dir_local, "tests.tex"), 'w') as tests_fd:
-    tests_fd.write(do_table_tests(results))
-with open(os.path.join(work_dir_local, "slocs.tex"), 'w') as slocs_fd:
-    slocs_fd.write(do_table_slocs(results))
 with open(os.path.join(work_dir_local, "results.json"), 'w') as results_file:
     json.dump(results, results_file)
+do_all_tables(results)
+
 log_message(f"DONE in {work_dir_local}")
 
 log_fd.close()

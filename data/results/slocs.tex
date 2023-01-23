@@ -1,0 +1,23 @@
+\begin{table}[tb]
+\begin{center}
+\begin{tabular}{lcrrr}
+\toprule
+Allocator & Version & SLoC & \multicolumn{2}{c}{Changed}\\
+\cmidrule(lr){4-5}
+  &   &   & LoC & \multicolumn{1}{c}{\%}\\
+\midrule
+musl-huawei & \small{7696cd655e20e765c32ad6292a3b4b885ed92d90} & 90089 & 811 & 0.90\%\\
+musl-morello & \small{4031f07dbf979885ce6184a26215f84c30260312} & 103348 & 1065 & 1.03\%\\
+newlib & \small{67fd37136e44556cd0395a3b8ccdad81766e5622} & 1379006 & 649 & 0.05\%\\
+jemalloc & \small{cc4e4c0553bb375d14f3c2e2513c20404fc2a748} & 28755 & 116 & 0.40\%\\
+snmalloc-cheribuild & \small{888d182baccb3288e41172fec3e0501158418613} & 14669 & 180 & 1.23\%\\
+bump-alloc & \small{270a3e15d695fa484cad0f58ecb7f38c64f309eb} & 379 & 0 & 0.00\%\\
+libmalloc-simple & \small{621751074f8feaafb270c4699a7f1380bca41f23} & 408 & 43 & 10.54\%\\
+snmalloc-repo & \small{0a5eb403adf85b3e04ad90e6b44e0cb1de99ba38} & 21342 & 212 & 0.99\%\\
+dlmalloc-cheribuild & \small{9cfbb1697b369ee6827684091eb3d8f26903e27d} & 3475 & 231 & 6.65\%
+\\ \bottomrule
+\end{tabular}
+\end{center}
+\caption{The allocators we examined, their size in Source Lines of Code (SLoC), and the number of lines changed to adapt them for pure capability CheriBSD.}
+\label{tab:allocator_summary}
+\end{table}
