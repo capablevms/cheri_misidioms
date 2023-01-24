@@ -9,6 +9,7 @@
 \usepackage{listings}
 \usepackage{microtype}
 \usepackage[numbers]{natbib}
+\usepackage{numprint}
 \usepackage{softdev}
 \usepackage{xspace}
 
@@ -41,12 +42,16 @@
 
 \renewcommand{\sectionautorefname}{Section}
 
+\newcommand{\memalloc}[1]{\texttt{#1}}
+
 \newcommand\bumpalloc{\emph{bmpalloc}\xspace}
 
 \newcommand\narrowingdoesnt{\textsc{Narrow}\xspace}
 \newcommand\narrowwiden{\textsc{NarrowWiden}\xspace}
 \newcommand\privesc{\textsc{PrivEsc}\xspace}
 \newcommand\myundef{\textsc{Undef}\xspace}
+
+\newcommand\footnoteurl[2]{\footnote{\url{#1}, accessed #2}}
 
 \newcommand\tblnarrowrealloc{\tiny{NrwRe}}
 \newcommand\tblnarrowwiden{\tiny{NrwWide}}

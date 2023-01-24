@@ -264,7 +264,7 @@ def do_table_cheri_api(results):
     preamble += [r'\toprule', r'allocator & API & \# API calls & \# builtin calls \\']
     preamble += [r'\midrule']
     entries = []
-    for result in results:
+    for result in sorted(results.items()):
         if not 'api' in result:
             continue
         api_key = max(result['api'][0], key = result['api'][0].get)
@@ -298,7 +298,6 @@ def do_table_tests_entries(result, test_names):
                 new_entry.append(r'$\times$')
     return new_entry
 
-
 def do_table_tests(results):
     latexify = lambda x : r'\tbl' + x.replace('_', '').replace('2', "two")
     header_fields = len(tests) * 'c'
@@ -307,7 +306,7 @@ def do_table_tests(results):
     preamble += [r'\toprule', r' & ' + ' & '.join(map(latexify, test_names)) + r'\\']
     preamble += [r'\midrule']
     entries = []
-    for result in results:
+    for result in sorted(results.items()):
         if not result['results'] or not result['validated']:
             continue
         entry = [result['name']]
@@ -325,14 +324,16 @@ def do_table_slocs(results):
     preamble += [r'\cmidrule(lr){4-5}', ' & '.join([' ', ' ', ' ', 'LoC', r'\multicolumn{1}{c}{\%}']) + r'\\']
     preamble += [r'\midrule']
     entries = []
-    for result in results:
+    for result in sorted(results.items()):
+        entry = [result['name']]
+        entry.append(r'\small{' + result['version'][:10] + r'}')
         if 'sloc' in result:
-            entry = [result['name']]
-            entry.append(r'\small{' + result['version'] + r'}')
-            entry.append(result['sloc'])
-            entry.append(result['cheri_loc'])
+            entry.append(r'\numprint{' + result['sloc'] + r'}')
+            entry.append(r'\numprint{' + result['cheri_loc'] + r'}')
             entry.append("{:.2f}\%".format(result['cheri_loc'] * 100 / result['sloc']))
-            entries.append(' & '.join(map(str, entry)))
+        else:
+            entry.extend(['-', '-', '-'])
+        entries.append(' & '.join(map(str, entry)))
     epilogue = [r'\\ \bottomrule', r'\end{tabular}', r'\end{center}']
     epilogue += [r'\caption{The allocators we examined, their size in Source Lines of Code (SLoC), and the number of lines changed to adapt them for pure capability CheriBSD.}']
     epilogue += [r'\label{tab:allocator_summary}', r'\end{table}']
