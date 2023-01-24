@@ -282,7 +282,7 @@ We looked at a number of sources in order to find memory allocators ported to
 CHERI. These are:
 \begin{enumerate}
     \item [CheriBSD] We found two allocators provided in CheriBSD itself. One
-        of them is identified as \memalloc{libmalloc\_simple}, while the other,
+        of them is identified as \memalloc{libmalloc-simple}, while the other,
         default option for CheriBSD, is a port of \memalloc{jemalloc};
     \item [cheribuild] Among the build targets provided by cheribuild, we
         identified \memalloc{snmalloc}~\cite{snmalloc}, an allocator from
@@ -310,7 +310,11 @@ CHERI. These are:
 That gives us a total of \alloccount{} allocators we have found. These
 allocator, along with the particular commit hash (truncated to 10 characters)
 or version number used during evaluation, as well as some source data (where
-available) can be seen in~\autoref{tab:allocator_summary}. Unfortunately,
+available) can be seen in~\autoref{tab:allocator_summary}. We note that some
+allocators, such as \memalloc{snmalloc} have been found from multiple sources;
+in tese cases, we distinguish the provenance by appending the source name
+(e.g., we identify \memalloc{snmalloc-repo} as the standalone variant, and
+\memalloc{snmalloc-cheribuild} as that provided by cheribuild). Unfortunately,
 during evaluation we discovered that not all of these allocators were in
 working condition.  Particularly, most allocators coming with \texttt{pkg64c}
 crashed with a segmentation fault on execution of our tests. \andrei{Hopefully
