@@ -4,10 +4,14 @@
 \toprule
  & \tblnarrowrealloc & \tblvalidate & \tblunrepresentablelength & \tblnarrow & \tblprivesctwo & \tblnarrowwiden & \tblundef & \tblprivesc\\
 \midrule
+bump-alloc & $\times$ & \checkmark & \checkmark & \checkmark & $\times$ & $\times$ & $\times$ & $\times$\\
+dlmalloc-cheribuild & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & $\times$ & \checkmark\\
+dmalloc & $\times$ & \checkmark & \checkmark & \checkmark & $\times$ & $\times$ & $\times$ & $\times$\\
 jemalloc & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark\\
 libmalloc-simple & \checkmark & \checkmark & \checkmark & \checkmark & $\times$ & \checkmark & \checkmark & \checkmark\\
 libxalloc & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark\\
-dlmalloc-cheribuild & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & $\times$ & \checkmark
+snmalloc-cheribuild & $\times$ & \checkmark & \checkmark & \checkmark & $\times$ & $\times$ & $\times$ & $\times$\\
+snmalloc-repo & $\times$ & \checkmark & \checkmark & \checkmark & $\times$ & $\times$ & $\times$ & $\times$
 \\ \bottomrule
 \end{tabular}
 \caption{Attacks which succeed on a given allocator are marked with a $\times$.}

@@ -12,6 +12,8 @@ import tempfile
 import time
 import sys
 
+from operator import itemgetter
+
 from fabric import Connection
 
 ################################################################################
@@ -264,7 +266,7 @@ def do_table_cheri_api(results):
     preamble += [r'\toprule', r'allocator & API & \# API calls & \# builtin calls \\']
     preamble += [r'\midrule']
     entries = []
-    for result in sorted(results.items()):
+    for result in results:
         if not 'api' in result:
             continue
         api_key = max(result['api'][0], key = result['api'][0].get)
@@ -306,7 +308,7 @@ def do_table_tests(results):
     preamble += [r'\toprule', r' & ' + ' & '.join(map(latexify, test_names)) + r'\\']
     preamble += [r'\midrule']
     entries = []
-    for result in sorted(results.items()):
+    for result in results:
         if not result['results'] or not result['validated']:
             continue
         entry = [result['name']]
@@ -324,12 +326,12 @@ def do_table_slocs(results):
     preamble += [r'\cmidrule(lr){4-5}', ' & '.join([' ', ' ', ' ', 'LoC', r'\multicolumn{1}{c}{\%}']) + r'\\']
     preamble += [r'\midrule']
     entries = []
-    for result in sorted(results.items()):
+    for result in results:
         entry = [result['name']]
-        entry.append(r'\small{' + result['version'][:10] + r'}')
+        entry.append(result['version'][:10].replace('_', r"\_"))
         if 'sloc' in result:
-            entry.append(r'\numprint{' + result['sloc'] + r'}')
-            entry.append(r'\numprint{' + result['cheri_loc'] + r'}')
+            entry.append(r'\numprint{' + str(result['sloc']) + r'}')
+            entry.append(r'\numprint{' + str(result['cheri_loc']) + r'}')
             entry.append("{:.2f}\%".format(result['cheri_loc'] * 100 / result['sloc']))
         else:
             entry.extend(['-', '-', '-'])
@@ -341,6 +343,7 @@ def do_table_slocs(results):
     return table
 
 def do_all_tables(results):
+    results = sorted(results, key = itemgetter("name"))
     with open(os.path.join(work_dir_local, "cheri_api.tex"), 'w') as cheri_api_fd:
         cheri_api_fd.write(do_table_cheri_api(results))
     with open(os.path.join(work_dir_local, "tests.tex"), 'w') as tests_fd:
