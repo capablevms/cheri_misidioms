@@ -36,7 +36,7 @@ int main() {
         if (rl > i) {
             printf("%lu ", i);
             fflush(NULL);
-            void **mallocs = calloc(sizeof(void *), NUM_MALLOCS);
+            void **mallocs = calloc(NUM_MALLOCS, sizeof(void *));
             for (int j = 0; j < NUM_MALLOCS; j++) {
                 mallocs[j] = malloc(i);
             }
