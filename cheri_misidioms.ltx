@@ -6,8 +6,11 @@
 
 \begin{abstract}
 Several memory allocators have been ported to CHERI, a hardware capability
-platform. We show that these allocators are subject to a number of
-simple (mostly, but not exclusively, temporal) vulnerabilities.
+platform. We define a number of simple (mostly, but not exclusively, temporal)
+vulnerabilities that CHERI memory allocators are potentially vulnerable to.
+Since we first made a pre-print of this paper available, some allocators have
+fixed some or all vulnerabilities, but many remain vulnerable: our work may
+  also prove useful for those working on CHERI memory allocators in the future.
 \end{abstract}
 
 
@@ -16,11 +19,11 @@ simple (mostly, but not exclusively, temporal) vulnerabilities.
 Capability Hardware Enhanced RISC Instructions
 (CHERI)~\cite{watson20cheriintroduction} provides and enforces hardware
 capabilities that allow programmers to make strong security guarantees
-about the memory safety properties of their programs. While available CHERI
-hardware has shown itself to be robust \laurie{cite}, programmers have to work
-out how to make best use of hardware capabilities to achieve a desired level of
-security in their software. Mistakes made in the use of capabilities
-undermine the security programmers believe their code possesses.
+about the memory safety properties of their programs. However, capabilities are
+not magic. Programmers must first decide which memory safety properties they
+wish to enforce and then actually enforce those memory safety properties.
+It is easy for mistakes to creep in during either step, undermining
+the security guarantees programmers believe their code possesses.
 
 In this paper we examine one of the most fundamental software components:
 memory allocators (henceforth just ``allocators''). Apart from some embedded
@@ -35,7 +38,10 @@ allocator example (\autoref{sec:bumppointerallocator}). We then
 examine~\alloccount{} existing allocators that have been ported to CHERI
 (\autoref{sec:cheriallocators}). Finally we introduce and name~\allocbugs{}
 simple `attacks' on pure capability memory allocators, showing that most of the
-allocators are vulnerable to most of the attacks (\autoref{sec:atk}).
+allocators are vulnerable to most of the attacks (\autoref{sec:atk}). Since
+we first made a pre-print of this paper available, some allocators have
+fixed some or all vulnerabilities, but many remain vulnerable.
+
 
 \section{Background}
 
