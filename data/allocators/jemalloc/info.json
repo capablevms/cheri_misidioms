@@ -9,5 +9,6 @@
     },
     "repo": "https://github.com/CTSRD-CHERI/cheribsd",
     "commit": "cc4e4c0553bb375d14f3c2e2513c20404fc2a748",
+    "commit_old": "699a0c9f79bf5ca25247d8d43c9c1744d225898e",
     "date": "2022-11-21"
 }
