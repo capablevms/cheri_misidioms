@@ -15,8 +15,8 @@
 #define NUM_MALLOCS 10000
 
 int cmp(const void *a, const void *b) {
-    void *aw = cheri_base_get(((void **) a)[0]);
-    void *bw = cheri_base_get(((void **) b)[0]);
+    ptraddr_t aw = cheri_base_get(((void **) a)[0]);
+    ptraddr_t bw = cheri_base_get(((void **) b)[0]);
     return aw < bw ? -1 : aw > bw;
 }
 
