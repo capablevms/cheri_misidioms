@@ -41,7 +41,7 @@ int main() {
                 mallocs[j] = malloc(i);
             }
 
-            qsort(mallocs, sizeof(void *), NUM_MALLOCS, cmp);
+            qsort(mallocs, NUM_MALLOCS, sizeof(void *), cmp);
 
             for (int j = 0; j < NUM_MALLOCS - 1; j++) {
                 if (overlaps(mallocs[j], mallocs[j + 1])) {
