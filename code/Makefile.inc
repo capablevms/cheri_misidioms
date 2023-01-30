@@ -6,11 +6,12 @@ SSHPORT ?= 0
 .c:
 	${CC} ${CFLAGS} -o $@ $<
 
-TARGETS = narrow narrow_realloc narrow_widen privesc privesc2 undef unrepresentable_length
+TARGETS = narrow narrow_realloc narrow_widen privesc privesc2 undef unrepresentable_length overlap
+ALL_COPYEXEC_TARGETS = narrow narrow_realloc narrow_widen privesc privesc2 undef unrepresentable_length
 
 all: ${TARGETS}
 
-all-copyexec: ${TARGETS:%=copyexec-%}
+all-copyexec: ${ALL_COPYEXEC_TARGETS:%=copyexec-%}
 
 copyexec-%: %
 	scp -P $(SSHPORT) $< root@127.0.0.1:/root
