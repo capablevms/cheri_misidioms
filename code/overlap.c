@@ -21,9 +21,11 @@ int cmp(const void *a, const void *b) {
 }
 
 bool overlaps(void *x, void *y) {
-    if (cheri_base_get(x) < cheri_base_get(y) && cheri_base_get(x) + cheri_length_get(x) > (unsigned long) y)
+    if (   cheri_base_get(x) < cheri_base_get(y)
+        && cheri_base_get(x) + cheri_length_get(x) > (unsigned long) cheri_base_get(y))
         return true;
-    if (cheri_base_get(y) < cheri_base_get(x) && cheri_base_get(y) + cheri_length_get(y) > (unsigned long) x)
+    if (   cheri_base_get(y) < cheri_base_get(x)
+        && cheri_base_get(y) + cheri_length_get(y) > (unsigned long) cheri_base_get(x))
         return true;
     return false;
 }
