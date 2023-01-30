@@ -19,7 +19,7 @@ int main() {
     uint8_t *c1 = malloc(16);
     // Separate out the pointer from the capability so that we can check it
     // later.
-    vaddr_t c1_addr = cheri_address_get(c1);
+    ptraddr_t c1_addr = cheri_address_get(c1);
 
     // Derive a capability C2 with bounds 0..m where m < n
     uint8_t *c2 = cheri_bounds_set(c1, 8);
