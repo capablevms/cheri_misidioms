@@ -9,13 +9,7 @@
 #  error This example must be run on a CHERI purecap system
 #endif
 
-// Check whether malloc() returns 
-// On CheriBSD, if a capability's bounds include the base pointer to a
-// `malloc`d block we can use `realloc` to launder a narrow capability into a
-// wider one. In other words if:
-//   1. malloc returns a capability C1 to a block 0..n bytes long
-//   2. we create a capability C2 with bounds 0..m where m < n
-//   3. realloc allows us to launder C2 back into C1
+// Check whether malloc() returns blocks that overlap.
 
 #define MAX_SIZE (24*1024)
 #define NUM_MALLOCS 10000
