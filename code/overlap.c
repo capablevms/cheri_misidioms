@@ -31,11 +31,9 @@ bool overlaps(void *x, void *y) {
 }
 
 int main() {
-    int tried = 0;
     for (size_t i = 0; i < MAX_SIZE; i++) {
         size_t rl = cheri_representable_length(i);
         if (rl > i) {
-            tried++;
             printf("%lu ", i);
             fflush(NULL);
             void **mallocs = calloc(sizeof(void *), NUM_MALLOCS);
