@@ -21,6 +21,7 @@ int cmp(const void *a, const void *b) {
 }
 
 bool overlaps(void *x, void *y) {
+    assert(cheri_tag_get(x) && cheri_tag_get(y));
     if (   cheri_base_get(x) < cheri_base_get(y)
         && cheri_base_get(x) + cheri_length_get(x) > cheri_base_get(y))
         return true;
@@ -37,13 +38,16 @@ int main() {
             printf("%lu ", i);
             fflush(NULL);
             void **mallocs = calloc(NUM_MALLOCS, sizeof(void *));
+            assert(mallocs);
             for (int j = 0; j < NUM_MALLOCS; j++) {
                 mallocs[j] = malloc(i);
+                assert(mallocs[j]);
             }
 
             qsort(mallocs, NUM_MALLOCS, sizeof(void *), cmp);
 
             for (int j = 0; j < NUM_MALLOCS - 1; j++) {
+                assert(cheri_base_get(mallocs[j]) < cheri_base_get(mallocs[j + 1]));
                 if (overlaps(mallocs[j], mallocs[j + 1])) {
                     printf("match! %lu\n", i);
                     exit(0);
