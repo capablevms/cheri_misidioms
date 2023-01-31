@@ -12,7 +12,7 @@
 // Check whether malloc() returns blocks that overlap.
 
 #define MAX_SIZE (24*1024)
-#define NUM_MALLOCS 10000
+#define NUM_MALLOCS 1000
 
 int cmp(const void *a, const void *b) {
     ptraddr_t aw = cheri_base_get(((void **) a)[0]);
@@ -32,10 +32,10 @@ bool overlaps(void *x, void *y) {
 }
 
 int main() {
-    for (size_t i = 0; i < MAX_SIZE; i++) {
+    for (size_t i = 0; i <= MAX_SIZE; i++) {
         size_t rl = cheri_representable_length(i);
         if (rl > i) {
-            printf("%lu ", i);
+            printf("ITERATION %lu (of %d)\r", i, MAX_SIZE);
             fflush(NULL);
             void **mallocs = calloc(NUM_MALLOCS, sizeof(void *));
             assert(mallocs);
@@ -49,7 +49,7 @@ int main() {
             for (int j = 0; j < NUM_MALLOCS - 1; j++) {
                 assert(cheri_base_get(mallocs[j]) < cheri_base_get(mallocs[j + 1]));
                 if (overlaps(mallocs[j], mallocs[j + 1])) {
-                    printf("match! %lu\n", i);
+                    printf("MATCH - %lu\n", i);
                     exit(0);
                 }
             }
@@ -60,4 +60,5 @@ int main() {
             free(mallocs);
         }
     }
+    printf("\nDONE\n");
 }
