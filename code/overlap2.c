@@ -43,7 +43,7 @@ int main() {
     }
 
     for (int i = 0; i < NUM_TRIES; i++) {
-        printf(".");
+        printf("ITERATION %lu (of %d)\r", i, NUM_TRIES);
         fflush(NULL);
         size_t num_mallocs = arc4random_uniform(NUM_MALLOCS);
         void **mallocs = calloc(num_mallocs, sizeof(void *));
@@ -58,8 +58,8 @@ int main() {
         for (int j = 0; j < num_mallocs - 1; j++) {
             assert(cheri_base_get(mallocs[j]) < cheri_base_get(mallocs[j + 1]));
             if (overlaps(mallocs[j], mallocs[j + 1])) {
-                printf("match!\n");
-                exit(0);
+                printf("MATCH - %lu\n", i);
+                exit(1);
             }
         }
 
@@ -68,4 +68,5 @@ int main() {
         }
         free(mallocs);
     }
+    printf("\nDONE\n");
 }

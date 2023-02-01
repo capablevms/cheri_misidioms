@@ -50,7 +50,7 @@ int main() {
                 assert(cheri_base_get(mallocs[j]) < cheri_base_get(mallocs[j + 1]));
                 if (overlaps(mallocs[j], mallocs[j + 1])) {
                     printf("MATCH - %lu\n", i);
-                    exit(0);
+                    exit(1);
                 }
             }
 
