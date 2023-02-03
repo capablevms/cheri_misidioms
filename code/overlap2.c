@@ -42,7 +42,7 @@ int main() {
             unrepresentables[num_unrepresentables++] = rl;
     }
 
-    for (int i = 0; i < NUM_TRIES; i++) {
+    for (size_t i = 0; i < NUM_TRIES; i++) {
         printf("ITERATION %lu (of %d)\r", i, NUM_TRIES);
         fflush(NULL);
         size_t num_mallocs = arc4random_uniform(NUM_MALLOCS);
