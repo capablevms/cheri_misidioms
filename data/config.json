@@ -7,8 +7,18 @@
     "cheribuild_folder": "$HOME/cheribuild",
     "cheri_api_path": "$CWD/apis.json",
     "cheri_qemu_port": 10086,
-    "cheri_qemu_test_folder": "/root/tests",
+    "cheri_qemu_test_folder": "$RHOME/tests",
     "data_get_script_path": "$CWD/get_data.py",
-    "tests_folder": "$CWD/code",
-    "allocators_folder": "$CWD/allocators"
+    "tests_folder": "$CWD/../code",
+    "allocators_folder": "$CWD/allocators",
+    "table_tests_to_ignore":
+    [
+        "unrepresentable_length"
+    ],
+    "tests_to_ignore":
+    [
+        "test_bump_alloc1",
+        "test_bump_alloc2",
+        "overlap"
+    ]
 }

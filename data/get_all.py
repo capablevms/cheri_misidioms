@@ -35,15 +35,26 @@ cheri_builtin_fn_call_grep_pattern = "__builtin_cheri[[:alnum:]_]\+"
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--alloc", type=str, action='store', required=False,
-        help="Optional path to allocator. If not given, runs over all allocators given in `config.json`.")
-arg_parser.add_argument("--local-dir", type=str, action='store', default=None, required=False, metavar="path",
+        help="""Optional path to allocator. If not given, runs over all
+        allocators given in `config.json`.""")
+arg_parser.add_argument("--local-dir", type=str, action='store', default=None,
+        required=False, metavar="path",
         help="Where to store local data, instead of generating a folder.")
-arg_parser.add_argument("--log-file", type=str, action='store', default='cheri_alloc.log', metavar="path",
+arg_parser.add_argument("--log-file", type=str, action='store',
+        default='cheri_alloc.log', metavar="path",
         help="File to store log data to")
 arg_parser.add_argument("--no-build-cheri", action="store_true",
-        help="Whether to build CheriBSD and the QEMU image from scratch. Only set if `local-dir` is set with a pre-existing build within.")
-arg_parser.add_argument("--parse-data-only", action='store', default="", type=str, metavar="path",
+        help="""Whether to build CheriBSD and the QEMU image from scratch. Only
+        set if `local-dir` is set with a pre-existing build within.""")
+arg_parser.add_argument("--parse-data-only", action='store', default="",
+        type=str, metavar="path",
         help="Parse given results file to generate LaTeX tables.")
+arg_parser.add_argument("--target-machine", action='store', default="",
+        type=str, metavar="IP",
+        help="""IP address of a CHERI-enabled machine on the network to run
+        experiments on instead of using a QEMU instance. NOTE: This requires
+        appropriate keys being set-up between the machines to communicate
+        without further user input""")
 args = arg_parser.parse_args()
 
 ################################################################################
@@ -51,10 +62,22 @@ args = arg_parser.parse_args()
 ################################################################################
 
 def make_ssh_cmd(cmd):
-    return shlex.split(f'ssh -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -p{config["cheri_qemu_port"]} -t root@localhost {cmd}')
+    if args.target_machine:
+        target = args.target_machine
+        port = ""
+    else:
+        target = "root@localhost"
+        port = f'-p{config["cheri_qemu_port"]}'
+    return shlex.split(f'ssh -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" {port} -t {target} {cmd}')
 
 def make_scp_cmd(path_from, path_to):
-    return shlex.split(f'scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -P{config["cheri_qemu_port"]} {path_from} root@localhost:{path_to}')
+    if args.target_machine:
+        target = args.target_machine
+        port = ""
+    else:
+        target = "root@localhost"
+        port = f'-P{config["cheri_qemu_port"]}'
+    return shlex.split(f'scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" {port} {path_from} {target}:{path_to}')
 
 def make_cheribuild_cmd(target, flags = ""):
     cmd = shlex.split(f'./cheribuild.py -d -f --skip-update --source-root {work_dir_local}/cheribuild {flags} {target}')
@@ -76,7 +99,8 @@ def make_replace(path):
 
 def prepare_tests(tests_path, dest_path):
     test_sources = glob.glob(os.path.join(tests_path, "*.c"))
-    test_sources = [x for x in test_sources if not "test_bump_alloc" in x]
+    for to_ignore in config["tests_to_ignore"]:
+        test_sources = [x for x in test_sources if not to_ignore in x]
     log_message(f"Found tests in {tests_path}: {test_sources}")
     assert(test_sources)
     tests = []
@@ -98,6 +122,8 @@ def parse_path(to_parse):
         to_parse = to_parse.replace("$WORK", work_dir_local)
     elif to_parse.startswith("$CWD"):
         to_parse = to_parse.replace("$CWD", base_cwd)
+    elif to_parse.startswith("$RHOME"):
+        to_parse = to_parse.replace("$RHOME", remote_homedir)
     else:
         print(f"Did not parse anything for path {to_parse}.")
     return to_parse
@@ -203,7 +229,11 @@ def do_install(info, compile_env):
         if 'lib_file' in info and info['lib_file'] and not 'no_copy' in info:
             subprocess.run(make_scp_cmd(os.path.join(alloc_path, info['lib_file']), work_dir_remote), check = True)
     elif info['mode'] == 'pkg64c':
-        subprocess.run(make_install_alloc_cmd(info['target'], info['version']))
+        if args.target_machine:
+            check_cmd = subprocess.run(make_ssh_cmd(f"pkg64c info {info['target']}"))
+            return check_cmd.returncode == 0
+        else:
+            subprocess.run(make_install_alloc_cmd(info['target'], info['version']))
     else:
         return False
     return True
@@ -218,8 +248,15 @@ def do_cheri_line_count(alloc_path):
 
 def do_tests(tests, lib_path):
     results = {}
+    if args.target_machine:
+        assert('@' in args.target_machine)
+        conn_user, conn_host = args.target_machine.split('@')
+        conn_port = None
+    else:
+        conn_user = "root"
+        conn_host = "localhost"
+        conn_port = config['cheri_qemu_port']
     for test in tests:
-        test_conn = Connection(host="localhost", user="root", port=10086, inline_ssh_env = True)
         cmd = os.path.join(work_dir_remote, os.path.basename(test))
         print(f"- Running test {cmd}")
         remote_env = {}
@@ -227,13 +264,18 @@ def do_tests(tests, lib_path):
             print(f"-- with `LD_PRELOAD` at {lib_path}")
             remote_env = { 'LD_PRELOAD' : lib_path }
         log_message(f"RUN {cmd} WITH ENV {remote_env}")
-        test_res = test_conn.run(cmd, env = remote_env, warn = True)
+        # test_conn = Connection(host="localhost", user="root", port=10086, inline_ssh_env = True)
+        start_time = time.perf_counter_ns()
+        with Connection(host=conn_host, user=conn_user, port=conn_port) as test_conn:
+            test_res = test_conn.run(cmd, env = remote_env, warn = True)
+        runtime = time.perf_counter_ns() - start_time
         if "validate" in test:
             validated = test_res.exited == 0
         results[test] = {}
         results[test]['exit_code'] = test_res.exited
         results[test]['stdout'] = test_res.stdout
         results[test]['stderr'] = test_res.stderr
+        results[test]['time'] = runtime
     return results, validated
 
 def do_cheri_api(source_dir, apis_info):
@@ -285,7 +327,7 @@ def do_table_tests_entries(result, test_names):
     new_entry = []
     if args.parse_data_only:
         for test in result["results"]:
-            if "test_bump_alloc" in test:
+            if os.path.basename(test) in config["table_tests_to_ignore"]:
                 continue
             assert(os.path.basename(test) in test_names)
             if result["results"][test]["exit_code"] == 0:
@@ -305,7 +347,7 @@ def do_table_tests(results):
     header_fields = len(tests) * 'c'
     test_names = [os.path.splitext(x)[0] for x in map(os.path.basename, tests)]
     preamble = [r'\begin{table}[t]', r'\begin{center}', r'\begin{tabular}{l' + header_fields + r'}']
-    preamble += [r'\toprule', r' & ' + ' & '.join(map(latexify, test_names)) + r'\\']
+    preamble += [r'\toprule', r'Allocator & ' + ' & '.join(map(latexify, test_names)) + r'\\']
     preamble += [r'\midrule']
     entries = []
     for result in results:
@@ -314,7 +356,8 @@ def do_table_tests(results):
         entry = [result['name']]
         entry.extend(do_table_tests_entries(result, test_names))
         entries.append(' & '.join(entry))
-    epilogue = [r'\\ \bottomrule', r'\end{tabular}']
+    epilogue = [r'\input{./data/results/tests_extra.tex}']
+    epilogue += [r'\\ \bottomrule', r'\end{tabular}']
     epilogue += [r'\caption{Attacks which succeed on a given allocator are marked with a $\times$.}']
     epilogue += [r'\label{tab:atks}', r'\end{center}', r'\end{table}']
     table = '\n'.join(['\n'.join(preamble), '\\\\\n'.join(entries), '\n'.join(epilogue)])
@@ -351,6 +394,8 @@ def do_all_tables(results):
     with open(os.path.join(work_dir_local, "slocs.tex"), 'w') as slocs_fd:
         slocs_fd.write(do_table_slocs(results))
 
+#-------------------------------------------------------------------------------
+
 # Initial setup
 config_path = "./config.json"
 with open(config_path, 'r') as json_config:
@@ -371,6 +416,9 @@ if args.local_dir:
 else:
     work_dir_local = tempfile.mkdtemp(prefix = work_dir_prefix, dir = os.getcwd())
 
+# Local files
+results_tmp_path = os.path.join(work_dir_local, "results_tmp.json")
+results_path = os.path.join(work_dir_local, "results.json")
 log_fd = open(os.path.join(work_dir_local, args.log_file), 'w')
 log_message(f"Set local work directory to {work_dir_local}")
 
@@ -390,14 +438,16 @@ if os.path.exists(symlink_name):
 os.symlink(work_dir_local, symlink_name)
 
 # Build and run new CHERI QEMU instance
-qemu_child = prepare_cheri()
-if not qemu_child:
-    log_message("Unable to build or run QEMU instance; exiting...")
-    sys.exit(1)
+if not args.target_machine:
+    qemu_child = prepare_cheri()
+    if not qemu_child:
+        log_message("Unable to build or run QEMU instance; exiting...")
+        sys.exit(1)
 
 # Prepare remote work directories
+remote_homedir = subprocess.check_output(make_ssh_cmd("printf '$HOME'"), encoding = "UTF-8")
 subprocess.run(make_ssh_cmd(f"mkdir -p {get_config('cheri_qemu_test_folder')}"), check = True)
-work_dir_remote = subprocess.check_output(make_ssh_cmd(f"mktemp -d {config['cheri_qemu_test_folder']}/{work_dir_prefix}XXX"), encoding = "UTF-8")
+work_dir_remote = subprocess.check_output(make_ssh_cmd(f"mktemp -d {get_config('cheri_qemu_test_folder')}/{work_dir_prefix}XXX"), encoding = "UTF-8")
 work_dir_remote = work_dir_remote.strip()
 log_message(f"Set remote work directory to {work_dir_remote}")
 
@@ -428,7 +478,11 @@ for alloc_folder in allocators:
 
     # Install
     if not do_install(alloc_info['install'], compile_env):
-        print(f"Unsupported install mode: {alloc_data['mode']}")
+        if args.target_machine:
+            log_message(f"Unable to find package {alloc_info['install']['target']}; please install manually!")
+        else:
+            log_message(f"Unsupported install mode: {alloc_data['mode']}")
+        continue
 
     # Tests and validation
     if alloc_info['install']['mode'] in ['cheribuild', 'repo'] \
@@ -469,13 +523,15 @@ for alloc_folder in allocators:
 
     print(alloc_data)
     results.append(alloc_data)
+    with open(os.path.join(work_dir_local, "results_tmp.json"), 'w') as results_file:
+        json.dump(results, results_file)
     log_message(f"=== DONE {alloc_folder}")
 
 # Terminate QEMU instance
-qemu_child.kill()
+if not args.target_machine:
+    qemu_child.kill()
 
-with open(os.path.join(work_dir_local, "results.json"), 'w') as results_file:
-    json.dump(results, results_file)
+os.rename(results_tmp_path, results_path)
 do_all_tables(results)
 
 log_message(f"DONE in {work_dir_local}")
