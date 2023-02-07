@@ -555,8 +555,9 @@ than expected; or can later be tricked in to escalating a capability's
 privileges. As these undermine the security guarantees of using capabilities,
 we refer to these issues as \emph{attacks}. In this section we start with three
 serious attacks in the latter category, before detailing one minor attack in
-the former category, as well as discuss theoretical mitigations for each of the
-issues.
+the former category\andrei{Since we have names for these attacks, could we use
+them, to refer back to the actual test sources}, as well as discuss theoretical
+mitigations for each of the issues.
 
 Formally speaking, CHERI capabilities have monotonically decreasing privileges:
 in other words, when taking an existing capability \emph{C1} as input, any
@@ -575,6 +576,8 @@ are at risk of privilege escalation, and need to be carefully audited for bad
 idioms.
 
 \subsection{Insufficient validation of the input capability}
+
+\andrei{Which of the test sources does this subsection refer to?}
 
 Consider a memory allocator whose \fnc{realloc(cap, size)} function takes in a
 capability \texttt{cap} whose address references the beginning of a block of
