@@ -287,7 +287,7 @@ properties, and then security properties. Is this sufficient, or is there
 something else?}
 
 We looked at a number of sources in order to find memory allocators ported to
-CHERI. These are:
+CHERI\@. These are:
 \begin{enumerate}
     \item [CheriBSD] We found two allocators provided in CheriBSD itself. One
         of them is identified as \memalloc{libmalloc-simple}, while the other,
@@ -543,11 +543,13 @@ vulnerabilities, mostly concerning temporal memory safety.
 %\end{center}
 %\end{table}
 
-We audited the default memory allocator on CheriBSD, \emph{jemalloc}, as well
-as Kingsley`s simple BSD allocator \andrei{Is this what `BSD simple` in the
-table means?}. We were able to identify \allocbugs{} bugs with respect to
-including capabilities in the two allocators. The presence of these bugs in
-both of the allocators is shown in~\autoref{tab:atks}.
+We came up with \numattacks{} potential memory allocator vulnerabilities, which
+could be used to undermine the security guarantees offered by CHERI\@. We
+prepared tests exercising each of these vulnerability, and execute them over
+the allocators mentioned in~\autoref{sec:cheriallocators}, except those
+allocators which have not passed our validation test. We observe a total of
+\allocbugs{} attack successes (\autoref{tab:atks}), indicating potential CHERI
+security violations.
 
 Conceptually, the capability memory allocator vulnerabilities we identified
 come in two flavours: the allocator can initially hand out more permissions
