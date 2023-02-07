@@ -577,9 +577,7 @@ privileges are not a subset of \emph{C1}'s privileges.} to perform calculations
 are at risk of privilege escalation, and need to be carefully audited for bad
 idioms.
 
-\subsection{Insufficient validation of the input capability}
-
-\andrei{Which of the test sources does this subsection refer to?}
+\subsection{\privesc: Insufficient validation of the input capability}
 
 Consider a memory allocator whose \fnc{realloc(cap, size)} function takes in a
 capability \texttt{cap} whose address references the beginning of a block of
