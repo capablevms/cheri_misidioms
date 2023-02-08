@@ -332,8 +332,10 @@ def do_table_tests_entries(result, test_names):
             assert(os.path.basename(test) in test_names)
             if result["results"][test]["exit_code"] == 0:
                 new_entry.append(r'\checkmark')
-            else:
+            else if "Assertion failed" in result["results"][test]["stderr"]:
                 new_entry.append(r'$\times$')
+            else:
+                new_entry.append(r'$\oslash$')
     else:
         for test in tests:
             if result["results"][test]["exit_code"] == 0:
@@ -358,7 +360,7 @@ def do_table_tests(results):
         entries.append(' & '.join(entry))
     epilogue = [r'\input{./data/results/tests_extra.tex}']
     epilogue += [r'\\ \bottomrule', r'\end{tabular}']
-    epilogue += [r'\caption{Attacks which succeed on a given allocator are marked with a $\times$.}']
+    epilogue += [r'\caption{Attacks which succeed on a given allocator are marked with a $\times$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}']
     epilogue += [r'\label{tab:atks}', r'\end{center}', r'\end{table}']
     table = '\n'.join(['\n'.join(preamble), '\\\\\n'.join(entries), '\n'.join(epilogue)])
     return table
@@ -426,7 +428,7 @@ if args.parse_data_only:
     log_message(f"Parsing results file at {args.parse_data_only}.")
     with open(args.parse_data_only, 'r') as results_fd:
         results = json.load(results_fd)
-    tests = [x for x in glob.glob(os.path.join(get_config('tests_folder'), "*.c")) if not "test_bump_alloc" in x]
+    tests = [x for x in glob.glob(os.path.join(get_config('tests_folder'), "*.c"))]
     api_fns = read_apis(get_config('cheri_api_path'))
     do_all_tables(results)
     sys.exit(0)
