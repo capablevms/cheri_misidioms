@@ -326,13 +326,13 @@ def do_table_cheri_api(results):
 def do_table_tests_entries(result, test_names):
     new_entry = []
     if args.parse_data_only:
-        for test in result["results"]:
+        for test in sorted(result["results"].keys()):
             if os.path.basename(test) in config["table_tests_to_ignore"]:
                 continue
             assert(os.path.basename(test) in test_names)
             if result["results"][test]["exit_code"] == 0:
                 new_entry.append(r'\checkmark')
-            else if "Assertion failed" in result["results"][test]["stderr"]:
+            elif "Assertion failed" in result["results"][test]["stderr"]:
                 new_entry.append(r'$\times$')
             else:
                 new_entry.append(r'$\oslash$')
@@ -346,8 +346,8 @@ def do_table_tests_entries(result, test_names):
 
 def do_table_tests(results):
     latexify = lambda x : r'\tbl' + x.replace('_', '').replace('2', "two")
-    header_fields = len(tests) * 'c'
-    test_names = [os.path.splitext(x)[0] for x in map(os.path.basename, tests)]
+    test_names = [os.path.splitext(x)[0] for x in map(os.path.basename, sorted(tests)) if not os.path.splitext(x)[0] in (config["table_tests_to_ignore"] + config["tests_to_ignore"])]
+    header_fields = len(test_names) * 'c'
     preamble = [r'\begin{table}[t]', r'\begin{center}', r'\begin{tabular}{l' + header_fields + r'}']
     preamble += [r'\toprule', r'Allocator & ' + ' & '.join(map(latexify, test_names)) + r'\\']
     preamble += [r'\midrule']
@@ -428,9 +428,11 @@ if args.parse_data_only:
     log_message(f"Parsing results file at {args.parse_data_only}.")
     with open(args.parse_data_only, 'r') as results_fd:
         results = json.load(results_fd)
-    tests = [x for x in glob.glob(os.path.join(get_config('tests_folder'), "*.c"))]
+    tests = sorted([x for x in glob.glob(os.path.join(get_config('tests_folder'), "*.c"))])
     api_fns = read_apis(get_config('cheri_api_path'))
     do_all_tables(results)
+    log_message(f"DONE in {work_dir_local}")
+    log_fd.close()
     sys.exit(0)
 
 # Symlink last execution work directory
@@ -454,7 +456,7 @@ work_dir_remote = work_dir_remote.strip()
 log_message(f"Set remote work directory to {work_dir_remote}")
 
 # Prepare tests and read API data
-tests = prepare_tests(get_config('tests_folder'), work_dir_remote)
+tests = sorted(prepare_tests(get_config('tests_folder'), work_dir_remote))
 api_fns = read_apis(get_config('cheri_api_path'))
 
 # Environment for cross-compiling
