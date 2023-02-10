@@ -195,6 +195,12 @@ itself a new capability. This would mean giving the allocator greater
 permissions to memory, which could undermine security if the allocator itself
 would become the target of an adversary.
 
+\jacob{I think I'm missing something here. The C-style allocators we're
+discussing can't move objects (in the C sense), and capabilities don't change
+that. Similarly, I think the allocator already needs a superior capability so it
+implement \textit{malloc}. Did this section refer to moving GCs? If so, perhaps
+we should save it for a future BDWGC paper.}
+
 \subsection{Richer Metadata}
 One advantage of using capabilities instead of traditional pointers
 is the additional metadata held within the capability.
