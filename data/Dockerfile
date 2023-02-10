@@ -45,6 +45,6 @@ RUN ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519 < /dev/null
 RUN git clone --depth 1 https://github.com/CTSRD-CHERI/cheribuild
 
 RUN git clone --depth 1 https://github.com/capablevms/cheri_misidioms && \
-    find /home/memalloc/cheri_misidioms -name build.sh -exec chmod u+x
+    find /home/memalloc/cheri_misidioms -name build.sh -exec chmod u+x {} \;
 
 WORKDIR /home/memalloc/cheri_misidioms/data
