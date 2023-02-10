@@ -167,20 +167,26 @@ the bounds are representable as a compressed capability. We pad to ensure the
 malloc buffer is at least as large as it needs to be.
 
 \subsection{Temporal Safety Issues}
-From a security perspective, after a successful \fnc{realloc} call,
-there still exists in scope a capability pointing to some part of memory (i.e.,
-the source \fnc{realloc} address). This small detail might evade the attention
-of a software developer working with such a simple allocator implementation,
-leading to potential capability leakage, thus undermining the security
-guarantees of capabilities.
+After successful \fnc{realloc} or \fnc{free} calls, the original capabilties are
+still available to the caller. For example, in C, the argument remains in scope
+and can be used again. Most possible uses of the original capabiltiies are
+"use-after-free" faults, and undefined behaviour, but still leave the caller
+with a capability to memory that it no longer owns. In addition, even if care is
+taken to avoid this problem at the language level, residual capabilities may
+remain in stack frames or machine registers.
 
 One method of overcoming temporal issues could be \emph{capability revocation}.
 Ideally, we could revoke a capability that has gone ``out of scope'' (perhaps
 by invalidating the tag bit), such that any attempt to use that capability
 would lead to a trap. However, as there is no record of how capabilities are
 used and copied, there is no way of tracking where capabilities that have to be
-revoked end up, without fully scanning memory. As this is a fairly expensive
-operation, alternative measures need to be found to enhance temporal safety.
+revoked end up, without fully scanning memory. This is an ongoing area of
+research\cite{filardo2020cornucopia}, but carries costs that are unlikely to be
+acceptable for universal deployment. Alternative measures need to be found to
+enhance temporal safety.
+
+\jacob{"need to be found": Are we doing that, or asking for further work, or
+both?}
 
 \subsection{Memory coalescing}
 
@@ -503,6 +509,15 @@ For memory allocators, CHERI offers the possibility of:
 \item temporal memory safety on the heap
 \item spatial memory safety on the heap
 \end{itemize}
+
+\jacob{We should define "lightweight software compartmentalization".}
+
+\jacob{I find it useful, in general, to distinguish between language-level
+temporal safety (like Rust or \fnc{unique\_ptr}) and strict temporal safety (at
+the machine level). The former is sufficient for the majority of UaF
+vulnerabilities, but the latter is required if the code is malicious (since
+residual register values could be read by inline assembly, for example). Is that
+too far for this paper?}
 
 When we survey existing CHERI memory allocators `in-the-wild', we
 see that they currently provide support for spatial memory safety
