@@ -5,12 +5,11 @@
 \maketitle
 
 \begin{abstract}
+\noindent
 Several memory allocators have been ported to CHERI, a hardware capability
-platform. We define a number of simple (mostly, but not exclusively, temporal)
-vulnerabilities that CHERI memory allocators are potentially vulnerable to.
-Since we first made a pre-print of this paper available, some allocators have
-fixed some or all vulnerabilities, but many remain vulnerable: our work may
-  also prove useful for those working on CHERI memory allocators in the future.
+platform. In this paper we examine the performance and security of these
+allocators: we show that they are much slower than their non-CHERI equivalents,
+and several are subject to simple security vulnerabilities.
 \end{abstract}
 
 
@@ -29,52 +28,65 @@ In this paper we examine one of the most fundamental software components:
 memory allocators (henceforth just ``allocators''). Apart from some embedded
 systems (which preallocate fixed quantities of memory), allocators are
 ubiquitous because they allow us to write programs that are generic over a
-variety of memory usage patterns. Security flaws in allocators thus tend
-to have significant and widespread consequences.
+variety of memory usage patterns. Since allocators are used so frequently
+by most programs, allocator performance is thus a major
+part of software performance in general. Similarly, security flaws in
+in allocators tend to have significant and widespread consequences.
 
-We show that it is surprisingly difficult to make a `secure' allocator for pure
-capability CHERI\@. We first show the basic problems with a simple bump-pointer
-allocator example (\autoref{sec:bumppointerallocator}). We then
-examine~\alloccount{} existing allocators that have been ported to CHERI
-(\autoref{sec:cheriallocators}). Finally we introduce and name~\allocbugs{}
-simple `attacks' on pure capability memory allocators, showing that most of the
-allocators are vulnerable to most of the attacks (\autoref{sec:atk}). Since
-we first made a pre-print of this paper available, some allocators have
-fixed some or all vulnerabilities, but many remain vulnerable.
+In this paper we examine allocators and CHERI from both performance
+(Section~\ref{performance}) and security (Section~\ref{security}) angles. In
+the former we show that CHERI allocators are currently much slower than their
+non-CHERI equivalents. In the latter we introduce a number of `attacks' and
+show that many of the allocators are vulnerable to at least some of the attacks
+(note that since we first made a pre-print of this paper available, some
+allocators have fixed some or all vulnerabilities).
+
+We do not claim our work is definitive, though it does suggest two things: that
+allocators remain a significant performance issue for CHERI; and that some
+allocators undermine the security one might expect from CHERI.
 
 
 \section{Background}
 
-We assume high-level familiarity with capabilities (\cite{levy84capability}
+We expect that few readers are expert in both CHERI and allocators: in this
+section, we first provide a brief overview of CHERI (Section~\ref{sec:cheri}),
+before introducing a very basic CHERIfied allocator (Section~\ref{sec:bumppointerallocator}).
+
+
+\subsection{CHERI}
+\label{sec:cheri}
+
+Capabilities are an old idea (\cite{levy84capability}
 provides an approachable historical overview of capability architectures, and
-may usefully be augmented by more recent work such as~\cite{miller06robust}),
-CHERI generally (for a useful introduction to CHERI,
-see~\cite{watson20cheriintroduction}),
-the CHERI ABI~\cite{brooks19cheriabi},
-and CHERI C (the dialect of C that CHERI defines)~\cite{watson20chericprogramming}.
-
-\subsection{Terminology}
-
+may usefully be augmented by more recent work such as~\cite{miller06robust}):
+CHERI can to some extent be seen as a modern update. In this subsection,
+we provide a simple overview of CHERI, and its major concepts.
 Because CHERI has been developed over a number of years, and is explained over
-a variety of documentation and papers, some concepts have more than one name.
-We have found that some of those names make it difficult to talk, and sometimes
-reason about, capability usage. In addition, some of these names are generic,
-and conflict with common terms in existing software.
-To avoid confusion, we have found it useful to assign specific meaning to some
-terms.
+a variety of documentation and papers, some concepts have acquired more than one name,
+and/or have names which subtly conflict with definitions common in mainstream
+software development. We use a single name for each concept, sometimes
+introducing new names where we believe that makes things clearer.
+
+%for a useful introduction to CHERI,
+%see~\cite{watson20cheriintroduction}),
+%the CHERI ABI~\cite{brooks19cheriabi},
+%and CHERI C (the dialect of C that CHERI defines)~\cite{watson20chericprogramming}.
 
 We use the term \emph{CHERI} to refer to the `abstract capability machine'
 that software can observe: that is, the combination of a capability hardware
-instruction set, an ABI, and a user-facing library that exposes
-capability-related functions.  We refer to specific hardware implementations by
-their name (e.g.~Arm's `Morello' or `CHERI RISC-V').
+instruction set, an ABI (e.g.~\cite{brooks19cheriabi}), a user-facing library that exposes
+capability-related functions, and a CHERI-aware language. (e.g.~CHERI C~\cite{watson20chericprogramming}).
+We refer to specific hardware implementations by
+their name (e.g.~Arm's `Morello', an extension of the AArch64 instruction
+set, or `CHERI RISC-V').
 
 A fundamental property of CHERI capabilities is that they cannot be forged. Each
 new \emph{child} capability must be derived from one or more \emph{parent}
-capabilities. An \emph{authentic} capability is one that has been derived from
-\emph{authentic} parents according to CHERI's rules. CHERI calls these `tagged'
-or `valid'. Attempts to create capabilities by other means produce
-\emph{inauthentic} results. CHERI calls these `untagged' or `invalid'.
+capabilities. An \emph{authentic}\footnote{CHERI calls these
+`tagged' or `valid' (and their inauthentic counterparts `untagged' or `invalid').}
+capability is one that has been derived from authentic parents according to
+CHERI's rules. Attempts to create capabilities by other means produce
+\emph{inauthentic} results.
 
 A capability consists of an
 \emph{address} in memory and a set of \emph{permissions} (only a subset of
@@ -125,7 +137,7 @@ which uses only capabilities is in \emph{pure capability} mode. In this paper
 we concentrate exclusively on programs which operate in pure capability mode.
 
 
-\section{A Basic Allocator for Pure Capability CHERI}
+\subsection{A Basic Allocator for Pure Capability CHERI}
 \label{sec:bumppointerallocator}
 
 \laurie{jeremy: why don't we present the absolute most bare bones allocator
@@ -158,7 +170,7 @@ design patterns from a pragmatic perspective.  In this section, we discuss some
 of the issues we have identified and how they might cause potential challenges
 in a capability-aware context.
 
-\subsection{Bare-bones Bump Pointer}
+\subsubsection{Bare-bones Bump Pointer}
 
 \lstinputlisting[language=C, caption={A very basic, but usable, non-capability
 bump pointer allocator.},
@@ -176,7 +188,7 @@ calls. The bump pointer moves through the initially allocated chunk until it
 reaches the upper limit at which point the memory is exhausted.
 
 
-\subsection{Capability Bounds}
+\subsubsection{Capability Bounds}
 
 When this allocator code is compiled and executed on a capability platform, the
 values returned by \fnc{malloc} will share the same capability metadata as the
@@ -217,7 +229,7 @@ enhance temporal safety.
 \jacob{"need to be found": Are we doing that, or asking for further work, or
 both?}
 
-\subsection{Memory coalescing}
+\subsubsection{Memory coalescing}
 
 One important functionality of memory allocators is \emph{memory coalescing}.
 As a program operates, deallocating objects leads to there being unused gaps in
@@ -236,7 +248,7 @@ that. Similarly, I think the allocator already needs a superior capability so it
 implement \textit{malloc}. Did this section refer to moving GCs? If so, perhaps
 we should save it for a future BDWGC paper.}
 
-\subsection{Richer Metadata}
+\subsubsection{Richer Metadata}
 One advantage of using capabilities instead of traditional pointers
 is the additional metadata held within the capability.
 For example, we are able to fetch the
@@ -319,7 +331,8 @@ On the other hand, if the metadata is in-bounds for the user-visible pointer
 then the metadata could be modified by user code, so CHERI cannot protect
 against metadata corruption.'''}
 
-\section{Existing CHERI Allocators}
+
+\section{The CHERI Allocators under consideration}
 \label{sec:cheriallocators}
 
 \laurie{we need to add citations for the allocators where possible}
@@ -529,6 +542,17 @@ Section~\ref{sec:atk}~goes into more detail there (by counter-example).}
 
 \subsection{Security Properties}
 \label{sec:rqs:rq4}
+
+\laurie{We show that it is surprisingly difficult to make a `secure' allocator for pure
+capability CHERI\@. We first show the basic problems with a simple bump-pointer
+allocator example (\autoref{sec:bumppointerallocator}). We then
+examine~\alloccount{} existing allocators that have been ported to CHERI
+(\autoref{sec:cheriallocators}). Finally we introduce and name~\allocbugs{}
+simple `attacks' on pure capability memory allocators, showing that most of the
+allocators are vulnerable to most of the attacks (\autoref{sec:atk}). Since
+we first made a pre-print of this paper available, some allocators have
+fixed some or all vulnerabilities, but many remain vulnerable.
+}
 
 The CHERI hardware extensions supports a variety of enforceable security
 policies, but these require careful coding in software.
