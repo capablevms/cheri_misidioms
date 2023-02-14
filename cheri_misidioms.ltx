@@ -53,37 +53,66 @@ see~\cite{watson20cheriintroduction}),
 the CHERI ABI~\cite{brooks19cheriabi},
 and CHERI C (the dialect of C that CHERI defines)~\cite{watson20chericprogramming}.
 
+\subsection{Terminology}
+
 Because CHERI has been developed over a number of years, and is explained over
 a variety of documentation and papers, some concepts have more than one name.
 We have found that some of those names make it difficult to talk, and sometimes
-reason about, capability usage.
-Unfortunately, we can think of no better solution to this than to propose our
-own terminology.
+reason about, capability usage. In addition, some of these names are generic,
+and conflict with common terms in existing software.
+To avoid confusion, we have found it useful to assign specific meaning to some
+terms.
 
-We use the term \textit{CHERI} to refer to the `abstract capability machine'
+We use the term \emph{CHERI} to refer to the `abstract capability machine'
 that software can observe: that is, the combination of a capability hardware
 instruction set, an ABI, and a user-facing library that exposes
 capability-related functions.  We refer to specific hardware implementations by
 their name (e.g.~Arm's `Morello' or `CHERI RISC-V').
 
-CHERI capabilities are immutable and thus a new \emph{child} capability must be
-derived from one or more \emph{parent} capabilities.  We refer to a capability
-as \emph{authentic} (what CHERI calls `tagged' or `valid') if it has been
-derived from its parents according to CHERI's rules, or \emph{inauthentic}
-(what CHERI calls `untagged' or `invalid') otherwise. An inauthentic capability
-may be duplicated at will but attempting to use an inauthentic capability in
-any other way leads to a hardware exception.  A capability consists of an
+A fundamental property of CHERI capabilities is that they cannot be forged. Each
+new \emph{child} capability must be derived from one or more \emph{parent}
+capabilities. An \emph{authentic} capability is one that has been derived from
+\emph{authentic} parents according to CHERI's rules. CHERI calls these `tagged'
+or `valid'. Attempts to create capabilities by other means produce
+\emph{inauthentic} results. CHERI calls these `untagged' or `invalid'.
+
+A capability consists of an
 \emph{address} in memory and a set of \emph{permissions} (only a subset of
 which we consider in this paper). Amongst the permissions are \emph{bounds} -- the region of memory an
 authentic capability is allowed to read/write from/to. A capability's bounds
 are from a \emph{low} (inclusive) to a \emph{high} (exclusive) address and we
 refer to `a bound of $x$ bytes' to mean a capability where
-$\textit{high}-\textit{low}=x$.  If a capability's address is contained within
-its bounds we refer to the capability as a whole as \emph{in-bounds} or
-\emph{out-of-bounds} otherwise (see~\cite{woodruff19chericoncentrate} for an
-explanation of why an authentic capability might have an out-of-bounds
-address). Other permissions include boolean flags such as whether a capability
-can read/write to memory addresses within its bounds.
+$\textit{high}-\textit{low}=x$. An address, or range or addressses, is
+\emph{in-bounds} for a given capability if it is wholly contained within the
+capability's bounds, or \emph{out-of-bounds} otherwise. The
+capability as a whole is considered \emph{in-bounds} or \emph{out-of-bounds} if
+its inherent (singular) address is in-bounds or out-of-bounds, respectively.
+See~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
+capability might have an out-of-bounds address. Other permissions include
+boolean flags, for example to indicate whether a capability can read from or
+write to memory addresses within its bounds.
+
+\jacob{I plan to change our \emph{permissions} to not include the \emph{bounds},
+since all other CHERI authorities seem to treat them separately, and I think
+there's little value in deviating here. If anyone objects, please let me know!}
+
+A \emph{permissions check} is said to be successful if the permission required
+for a given operation is provided by a given capability.
+A \emph{bounds check} is said to be successful if a given capability, address or
+address range is in-bounds for a given capability.
+
+We consider a capability to be \emph{exercised} if an operation is successfully
+performed that requires authenticity, a permission check, and a bounds check
+according to the operation. Failed attempts to exercise capabilities usually
+result in hardware exceptions. However, some CHERI implementations instead
+provide inauthentic results, where permitted by the security model. For example:
+a failed attempt to exercie a capability for a sealing operation on Morello
+produces an inauthentic result, rather than an exception.
+
+\jacob{This is slightly narrower than Morello's own definition of \emph{using} a
+capability, which depends only on the permissions. However, in practice, all
+such uses also check authenticity and bounds, so I think our definition is more
+useful. Do we all agree?}
 
 As well as capabilities (which on Morello and CHERI RISC-V, for example, are
 128 bits), CHERI also allows `traditional' single-width
@@ -176,11 +205,11 @@ taken to avoid this problem at the language level, residual capabilities may
 remain in stack frames or machine registers.
 
 One method of overcoming temporal issues could be \emph{capability revocation}.
-Ideally, we could revoke a capability that has gone ``out of scope'' (perhaps
-by invalidating the tag bit), such that any attempt to use that capability
-would lead to a trap. However, as there is no record of how capabilities are
-used and copied, there is no way of tracking where capabilities that have to be
-revoked end up, without fully scanning memory. This is an ongoing area of
+Ideally, we could revoke a capability that has gone ``out of scope'' (perhaps by
+zeroing it, rendering it inauthentic). Then, any attempt to exercise that
+capability would fail. However, as there is no record of how capabilities are
+exercised and copied, there is no way of tracking where capabilities that have
+to be revoked end up, without fully scanning memory. This is an ongoing area of
 research\cite{filardo2020cornucopia}, but carries costs that are unlikely to be
 acceptable for universal deployment. Alternative measures need to be found to
 enhance temporal safety.
@@ -593,7 +622,7 @@ use of a higher-privileged capability in order to function.
 
 Functions which take in a low privileged capability and use a higher privileged
 capability\footnote{More formally, which take as input a capability \emph{C1}
-and make internal use of  a capability \emph{C2}, where \emph{C2}'s set of
+and make internal use of a capability \emph{C2}, where \emph{C2}'s set of
 privileges are not a subset of \emph{C1}'s privileges.} to perform calculations
 are at risk of privilege escalation, and need to be carefully audited for bad
 idioms.
@@ -759,11 +788,11 @@ observed and tampered with by the attacker.
 A more complete mitigation for the concrete example is for \texttt{free} to
 revoke all references to the capability. In other words, CHERI allows one to
 scan memory looking for all capabilities with bounds encompassing an address
-$p$ and invalidate the capability~\cite{xia29cherivoke}. In this case, this
+$p$ and render them inauthentic~\cite{xia29cherivoke}. In this case, this
 means that the original code will then fail with a \texttt{SIGPROT} when it
-tries to use \emph{C1}, downgrading the security leak into a denial-of-service.
-However, scanning the stack and heap in order to perform revocation is not
-likely to be a quick operation.
+tries to dereference \emph{C1}, downgrading the security leak into a
+denial-of-service. However, scanning the stack and heap in order to perform
+revocation is not likely to be a quick operation.
 
 
 \subsection{\narrowingdoesnt: Narrowing a capability's bounds does not always fully narrow the capability's bounds}
