@@ -8,11 +8,10 @@
 #include "../listings/bump_alloc1.c"
 
 int
-sum_arr(int* arr, size_t arr_size)
+sum_arr(int *arr, size_t arr_size)
 {
     int sum = 0;
-    for (size_t i = 0; i < arr_size; ++i)
-    {
+    for (size_t i = 0; i < arr_size; i++) {
         sum += arr[i];
     }
     return sum;
@@ -21,18 +20,20 @@ sum_arr(int* arr, size_t arr_size)
 int
 main()
 {
-    const size_t vars_count = 10;
-    int* vars = malloc(vars_count * sizeof(int));
+    size_t vars_count = 10;
+    int *vars = malloc(vars_count * sizeof(int));
     assert(vars != NULL);
-    printf("Allocated new array of size %d at pointer %p.\n", vars_count, vars);
-    for (size_t i = 0; i < vars_count; ++i)
-    {
+    for (size_t i = 0; i < vars_count; i++) {
         vars[i] = i * i;
     }
     assert(sum_arr(vars, vars_count) == 285);
-    int* ptr_var = malloc(sizeof(int));
+    int *ptr_var = malloc(sizeof(int));
     assert(ptr_var != NULL);
     assert(ptr_var != vars);
-    printf("Allocated new pointer %p.\n", ptr_var);
+    vars_count--;
+    int *new_vars = realloc(vars, vars_count * sizeof(int));
+    assert(vars != new_vars);
+    assert(new_vars != NULL);
+    assert(sum_arr(new_vars, vars_count) == 204);
     return 0;
 }
