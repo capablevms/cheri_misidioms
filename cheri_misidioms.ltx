@@ -125,6 +125,11 @@ produces an inauthentic result, rather than an exception.
 capability, which depends only on the permissions. However, in practice, all
 such uses also check authenticity and bounds, so I think our definition is more
 useful. Do we all agree?}
+\laurie{i'm broadly fine with this, though i think I might tweak `instead
+permitted by the security model' to something like `operate on and produce
+inauthentic capabilities (mostly for performance reasons) where this does not
+undermine fundamental aspects of the security model (e.g.~memory safety)' to
+hammer home the point}
 
 As well as capabilities (which on Morello and CHERI RISC-V, for example, are
 128 bits), CHERI also allows `traditional' single-width
