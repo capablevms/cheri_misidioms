@@ -13,7 +13,7 @@ clean:
 	rm -rf ${DIAGRAMS} ${DIAGRAMS:S/.pdf/.eps/}
 	rm -rf cheri_misidioms.aux cheri_misidioms.bbl cheri_misidioms.blg cheri_misidioms.dvi cheri_misidioms.log cheri_misidioms.ps cheri_misidioms.pdf cheri_misidioms.toc cheri_misidioms.out cheri_misidioms.snm cheri_misidioms.nav cheri_misidioms.vrb cheri_misidioms_preamble.fmt texput.log
 
-cheri_misidioms.pdf: bib.bib ${LATEX_FILES} ${DIAGRAMS} cheri_misidioms_preamble.fmt
+cheri_misidioms.pdf: bib.bib ${LATEX_FILES} ${DIAGRAMS} cheri_misidioms_preamble.fmt listings/*.c
 	pdflatex cheri_misidioms.ltx
 	bibtex cheri_misidioms
 	pdflatex cheri_misidioms.ltx
