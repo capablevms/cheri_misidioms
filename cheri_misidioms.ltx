@@ -20,30 +20,32 @@ Capability Hardware Enhanced RISC Instructions
 capabilities that allow programmers to make strong security guarantees
 about the memory safety properties of their programs. However, capabilities are
 not magic. Programmers must first decide which memory safety properties they
-wish to enforce and then actually enforce those memory safety properties.
+wish to enforce and then write their software in a way that enforces those properties.
 It is easy for mistakes to creep in during either step, undermining
 the security guarantees programmers believe their code possesses.
 
 In this paper we examine one of the most fundamental software components:
 memory allocators (henceforth just ``allocators''). Apart from some embedded
 systems (which preallocate fixed quantities of memory), allocators are
-ubiquitous because they allow us to write programs that are generic over a
-variety of memory usage patterns. Since allocators are used so frequently
-by most programs, allocator performance is thus a major
-part of software performance in general. Similarly, security flaws in
-in allocators tend to have significant and widespread consequences.
+ubiquitous, because they allow us to write programs that are generic over a
+variety of memory usage patterns. Since allocators are used so frequently,
+their performance and security properties are a major part of the
+performance and security properties of software in general. In other words,
+slow memory allocators and/or those with security flaws have significant
+and widespread consequences.
 
 In this paper we examine allocators and CHERI from both performance
-(Section~\ref{performance}) and security (Section~\ref{security}) angles. In
-the former we show that CHERI allocators are currently much slower than their
-non-CHERI equivalents. In the latter we introduce a number of `attacks' and
+and security angles. In
+Section~\ref{performance} we show that CHERI allocators are currently much slower than their
+non-CHERI equivalents. In Section~\ref{sec:atk} we introduce a number of `attacks' and
 show that many of the allocators are vulnerable to at least some of the attacks
 (note that since we first made a pre-print of this paper available, some
 allocators have fixed some or all vulnerabilities).
 
 We do not claim our work is definitive, though it does suggest two things: that
-allocators remain a significant performance issue for CHERI; and that some
-allocators undermine the security one might expect from CHERI.
+allocators are a significant performance issue for software running
+on CHERI; and that some allocators undermine the security properties one might
+expect from software running on CHERI.
 
 
 \section{Background}
@@ -56,10 +58,7 @@ before introducing a very basic CHERIfied allocator (Section~\ref{sec:bumppointe
 \subsection{CHERI}
 \label{sec:cheri}
 
-Capabilities are an old idea (\cite{levy84capability}
-provides an approachable historical overview of capability architectures, and
-may usefully be augmented by more recent work such as~\cite{miller06robust}):
-CHERI can to some extent be seen as a modern update. In this subsection,
+In this subsection,
 we provide a simple overview of CHERI, and its major concepts.
 Because CHERI has been developed over a number of years, and is explained over
 a variety of documentation and papers, some concepts have acquired more than one name,
@@ -67,10 +66,15 @@ and/or have names which subtly conflict with definitions common in mainstream
 software development. We use a single name for each concept, sometimes
 introducing new names where we believe that makes things clearer.
 
-%for a useful introduction to CHERI,
-%see~\cite{watson20cheriintroduction}),
-%the CHERI ABI~\cite{brooks19cheriabi},
-%and CHERI C (the dialect of C that CHERI defines)~\cite{watson20chericprogramming}.
+A \emph{capability} is a token that gives those who bear it the ability to
+perform certain actions. By restricting who has access to a given capability,
+one can enforce security properties (e.g.~`this part of the software can
+only read from heap memory'). Capabilities have a long and storied history (\cite{levy84capability}
+provides an approachable historical overview of capability architectures, and
+may usefully be augmented by more recent work such as~\cite{miller06robust}).
+A good first intuition is that CHERI is a modern update of this venerable
+idea, updated with fine-grained permissions, and adapted to work on modern
+CPU instruction sets.
 
 We use the term \emph{CHERI} to refer to the `abstract capability machine'
 that software can observe: that is, the combination of a capability hardware
@@ -545,7 +549,11 @@ Section~\ref{sec:atk}~goes into more detail there (by counter-example).}
 %%%
 
 
-\subsection{Security Properties}
+\section{Performance}
+\label{performance}
+
+
+\section{Security Properties}
 \label{sec:rqs:rq4}
 
 \laurie{We show that it is surprisingly difficult to make a `secure' allocator for pure
