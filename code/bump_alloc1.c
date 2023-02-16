@@ -11,10 +11,12 @@ void *malloc(size_t size) {
     heap_current = mmap(NULL, HEAP_SIZE,
       PROT_READ | PROT_WRITE,
       MAP_PRIVATE | MAP_ANON, -1, 0);
-    if (heap_start == MAP_FAILED) return NULL;
+    if (heap_start == MAP_FAILED)
+      return NULL;
     heap_start = heap_current;
   }
-  if (heap_current+size > heap_start + HEAP_SIZE)
+  if (heap_current + size >
+      heap_start + HEAP_SIZE)
     return NULL;
   heap_current += size;
   return heap_current - size;

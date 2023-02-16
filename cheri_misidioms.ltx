@@ -156,9 +156,14 @@ and allocators interact.
 
 \subsubsection{Bare-bones Bump Pointer}
 
-\lstinputlisting[language=C, caption={A very basic, but usable, non-capability
-bump pointer allocator.},
-label=lst:bump_alloc]{listings/bump_alloc1.c}
+\begin{figure}[t]
+\lstinputlisting[
+  language=C,
+  caption={
+    A basic, but usable, non-capability bump pointer allocator.
+  },
+label=lst:bump_alloc]{code/bump_alloc1.c}
+\end{figure}
 
 A very basic version of \bumpalloc is shown in~\autoref{lst:bump_alloc}.  In
 this implementation, \fnc{malloc} always returns a new chunk if memory is
@@ -184,7 +189,7 @@ value by deriving a new capability with updated base and bounds.
 
 \lstinputlisting[language=C, caption={Bump pointer allocator that returns
 bounded capability values to client code.},
-label=lst:bump_alloc2]{listings/bump_alloc2.c}
+label=lst:bump_alloc2]{code/bump_alloc2.c}
 
 \autoref{lst:bump_alloc2} shows how such derived capabilities can be
 calculated. Note there is complex capability value logic required to ensure

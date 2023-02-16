@@ -5,7 +5,7 @@
 #include <sys/mman.h>
 #include <stdio.h>
 
-#include "../listings/bump_alloc1.c"
+#include "bump_alloc1.c"
 
 int
 sum_arr(int *arr, size_t arr_size)
