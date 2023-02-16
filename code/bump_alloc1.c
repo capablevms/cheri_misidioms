@@ -1,25 +1,25 @@
 #include <string.h>
 #include <sys/mman.h>
 
+void *heap = NULL;
 void *heap_start = NULL;
-void *heap_current = NULL;
-void *heap_end = NULL;
-size_t HEAP_SIZE = 0x1000000UL;
+size_t HEAP_SIZE = 0x1000000;
+
+void *malloc_init() {
+  heap = heap_start = mmap(NULL, HEAP_SIZE,
+    PROT_READ | PROT_WRITE,
+    MAP_PRIVATE | MAP_ANON, -1, 0);
+  return heap;
+}
 
 void *malloc(size_t size) {
-  if (heap_start == NULL) {
-    heap_current = mmap(NULL, HEAP_SIZE,
-      PROT_READ | PROT_WRITE,
-      MAP_PRIVATE | MAP_ANON, -1, 0);
-    if (heap_start == MAP_FAILED)
-      return NULL;
-    heap_start = heap_current;
-  }
-  if (heap_current + size >
+  if (heap == NULL && !malloc_init())
+    return NULL;
+  if (heap + size >
       heap_start + HEAP_SIZE)
     return NULL;
-  heap_current += size;
-  return heap_current - size;
+  heap += size;
+  return heap - size;
 }
 
 void free(void *ptr) { }
