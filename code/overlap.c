@@ -22,13 +22,9 @@ int cmp(const void *a, const void *b) {
 
 bool overlaps(void *x, void *y) {
     assert(cheri_tag_get(x) && cheri_tag_get(y));
-    if (   cheri_base_get(x) < cheri_base_get(y)
-        && cheri_base_get(x) + cheri_length_get(x) > cheri_base_get(y))
-        return true;
-    if (   cheri_base_get(y) < cheri_base_get(x)
-        && cheri_base_get(y) + cheri_length_get(y) > cheri_base_get(x))
-        return true;
-    return false;
+    return
+       (cheri_base_get(x) >= cheri_base_get(y) && cheri_base_get(x) < cheri_base_get(y) + cheri_length_get(y))
+    || (cheri_base_get(y) >= cheri_base_get(x) && cheri_base_get(y) < cheri_base_get(x) + cheri_length_get(x));
 }
 
 int main() {
@@ -47,12 +43,14 @@ int main() {
             qsort(mallocs, NUM_MALLOCS, sizeof(void *), cmp);
 
             for (int j = 0; j < NUM_MALLOCS - 1; j++) {
+                printf("%lu (%lu)\n", cheri_base_get(mallocs[j]), cheri_length_get(mallocs[j]));
                 assert(cheri_base_get(mallocs[j]) < cheri_base_get(mallocs[j + 1]));
                 if (overlaps(mallocs[j], mallocs[j + 1])) {
                     printf("MATCH - %lu\n", i);
                     exit(1);
                 }
             }
+            exit(1);
 
             for (int j = 0; j < NUM_MALLOCS; j++) {
                 free(mallocs[j]);

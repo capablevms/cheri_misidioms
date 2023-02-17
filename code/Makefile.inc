@@ -16,6 +16,7 @@ TARGETS = \
 	unrepresentable_length \
 	overlap \
 	overlap2 \
+	overlap3 \
 	test_bump_alloc1 \
 	test_bump_alloc2
 

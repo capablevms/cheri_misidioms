@@ -829,12 +829,12 @@ memory block. For example, we expect that the following code never succeeds:
 \begin{lstlisting}[language=C]
 void *b1 = malloc(size);
 void *b2 = malloc(size);
-assert(cheri_address_get(b2) >
-       cheri_address_get(b1) +
-       length_get(b1)
-    || cheri_address_get(b1) >
-       cheri_address_get(b2) +
-       length_get(b2))
+assert(
+  cheri_base_get(b1) >= cheri_base_get(b2) &&
+  cheri_base_get(b1) <
+    cheri_base_get(b2) + cheri_length_get(f2)
+);
+}
 \end{lstlisting}
 
 The underlying issue is that capabilities have to be able to cover the full
