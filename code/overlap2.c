@@ -37,9 +37,8 @@ int main() {
     size_t *unrepresentables = calloc(NUM_UNREPRESENTABLES, sizeof(size_t));
     size_t num_unrepresentables = 0;
     for (size_t i = 0; num_unrepresentables < NUM_UNREPRESENTABLES; i++) {
-        size_t rl = cheri_representable_length(i);
-        if (rl > i)
-            unrepresentables[num_unrepresentables++] = rl;
+        if (cheri_representable_length(i) > i)
+            unrepresentables[num_unrepresentables++] = i;
     }
 
     for (size_t i = 0; i < NUM_TRIES; i++) {
