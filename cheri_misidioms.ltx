@@ -816,77 +816,40 @@ denial-of-service. However, scanning the stack and heap in order to perform
 revocation is not likely to be a quick operation.
 
 
-\subsection{\narrowingdoesnt: Narrowing a capability's bounds does not always fully narrow the capability's bounds}
-\label{sec:narrow}
-
-\laurie{this isn't quite an attack in the same style as the others or, at
-least, i couldn't tickle it in quite the same way. however, if there are
-allocators which allocate `larger' chunks of memory contiguously, they could be
-subject to this attack, as one block's bounds might overlap with a
-predecessor/successor}
+\subsection{\overlap: Returning capabilities whose bounds overlap with another block's}
+\label{sec:overlap}
 
 Capabilities have high and low bounds, which are a strong enforcement mechanism
 for restricting the region of memory that the capability can access for
-reading and writing. It is thus tempting to write code which hides secrets
-(e.g.~allocator metadata) beyond the reach of a capability's bounds such as the
-following:
+reading and writing. However, while small bounds can be precisely represented,
+large bounds are over-approximated, raising the possibility of the capability
+for one memory block having bounds which overlap with that of another nearby
+memory block. For example, we expect that the following code never succeeds:
 
-% Adapted from narrow.c
 \begin{lstlisting}[language=C]
-uint8_t *array_with_hidden_secret(size_t size) {
-    uint8_t *arr = malloc(size);
-    return cheri_bounds_set(arr, size - 1);
-}
+void *b1 = malloc(size);
+void *b2 = malloc(size);
+assert(cheri_address_get(b2) >
+       cheri_address_get(b1) +
+       length_get(b1)
+    || cheri_address_get(b1) >
+       cheri_address_get(b2) +
+       length_get(b2))
 \end{lstlisting}
 
-\noindent We first \fnc{malloc} an array with enough space to store
-\texttt{size} bytes (line 2) before creating a child capability
-which prevents access to the array's final byte (line 3). We can verify this
-behaviour by checking the returned capability's length, as in the following
-code, which executes without error:
-
-% Adapted from narrow.c
-\begin{lstlisting}[language=C]
-uint8_t *arr = array_with_hidden_secret(16385);
-assert(cheri_length_get(arr) == 16384);
-\end{lstlisting}
-
-\noindent This idiom is insidious because it works correctly for the sorts of
-`human friendly' sizes that programmers tend to test, but not for many other
-sizes. As we saw above, creating a capability with a bound of 16384 bytes
-prevents access to the array's last byte. However, making the array 1 byte
-bigger undermines our expectations, as in the following code, which executes
-without error:
-
-% Adapted from narrow.c
-\begin{lstlisting}[language=C]
-uint8_t *arr = array_with_hidden_secret(16386);
-assert(cheri_length_get(arr) == 16392);
-\end{lstlisting}
-
-\noindent Although we expected a capability with a bound of 16385 bytes, the
-capability we receive has a bound of 16392 bytes. On Morello, 16385 bytes is
-the smallest bound which
-can not be precisely represented in a capability, and thus it has been been
-rounded up to the next representable bound.
-
-Practically speaking, this means that one cannot expect that narrowing a
-capability's bounds precisely captures only the requested region of memory: in
-general, the capability will provide access to more memory than one wishes.
-Forgetting to take account of this, as in our example above, leads to secrets
-being leaked.
-
-The underlying issue is that modern CHERI systems use `CHERI
-Concentrate'~\cite{woodruff19chericoncentrate}, an approach to representing
-bounds that requires relatively few bits: for example Morello's capabilities
-have 31 bits to express the bounds for a 64-bit address space. The trade-off is
-simple: the fewer bits used for bounds, the smaller capabilities are (which is
-good for memory use and performance), but the less precise the bounds that can
-be represented. The encoding is ingenious, but hard to capture succinctly: in essence,
-bounds use exponents, in similar fashion to IEEE 754 floating point
-numbers: the wider the bound, the less accurately it will be
-represented. When a desired length cannot be precisely represented, the next
-largest precisely representable length is used in the bound.
+The underlying issue is that capabilities have to be able to cover the full
+span of virtual memory without having enough bits to do so precisely. For
+example, Morello's capabilities have 31 bits to express the bounds for a 64-bit
+address space. Modern CHERI systems use `CHERI
+Concentrate'~\cite{woodruff19chericoncentrate} to encode bounds. A good analogy
+is that CHERI Concentrate is similar IEEE 754 floating point numbers: the wider
+the bound, the less accurately it will be represented. When a desired length
+cannot be precisely represented, the next largest precisely representable
+length is used in the bound. On Morello, 16,385 bytes is the smallest bound
+which can not be precisely represented in a capability, and which is thus
+rounded up to the next representable bound (in this case 16,392\footnote{For
+CHERI RISC-V the first unrepresentable length is 4,097 bytes, which is rounded
+up to 4,104.}).
 
 
 \subsubsection{Mitigations}
