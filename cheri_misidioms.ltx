@@ -70,12 +70,12 @@ introducing new names where we believe that makes things clearer.
 A \emph{capability} is a token that gives those who bear it the ability to
 perform certain actions. By restricting who has access to a given capability,
 one can enforce security properties (e.g.~`this part of the software can
-only read from heap memory'). Capabilities have a long and storied history (\cite{levy84capability}
+only read from heap memory'). Capabilities have a long and storied history: \cite{levy84capability}
 provides an approachable historical overview of capability architectures, and
-may usefully be augmented by more recent work such as~\cite{miller06robust}).
+may usefully be augmented by more recent work such as~\cite{miller06robust}.
 A good first intuition is that CHERI is a modern update of this venerable
 idea, updated with fine-grained permissions, and adapted to work on modern
-CPU instruction sets.
+processor instruction sets.
 
 We use the term \emph{CHERI} to refer to the `abstract capability machine'
 that software can observe: that is, the combination of a capability hardware
