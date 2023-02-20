@@ -154,27 +154,25 @@ In this subsection we introduce a basic, but functional, bump allocator \bumpall
 adapted to pure capability CHERI. This allows us to focus on how capabilities
 and allocators interact.
 
-\subsubsection{Bare-bones Bump Pointer}
-
 \begin{figure}[t]
 \lstinputlisting[
   language=C,
   caption={
-    A basic, but usable, non-capability bump pointer allocator.
+    A bare bones, non-capability, bump pointer allocator:
+    \texttt{malloc} works as expected; \texttt{free} is a no-op; and
+    \texttt{realloc} always allocates a new chunk of memory.
   },
 label=lst:bump_alloc1]{code/bump_alloc1.c}
 \end{figure}
 
-A very basic version of \bumpalloc is shown in~\autoref{lst:bump_alloc}.  In
-this implementation, \fnc{malloc} always returns a new chunk if memory is
-available, otherwise it returns \texttt{NULL}, while \texttt{free} is a no-op
-and \fnc{realloc} is aliased to \fnc{malloc}.
-%% FIXME realloc semantics incorrect!
-
-This code initially reserves a large chunk of memory using a single
-\fnc{mmap} call then doles out successive small chunks on \fnc{malloc}
+We start by introducing a bare bones, non-capability bump allocator
+in~\autoref{lst:bump_alloc1}: \texttt{malloc} works as expected; \texttt{free}
+is a no-op; and \texttt{realloc} always allocates a new chunk of memory. The
+allocator reserves a large chunk of memory using a single \fnc{mmap} call then
+doles out chunks on \fnc{malloc} / \texttt{realloc}
 calls. The bump pointer moves through the initially allocated chunk until it
-reaches the upper limit at which point the memory is exhausted.
+reaches the upper limit at which point memory is exhausted.
+Taking this as our basis, we can gradually increase more sophisticated features.
 
 
 \subsubsection{Capability Bounds}
