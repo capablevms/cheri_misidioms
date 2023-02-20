@@ -68,9 +68,9 @@ int main() {
         }
         i++;
     }
-    for (size_t i = 0; i < num_unrepresentables; i++)
-        printf("%lu ", unrepresentables[i]);
-    printf("\n");
+    /*for (size_t i = 0; i < num_unrepresentables; i++)*/
+        /*printf("%lu ", unrepresentables[i]);*/
+    /*printf("\n");*/
 
     for (size_t i = 0; i < NUM_TRIES; i++) {
         printf("ITERATION %lu (of %d)\r", i, NUM_TRIES);

@@ -43,7 +43,7 @@ int main() {
             qsort(mallocs, NUM_MALLOCS, sizeof(void *), cmp);
 
             for (int j = 0; j < NUM_MALLOCS - 1; j++) {
-                printf("%lu (%lu)\n", cheri_base_get(mallocs[j]), cheri_length_get(mallocs[j]));
+                /*printf("%lu (%lu)\n", cheri_base_get(mallocs[j]), cheri_length_get(mallocs[j]));*/
                 assert(cheri_base_get(mallocs[j]) < cheri_base_get(mallocs[j + 1]));
                 if (overlaps(mallocs[j], mallocs[j + 1])) {
                     printf("MATCH - %lu\n", i);
