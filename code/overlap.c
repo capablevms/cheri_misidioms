@@ -47,7 +47,7 @@ int main() {
                 assert(cheri_base_get(mallocs[j]) < cheri_base_get(mallocs[j + 1]));
                 if (overlaps(mallocs[j], mallocs[j + 1])) {
                     printf("MATCH - %lu\n", i);
-                    exit(1);
+                    return 0;
                 }
             }
             exit(1);
@@ -59,4 +59,5 @@ int main() {
         }
     }
     printf("\nDONE\n");
+    return 1;
 }

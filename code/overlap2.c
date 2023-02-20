@@ -92,7 +92,7 @@ int main() {
             if (overlaps(mallocs[j], mallocs[j + 1])) {
                 printf("(%lu, %lu) (%lu, %lu)", cheri_address_get(mallocs[j]), cheri_length_get(mallocs[j]), cheri_address_get(mallocs[j + 1]), cheri_length_get(mallocs[j + 1]));
                 printf("MATCH - %lu\n", i);
-                exit(1);
+                return 0;
             }
         }
 
@@ -102,4 +102,5 @@ int main() {
         free(mallocs);
     }
     printf("\nDONE\n");
+    return 1;
 }
