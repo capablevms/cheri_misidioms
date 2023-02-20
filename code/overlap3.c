@@ -23,5 +23,5 @@ int main() {
     printf("%lu (%lu)\n", cheri_base_get(b1), cheri_length_get(b1));
     printf("%lu (%lu)\n", cheri_base_get(b2), cheri_length_get(b2));
     printf("%lu\n", cheri_base_get(b2) - (cheri_base_get(b1) + cheri_length_get(b2)));
-    assert(!overlaps(b1, b2));
+    return overlaps(b1, b2);
 }
