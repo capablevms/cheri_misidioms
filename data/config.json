@@ -5,6 +5,7 @@
     "cheribsd_cxxflags": "--config cheribsd-morello-purecap",
     "cheribsd_ld": "$HOME/cheribuild/output/morello-sdk/bin/clang",
     "cheribuild_folder": "$HOME/cheribuild",
+    "cheribsd_ports_url": "https://github.com/CTSRD-CHERI/cheribsd-ports",
     "cheri_api_path": "$CWD/apis.json",
     "cheri_qemu_port": 10086,
     "cheri_qemu_test_folder": "$RHOME/tests",
@@ -13,12 +14,14 @@
     "allocators_folder": "$CWD/allocators",
     "table_tests_to_ignore":
     [
-        "unrepresentable_length"
+        "unrepresentable_length",
+        "narrow",
+        "narrow_realloc",
+        "validate"
     ],
     "tests_to_ignore":
     [
-        "test_bump_alloc1",
-        "test_bump_alloc2",
-        "overlap"
+        "bump_alloc1",
+        "bump_alloc2"
     ]
 }

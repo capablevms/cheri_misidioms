@@ -107,7 +107,7 @@ def prepare_tests(tests_path, dest_path):
     compile_cmd = f"{os.path.join(work_dir_local, 'cheribuild', 'output', 'morello-sdk', 'bin', 'clang')} --std=c11 -Wall --config cheribsd-morello-purecap.cfg"
     for source in test_sources:
         test = os.path.join(work_dir_local, os.path.splitext(os.path.basename(source))[0])
-        subprocess.run(shlex.split(compile_cmd) + ['-o', test, source])
+        subprocess.run(shlex.split(compile_cmd) + ['-o', test, source], check = True)
         tests.append(test)
     subprocess.run(make_scp_cmd(" ".join(tests), f"{dest_path}"), check = True)
     return tests
@@ -200,6 +200,13 @@ def prepare_cheri():
         time.sleep(attempts_cd)
     return None
 
+def prepare_cheribsd_ports():
+    repo = git.Repo.clone_from(url = get_config('cheribsd_ports_url'),
+                               to_path = os.path.join(work_dir_local,
+                                                      'cheribsd-ports'),
+                               multi_options = ["--depth 1", "--single-branch"])
+    return repo
+
 def do_install(info, compile_env):
     if info['mode'] == 'cheribuild':
         os.chdir(get_config('cheribuild_folder'))
@@ -234,6 +241,7 @@ def do_install(info, compile_env):
             return check_cmd.returncode == 0
         else:
             subprocess.run(make_install_alloc_cmd(info['target'], info['version']))
+        assert(os.path.exists(os.path.join(cheribsd_ports_repo.working_tree_dir, info['ports_path'])))
     else:
         return False
     return True
@@ -331,9 +339,9 @@ def do_table_tests_entries(result, test_names):
                 continue
             assert(os.path.basename(test) in test_names)
             if result["results"][test]["exit_code"] == 0:
-                new_entry.append(r'\checkmark')
+                new_entry.append(r'\times')
             elif "Assertion failed" in result["results"][test]["stderr"]:
-                new_entry.append(r'$\times$')
+                new_entry.append(r'$\checkmark$')
             else:
                 new_entry.append(r'$\oslash$')
     else:
@@ -458,6 +466,7 @@ log_message(f"Set remote work directory to {work_dir_remote}")
 # Prepare tests and read API data
 tests = sorted(prepare_tests(get_config('tests_folder'), work_dir_remote))
 api_fns = read_apis(get_config('cheri_api_path'))
+cheribsd_ports_repo = prepare_cheribsd_ports()
 
 # Environment for cross-compiling
 compile_env = {
@@ -515,6 +524,11 @@ for alloc_folder in allocators:
         alloc_path = os.path.join(work_dir_local, alloc_data['name'])
         alloc_data['api'] = do_cheri_api(alloc_path, api_fns)
         alloc_data['sloc'] = do_line_count(alloc_path)
+        alloc_data['cheri_loc'] = do_cheri_line_count(alloc_path)
+    elif alloc_info['install']['mode'] == 'pkg64c':
+        cheribsd_ports_repo.checkout(alloc_info['commit'])
+        alloc_path = os.path.join(cheribsd_ports_repo.working_dir, alloc_info['cheribsd_ports_path'])
+        alloc_data['api'] = do_cheri_api(alloc_path, api_fns)
         alloc_data['cheri_loc'] = do_cheri_line_count(alloc_path)
 
     # Version info
