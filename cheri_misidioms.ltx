@@ -35,9 +35,9 @@ performance and security properties of software in general. In other words,
 slow memory allocators and/or those with security flaws have significant
 and widespread consequences.
 
-In this paper we examine allocators and CHERI from both performance
+In this paper we examine allocators and pure capability CHERI from both performance
 and security angles. In
-Section~\ref{performance} we show that CHERI allocators are currently much slower than their
+Section~\ref{performance} we show that pure capability CHERI allocators are currently much slower than their
 non-CHERI equivalents. In Section~\ref{sec:atk} we introduce a number of `attacks' and
 show that many of the allocators are vulnerable to at least some of the attacks
 (note that since we first made a pre-print of this paper available, some
@@ -45,8 +45,8 @@ allocators have fixed some or all vulnerabilities).
 
 We do not claim our work is definitive, though it does suggest two things: that
 allocators are a significant performance issue for software running
-on CHERI; and that some allocators undermine the security properties one might
-expect from software running on CHERI.
+on pure capability CHERI; and that some allocators undermine the security properties one might
+expect from software running on pure capability CHERI.
 
 
 \section{Background}
