@@ -4,7 +4,7 @@ SSHPORT ?= 0
 .PHONY: all clean
 
 .c:
-	${CC} ${CFLAGS} -o $@ $<
+	${CC} ${CFLAGS} -Wall -Wextra -o $@ $<
 
 TARGETS = \
 	narrow \

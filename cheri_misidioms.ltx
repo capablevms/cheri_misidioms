@@ -150,51 +150,45 @@ we concentrate exclusively on programs which operate in pure capability mode.
 \subsection{A Basic Pure Capability Allocator}
 \label{sec:bumppointerallocator}
 
-In this subsection we introduce a basic, but functional, bump allocator \bumpalloc,
-adapted to pure capability CHERI. This allows us to focus on how capabilities
-and allocators interact.
-
 \begin{figure}[t]
 \lstinputlisting[
   language=C,
   caption={
-    A bare bones, non-capability, bump pointer allocator:
-    \texttt{malloc} works as expected; \texttt{free} is a no-op; and
+    A simple, but complete, non-capability aware, bump pointer allocator:
+    \texttt{malloc} works as per normal; \texttt{free} is a no-op; and
     \texttt{realloc} always allocates a new chunk of memory.
-  },
+    \texttt{\_\_builtin\_align\_up(v, a)} is an LLVM / clang primitive which rounds
+    \texttt{v} up to the next smallest multiple of \texttt{a}.
+  }
 label=lst:bump_alloc1]{code/bump_alloc1.c}
 \end{figure}
 
-We start by introducing a bare bones, non-capability bump allocator
-in~\autoref{lst:bump_alloc1}: \texttt{malloc} works as expected; \texttt{free}
+At a basic level, capabilities do not add substantial complexity to an
+allocator. To illustrate this, we start with a simple, but complete, example of
+a non-capability bump allocator in Listing~\ref{lst:bump_alloc1}: \texttt{malloc} works as per normal; \texttt{free}
 is a no-op; and \texttt{realloc} always allocates a new chunk of memory. The
 allocator reserves a large chunk of memory using a single \fnc{mmap} call then
-doles out chunks on \fnc{malloc} / \texttt{realloc}
-calls. The bump pointer moves through the initially allocated chunk until it
-reaches the upper limit at which point memory is exhausted.
-Taking this as our basis, we can gradually increase more sophisticated features.
-
-
-\subsubsection{Capability Bounds}
-
-When this allocator code is compiled and executed on a capability platform, the
-values returned by \fnc{malloc} will share the same capability metadata as the
-capability returned by the original \fnc{mmap} call, in particular the
-page-granular bounds.  We can tighten the bounds for each \fnc{malloc} return
-value by deriving a new capability with updated base and bounds.
-% using CHERI intrinsic functions.
-% like \texttt{cheri\_address\_set} and \texttt{cheri\_bounds\_set}.
+doles out chunks on each \fnc{malloc} / \texttt{realloc}
+calls. The bump pointer moves through the \texttt{mmap}ed chunk until it
+reaches the upper limit, at which point the allocator returns \texttt{NULL}s.
 
 \begin{figure}[t]
-\lstinputlisting[language=C, caption={
-  Replacing the non-CHERI aware \texttt{malloc} from
-  Listing~\ref{lst:bump_alloc1} with a CHERI-aware alternative.
+\lstinputlisting[language=C,
+  caption={
+    Replacing the non-CHERI aware \texttt{malloc} from
+    Listing~\ref{lst:bump_alloc1} with a capability-aware alternative
+    using the idioms suggested in~\cite[p.~30]{watson20chericprogramming}.
   },
-label=lst:bump_alloc2]{code/bump_alloc2.c}
+  label=lst:bump_alloc2]
+  {code/bump_alloc2.c}
 \end{figure}
 
-\autoref{lst:bump_alloc2} shows how such derived capabilities can be
-calculated. Note there is complex capability value logic required to ensure
+There is no single definition of what a `capability aware' allocator should do
+but, at a minimum, one might reasonably expect that \texttt{malloc} returns a
+capability (rather than just a pointer) and that capability's bounds will be
+restricted to the block of memory just allocated. Listing~\ref{lst:bump_alloc2}
+shows how to adapt \texttt{malloc} to do this.
+Note there is complex capability value logic required to ensure
 the bounds are representable as a compressed capability. We pad to ensure the
 malloc buffer is at least as large as it needs to be.
 

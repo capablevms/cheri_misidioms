@@ -15,10 +15,11 @@ void *malloc_init() {
 void *malloc(size_t size) {
   if (heap == NULL && !malloc_init())
     return NULL;
+  size = __builtin_align_up(size,
+    sizeof(void *));
   if (heap + size >
       heap_start + HEAP_SIZE)
     return NULL;
-  heap += size;
   return heap - size;
 }
 
