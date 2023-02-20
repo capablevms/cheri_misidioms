@@ -7,6 +7,7 @@
         "lib_file": "/usr/local/lib/libptmalloc.so.3"
     },
     "repo": "https://github.com/CTSRD-CHERI/cheribsd-ports/tree/main/devel/ptmalloc",
+    "cheribsd_ports_path": "devel/ptmalloc",
     "commit": "90f12ce9319dcbda9d3403fb3dd2bab585c7f7bb",
     "date": "2022-10-20"
 }

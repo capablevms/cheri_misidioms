@@ -7,6 +7,7 @@
         "lib_file": "/usr/local/lib/libxalloc.so.1"
     },
     "repo": "https://github.com/CTSRD-CHERI/cheribsd-ports/tree/main/devel/libxalloc",
+    "cheribsd_ports_path": "devel/libxalloc",
     "commit": "90f12ce9319dcbda9d3403fb3dd2bab585c7f7bb",
     "date": "2022-10-20"
 }
