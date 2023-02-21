@@ -2,7 +2,7 @@ void *malloc(size_t size) {
   if (heap == NULL && !malloc_init())
     return NULL;
 
-  void *new_ptr = __builtin_align_up(
+  char *new_ptr = __builtin_align_up(
     heap,
     ~cheri_representable_alignment_mask(size)
     + 1);

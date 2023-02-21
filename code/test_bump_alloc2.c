@@ -12,8 +12,8 @@
 void *malloc(size_t);
 void *malloc_init();
 // From `bump_alloc1.c`
-void *heap = NULL;
-void *heap_start = NULL;
+char *heap = NULL;
+char *heap_start = NULL;
 size_t HEAP_SIZE = 0x1000000;
 
 void *malloc_init() {
