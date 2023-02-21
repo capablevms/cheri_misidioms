@@ -78,7 +78,7 @@ int main() {
         size_t num_mallocs = arc4random_uniform(NUM_MALLOCS);
         void **mallocs = calloc(num_mallocs, sizeof(void *));
         assert(mallocs);
-        for (int j = 0; j < num_mallocs; j++) {
+        for (size_t j = 0; j < num_mallocs; j++) {
             size_t sz = unrepresentables[arc4random_uniform(num_unrepresentables)];
             mallocs[j] = malloc(sz);
             assert(mallocs[j]);
@@ -87,7 +87,7 @@ int main() {
 
         qsort(mallocs, num_mallocs, sizeof(void *), cmp);
 
-        for (int j = 0; j < num_mallocs - 1; j++) {
+        for (size_t j = 0; j < num_mallocs - 1; j++) {
             assert(cheri_base_get(mallocs[j]) < cheri_base_get(mallocs[j + 1]));
             if (overlaps(mallocs[j], mallocs[j + 1])) {
                 printf("(%lu, %lu) (%lu, %lu)", cheri_address_get(mallocs[j]), cheri_length_get(mallocs[j]), cheri_address_get(mallocs[j + 1]), cheri_length_get(mallocs[j + 1]));
@@ -96,7 +96,7 @@ int main() {
             }
         }
 
-        for (int j = 0; j < num_mallocs; j++) {
+        for (size_t j = 0; j < num_mallocs; j++) {
             free(mallocs[j]);
         }
         free(mallocs);
