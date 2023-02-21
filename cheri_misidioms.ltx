@@ -180,6 +180,10 @@ reaches the upper limit, at which point the allocator returns \texttt{NULL}s.
     Replacing the non-CHERI aware \texttt{malloc} from
     Listing~\ref{lst:bump_alloc1} with a capability-aware alternative
     using the idioms suggested in~{\cite[p.~30]{watson20chericprogramming}}.
+    This \texttt{malloc} returns a capability whose bounds are sufficient
+    to cover \texttt{size} bytes starting at the capability's address: in other
+    words, the capability returned allows the caller to access memory in the
+    way they would expect..
   },
     label=lst:bump_alloc2]
   {code/bump_alloc2.c}
@@ -190,9 +194,22 @@ but, at a minimum, one might reasonably expect that \texttt{malloc} returns a
 capability (rather than just a pointer) and that capability's bounds will be
 restricted to the block of memory just allocated. Listing~\ref{lst:bump_alloc2}
 shows how to adapt \texttt{malloc} to do this.
-Note there is complex capability value logic required to ensure
-the bounds are representable as a compressed capability. We pad to ensure the
-malloc buffer is at least as large as it needs to be.
+
+The code to create the capability (using the idioms suggested
+in~\cite[p.~30]{watson20chericprogramming}) is more involved than one might
+first expect. The underlying cause is that there aren't, and cannot reasonably
+be, enough bits in CHERI's bounds to precisely represent every possible address
+and size. Modern CHERI therefore uses an encoding for bounds that allows small
+bounds to be precisely represented, at the expense of larger bounds becoming
+progressively less precise~\cite{woodruff19chericoncentrate}. On Morello,
+16,385 bytes is the smallest bound which can not be precisely represented in a
+capability, and which is thus rounded up to the next representable bound (in
+this case 16,392\footnote{For CHERI RISC-V the first unrepresentable length is
+4,097 bytes, which is rounded up to 4,104.}). Our capability aware
+\texttt{malloc} thus has to ensure that both the capability's low and high
+bound addresses are rounded down and up (respectively) in a way that ensures
+that the address and size can be fully covered.
+
 
 \subsection{Temporal Safety Issues}
 After successful \fnc{realloc} or \fnc{free} calls, the original capabilties are
