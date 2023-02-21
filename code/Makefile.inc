@@ -4,7 +4,7 @@ SSHPORT ?= 0
 .PHONY: all clean
 
 .c:
-	${CC} ${CFLAGS} -Wall -Wextra -o $@ $<
+	${CC} ${CFLAGS} -Wall -Wextra -Wno-unused-parameter -o $@ $<
 
 TARGETS = \
 	narrow \
@@ -20,7 +20,7 @@ TARGETS = \
 	test_bump_alloc1 \
 	test_bump_alloc2
 
-ALL_COPYEXEC_TARGETS = narrow narrow_realloc narrow_widen privesc privesc2 undef unrepresentable_length
+ALL_COPYEXEC_TARGETS = narrow narrow_realloc narrow_widen privesc privesc2 test_bump_alloc2 undef unrepresentable_length
 
 all: ${TARGETS}
 

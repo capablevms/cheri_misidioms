@@ -1,8 +1,8 @@
 #include <string.h>
 #include <sys/mman.h>
 
-void *heap = NULL;
-void *heap_start = NULL;
+char *heap = NULL;
+char *heap_start = NULL;
 size_t HEAP_SIZE = 0x1000000;
 
 void *malloc_init() {
@@ -20,6 +20,7 @@ void *malloc(size_t size) {
   if (heap + size >
       heap_start + HEAP_SIZE)
     return NULL;
+  heap += size;
   return heap - size;
 }
 
