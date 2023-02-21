@@ -50,7 +50,6 @@ int main() {
                     return 0;
                 }
             }
-            exit(1);
 
             for (int j = 0; j < NUM_MALLOCS; j++) {
                 free(mallocs[j]);
