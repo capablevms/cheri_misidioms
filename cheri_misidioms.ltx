@@ -7,9 +7,12 @@
 \begin{abstract}
 \noindent
 Several memory allocators have been ported to CHERI, a hardware capability
-platform. In this paper we examine the performance and security of these
-allocators: we show that they are much slower than their non-CHERI equivalents,
-and several are subject to simple security vulnerabilities.
+platform. In this paper we examine the security and performance of these
+allocators. We show that the allocators are subject to simple security vulnerabilities,
+which we categorise and explain. However, we show that it is difficult
+to make statements about performance, because compilers adapted to CHERI do not optimise code
+as fully as one would hope, particularly in idioms that are common in allocators,
+leading to a muddled performance picture.
 \end{abstract}
 
 \maketitle
@@ -36,17 +39,19 @@ slow memory allocators and/or those with security flaws have significant
 and widespread consequences.
 
 In this paper we examine allocators and pure capability CHERI from both performance
-and security angles. In
-Section~\ref{performance} we show that pure capability CHERI allocators are currently much slower than their
-non-CHERI equivalents. In Section~\ref{sec:atk} we introduce a number of `attacks' and
+and security angles. In Section~\ref{sec:atk} we introduce a number of `attacks' and
 show that many of the allocators are vulnerable to at least some of the attacks
 (note that since we first made a pre-print of this paper available, some
-allocators have fixed some or all vulnerabilities).
+allocators have fixed some or all vulnerabilities). In
+Section~\ref{performance} we attempt to examine the performance of CHERI
+allocators. To our surprise, it is difficult to draw meaningful conclusions. We
+show that compilers on CHERI platforms do not optimise code as fully as one
+would expect, leading to a muddled performance picture.
 
-We do not claim our work is definitive, though it does suggest two things: that
-allocators are a significant performance issue for software running
-on pure capability CHERI; and that some allocators undermine the security properties one might
-expect from software running on pure capability CHERI.
+We do not claim our work is definitive, though it does suggest two things:
+that some allocators undermine the security properties one might
+expect from software running on pure capability CHERI; and that it is
+currently difficult to reason about the performance of software on CHERI.
 
 
 \section{Background}
