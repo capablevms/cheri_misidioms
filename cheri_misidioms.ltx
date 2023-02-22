@@ -146,6 +146,10 @@ capabilities is said to be operating in \emph{hybrid} mode while a program
 which uses only capabilities is in \emph{pure capability} mode. In this paper
 we concentrate exclusively on programs which operate in pure capability mode.
 
+CHERI does not presuppose a particular Operating System (OS). While there is a
+CHERI Linux port, at the time of writing the most mature OS for CHERI hardware
+is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD exclusively.
+
 
 \subsection{A Basic Pure Capability Allocator}
 \label{sec:bumppointerallocator}
@@ -211,7 +215,7 @@ bound addresses are rounded down and up (respectively) in a way that ensures
 that the address and size can be fully covered.
 
 
-\section{The CHERI Allocators under consideration}
+\section{The Allocators under Consideration}
 \label{sec:cheriallocators}
 
 \laurie{we need to add citations for the allocators where possible}
@@ -219,104 +223,72 @@ that the address and size can be fully covered.
 properties, and then security properties. Is this sufficient, or is there
 something else?}
 
-We looked at a number of sources in order to find memory allocators ported to
-CHERI\@. These are:
-\begin{enumerate}
-    \item [CheriBSD] We found two allocators provided in CheriBSD itself. One
-        of them is identified as \memalloc{libmalloc-simple}, while the other,
-        default option for CheriBSD, is a port of \memalloc{jemalloc};
-    \item [cheribuild] Among the build targets provided by cheribuild, we
-        identified \memalloc{snmalloc}~\cite{snmalloc}, an allocator from
-        Microsoft, and \memalloc{dlmalloc}~\cite{dlmalloc}, Doug Lea's malloc
-        implementation;
-    \item [pkg64c] CheriBSD comes with its own package manager, which for the
-        Morello purecap variant of the OS, is known as \texttt{pkg64c}. A
-        cursory search for the keyword ``alloc'' found ports for:
-        \andrei{cites/links here} \memalloc{dlmalloc},
-        \memalloc{ElectricFence}, \memalloc{dmalloc}, \memalloc{ptmalloc}, and
-        \memalloc{libxalloc};
-    \item [Standalone] We were able to track down standalone, public version of
-        allocators ported to CHERI, or as part of libc alternatives. These are
-        \memalloc{snmalloc}~\footnoteurl{https://github.com/microsoft/snmalloc, 24 Jan 2023},
-        allocators from the
-        Huawei~\footnoteurl{https://github.com/cheri-linux/musl, 24 Jan 2023}
-        and
-        Morello~\footnoteurl{https://git.morello-project.org/morello/musl-libc,
-        24 Jan 2023} ports of \texttt{musl}, allocator from the Morello
-        \memalloc{newlib}~\footnoteurl{https://git.morello-project.org/morello/newlib,
-        24 Jan 2023} port, and finally the toy bump allocator discussed
-        in~\autoref{sec:bumppointerallocator}.
-\end{enumerate}
+A number of allocators are available for CheriBSD, though they are mostly
+installed via three different routes: as part of the base distribution; via
+CheriBSD \emph{packages}; or via external source. The standard way to build a CheriBSD distribution is to use
+the \texttt{cheribuild} tool: this also offers multiple flavours of CheriBSD,
+where different flavours can, and do, include different allocators. In one case
+the version of one allocator available via \texttt{cheribuild} is sufficiently
+old and broken that we felt it necessary to build it directly from a GitHub
+repository. When describing the set of allocators under consideration in this
+paper, we therefore need to describe not just the allocator itself, but also
+the route via which we obtained it.
 
-That gives us a total of \alloccount{} allocators we have found. These
-allocator, along with the particular commit hash (truncated to 10 characters)
-or version number used during evaluation, as well as some source data (where
-available) can be seen in~\autoref{tab:allocator_summary}. We note that some
-allocators, such as \memalloc{snmalloc} have been found from multiple sources;
-in tese cases, we distinguish the provenance by appending the source name
-(e.g., we identify \memalloc{snmalloc-repo} as the standalone variant, and
-\memalloc{snmalloc-cheribuild} as that provided by cheribuild). Unfortunately,
-during evaluation we discovered that not all of these allocators were in
-working condition.  Particularly, most allocators coming with \texttt{pkg64c}
+On that basis, the allocators we consider in this paper, and the names we use
+for them for the rest of this paper, are as follows:
+\begin{itemize}
+  \item \memalloc{jemalloc}, a modified version of the well-known \emph{jemalloc} \laurie{cite} allocator,
+is the default allocator for CheriBSD.
+
+\item \memalloc{libmalloc-simple} is \laurie{what is it?} \laurie{is it installed in the default CheriBSD distribution? how do we access it?}.
+
+\item \memalloc{snmalloc-cheribuild} is an old version of
+  \emph{snmalloc}~\cite{snmalloc} that can be installed via \texttt{cheribuild}. We
+    found that this version to have several problems which we rectified by
+    manually building a version from \emph{snmalloc}'s GitHub repository. We term this
+    latter version \texttt{snmalloc-repo}. Note that \emph{snmalloc} has adaptions for
+    CHERI included as default \laurie{I think -- please check!} \laurie{Table 1
+    suggests i'm wrong as snmalloc has non-zero LoC changed}.
+
+  \item \memalloc{dlmalloc-cheribuild} is a version of the well-known \emph{dlmalloc} allocator \laurie{cite} modified for CHERI, installable via \texttt{cheribuild}. CheriBSD's packages include \memalloc{dlmalloc-pkg64c} which is an unmodified version of dlmalloc. \laurie{are these the same `underlying' version of dlmalloc?}
+
+\item \memalloc{ptmalloc} is \laurie{dunno}.
+
+\item \memalloc{libxmalloc} is \laurie{dunno}.
+
+\item \emph{musl} is an implementation of the standard C library, which includes an allocator. We found two \emph{musl} ports to CHERI on GitHub: \texttt{musl-huawei} and \texttt{musl-morello} from Huawei and Arm respectively. \laurie{i guess these two musl's aren't forked from the same underlying version?}.
+
+\item \memalloc{newlib} is \laurie{dunno}.
+
+\item \memalloc{bump-alloc} is the simple bump allocator from Section~\ref{sec:bumppointerallocator}.
+\end{itemize}
+
+We are aware of at least two other major memory allocators that have been
+partly ported to CHERI: the \emph{Boehm-Demers-Weiser} conservative garbage
+collector; and the \emph{WebKit} garbage collector. Since neither port is yet
+complete, we have not included them in this paper.
+
+\autoref{tab:allocator_summary} shows further detail about the allocators,
+including the precise version we used, and their total number of Source Lines
+of Code (SLoC) as calculated by the \texttt{cloc} tool. We also show
+approximately what proportion of the allocator has been adapted for CHERI by
+calculating the percentage of lines of code contained between \texttt{\#ifdef
+CHERI} blocks. This count is an under-approximation, as some code outside such
+\texttt{\#ifdef} blocks may also have been adapted, but it gives a rough idea
+of the extent of changes. \laurie{what tool did we use to do the IFDEF counting?}
+
+\laurie{i think the rest of this paragraph is out of date?}
+Particularly, most allocators coming with \texttt{pkg64c}
 crashed with a segmentation fault on execution of our tests. \andrei{Hopefully
 we can test these shortly} Furthermore, at the moment of writing, we do not
 have access to a CHERI Linux system, meaning we are unable to test the
 \memalloc{musl} and \memalloc{newlib} ports.
-
-For the source data in~\autoref{tab:allocator_summary}, we provide the total
-number of Source Lines of Code (SLoC), as given by the \texttt{cloc} utility,
-then the total number of lines of code ``changed'' during porting (which we
-define as the number of lines in a CHERI \texttt{ifdef} block), as well as
-percentage of total SLoC. We note that for \memalloc{bump-alloc} the number of
-changed lines of code is zero, as we wrote the toy allocator with CHERI in
-mind.
-
-% In this paper we examine the following memory allocators which have
-% been ported to CheriBSD: \textit{jemalloc} (the default allocator on CheriBSD),
-% Kingsley's \textit{BSD malloc} (\laurie{say something about it -- I don't even
-% know what it is and I'm a fully paid-up member of the BSD cult!}), and the two
-% unnamed allocators inside the libc alternatives \textit{newlib} and
-% \textit{Musl}. As a baseline we show a trivial \textit{bump-pointer
-% allocator} of our own devising.\andrei{Is `snmalloc` not part of this
-% experiment? I think they have a decent CHERI port. Also, can I find the
-% data/scripts for this experiment somewhere?}
-
-At least two other memory allocators have been partly ported to CHERI: the
-conservative garbage collector \textit{Boehm-Demers-Weiser} garbage collector
-and the garbage collector inside the JavaScript virtual machine
-\textit{JavaScriptCore}. To the best of our knowledge, neither port is
-yet complete\andrei{I don't know much about gc's, but could we extract either
-some design ideas, or even some functionality to add to our comparison?}.
 
 
 \subsection{Existing CheriBSD allocators}
 \label{sec:rqs}
 
 \input{./data/results/slocs.tex}
-
-%\begin{table}[tb]
-  %\begin{center}
-    %\begin{tabular}{lllll}
-      %\toprule
-      %Allocator          & Version & SLoC & \multicolumn{2}{c}{Changed} \\
-      %\cmidrule(lr){4-5}
-			 %&       &        & LoC & \multicolumn{1}{c}{\%} \\
-      %\midrule
-      %jemalloc           &       & 39,059 & 116 & 0.30\% \\
-      %libmalloc-simple\andrei{Is this BSD malloc?}   &       & 680    & 43  & 6.32\% \\
-      %musl-libc          &       & 72,177 & 624 & 0.87\% \\
-      %newlib stdlib      &       & 26,041 & 83  & 0.32\%\\
-      %\bottomrule
-    %\end{tabular}
-  %\end{center}
-  %\caption{The allocators we examined, their size in Source Lines of Code
-  %(SLoC), and the number of lines changed to adapt them for pure capability
-  %CheriBSD.\laurie{jeremy: we need to include the version number for each
-  %allocator (or, at least, a git hash or similar) so that people can
-  %reproduce our study.}\laurie{shouldn't bsdmalloc be in this table
-    %too?}}
-  %\label{tab:allocator_summary}
-%\end{table}
 
 How difficult is it to port a standard memory allocator to pure capability
 CheriBSD\@? In this section we briefly examine several existing allocators. We
