@@ -56,7 +56,7 @@ currently difficult to reason about the performance of software on CHERI.
 
 We expect that few readers are expert in both CHERI and allocators: in this
 section, we first provide a brief overview of CHERI (Section~\ref{sec:cheri}),
-before introducing a very basic CHERIfied allocator (Section~\ref{sec:bumppointerallocator}).
+before introducing a very basic CHERI-aware allocator (Section~\ref{sec:bumppointerallocator}).
 
 
 \subsection{CHERI}
@@ -157,11 +157,14 @@ is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD exclusively.
 \subsection{A Basic Pure Capability Allocator}
 \label{sec:bumppointerallocator}
 
+To illustrate how CHERI affects allocator, in this subsection we adapt a simple
+non-CHERI aware allocator to become CHERI aware.
+
 \begin{figure}[t]
 \lstinputlisting[
   language=C,
   caption={
-    A simple, but complete, non-capability aware, bump pointer allocator:
+    A simple, but complete, non-CHERI aware, bump pointer allocator:
     \texttt{malloc} works as per normal; \texttt{free} is a no-op; and
     \texttt{realloc} always allocates a new chunk of memory.
     \texttt{\_\_builtin\_align\_up(v, a)} is an LLVM / clang primitive which rounds
@@ -172,34 +175,41 @@ is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD exclusively.
 label=lst:bump_alloc1]{code/bump_alloc1.c}
 \end{figure}
 
-At a basic level, capabilities do not add substantial complexity to an
-allocator. To illustrate this, we start with a simple, but complete, example of
-a non-capability bump allocator in Listing~\ref{lst:bump_alloc1}: \texttt{malloc} works as per normal; \texttt{free}
+We start with a simple, complete, example of
+a C bump allocator in Listing~\ref{lst:bump_alloc1}: \texttt{malloc} works as per normal; \texttt{free}
 is a no-op; and \texttt{realloc} always allocates a new chunk of memory. The
 allocator reserves a large chunk of memory using a single \fnc{mmap} call then
 doles out chunks on each \fnc{malloc} / \texttt{realloc}
 calls. The bump pointer moves through the \texttt{mmap}ed chunk until it
 reaches the upper limit, at which point the allocator returns \texttt{NULL}s.
 
+Our simple bump allocator works as expected on non-CHERI systems. Perhaps
+surprisingly, it also compiles and runs correctly on CHERI systems too, with
+pointers transparently `upgraded' to capabilities. As this suggests,
+CHERI C is largely source compatible with normal C code. However, compiling and
+running Listing~\ref{lst:bump_alloc1} on CHERI gives little additional security
+over the non-CHERI version\footnote{On CheriBSD, the capability returned by our
+\texttt{malloc} will have the bounds returned by the \texttt{mmap} call.}.
+
 \begin{figure}[t]
 \lstinputlisting[language=C,
   caption={
     Replacing the non-CHERI aware \texttt{malloc} from
-    Listing~\ref{lst:bump_alloc1} with a capability-aware alternative
+    Listing~\ref{lst:bump_alloc1} with a CHERI-aware alternative
     using the idioms suggested in~{\cite[p.~30]{watson20chericprogramming}}.
     This \texttt{malloc} returns a capability whose bounds are sufficient
     to cover \texttt{size} bytes starting at the capability's address: in other
     words, the capability returned allows the caller to access memory in the
-    way they would expect..
+    way they would expect.
   },
     label=lst:bump_alloc2]
   {code/bump_alloc2.c}
 \end{figure}
 
-There is no single definition of what a `capability aware' allocator should do
+There is no single definition of what a `CHERI aware' allocator should do
 but, at a minimum, one might reasonably expect that \texttt{malloc} returns a
-capability (rather than just a pointer) and that capability's bounds will be
-restricted to the block of memory just allocated. Listing~\ref{lst:bump_alloc2}
+capability whose bounds are
+restricted to the block of memory allocated. Listing~\ref{lst:bump_alloc2}
 shows how to adapt \texttt{malloc} to do this.
 
 The code to create the capability (using the idioms suggested
@@ -216,6 +226,25 @@ this case 16,392\footnote{For CHERI RISC-V the first unrepresentable length is
 \texttt{malloc} thus has to ensure that both the capability's low and high
 bound addresses are rounded down and up (respectively) in a way that ensures
 that the address and size can be fully covered.
+
+The two versions of our allocator have meaningfully different security properties,
+even when we run both on a CHERI system. For example, consider this simple
+C snippet:
+
+\begin{lstlisting}[language=C]
+char *b = malloc(1);
+b[0] = 'a';
+b[1] = 'b';
+\end{lstlisting}
+
+Unsurprisingly, on a non-CHERI system this code compiles and runs without
+error. If we compile and run it on a CHERI system, we get two different
+outcomes. With the \texttt{malloc} from \autoref{lst:bump_alloc1} the code
+still compiles and runs without error. However, with the \texttt{malloc} from
+\autoref{lst:bump_alloc2} the code compiles but crashes with a security violation
+when attempting to execute line 3. This is due to the tighter capability bounds
+returned by the latter \texttt{malloc}, showing how CHERI can prevent
+programmer errors becoming security violations.
 
 
 \section{The Allocators under Consideration}
