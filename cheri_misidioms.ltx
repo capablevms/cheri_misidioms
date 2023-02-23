@@ -248,13 +248,18 @@ returned by the latter \texttt{malloc}, showing how CHERI can prevent
 programmer errors becoming security violations.
 
 
-\section{The Allocators under Consideration}
+\section{CHERI Allocators}
 \label{sec:cheriallocators}
 
+In this paper we consider a number of allocators that are available for
+CheriBSD. We first of all explain the set of allocators we use, before
+exploring in more detail how the allocators have been adapted (if at all) for
+CHERI.
+
+
+\subsection{The Allocators Under Consideration}
+
 \laurie{we need to add citations for the allocators where possible}
-\andrei{Currently this section talks about porting effort, some assorted
-properties, and then security properties. Is this sufficient, or is there
-something else?}
 
 A number of allocators are available for CheriBSD, installable via three
 different routes: as part of the base distribution; via CheriBSD
@@ -319,133 +324,85 @@ for them for the rest of this paper, are as follows:
     should include both?}
 \end{itemize}
 
+\input{./data/results/slocs.tex}
+
+\autoref{tab:allocator_summary} shows the version of each allocator we used.
 We are aware of at least two other major memory allocators that have been
 partly ported to CHERI: the \emph{Boehm-Demers-Weiser} conservative garbage
 collector; and the \emph{WebKit} garbage collector. Since neither port is yet
 complete, we have not included them in this paper.
 
-\autoref{tab:allocator_summary} shows further details about the allocators,
-including the precise version we used, and their total number of Source Lines
-of Code (SLoC) as calculated by the \texttt{cloc} tool. We also show
-approximately what proportion of the allocator's source has been adapted for
-CHERI by calculating the percentage of lines of code contained between
-\texttt{\#ifdef CHERI} blocks. This count is an under-approximation, as some
-code outside such \texttt{\#ifdef} blocks may also have been adapted, but it
-gives a rough idea of the extent of changes. \laurie{what tool did we use to do
-the IFDEF counting?} \andrei{I was given a script by Jeremy which I reused}
 
-\laurie{i think the rest of this paragraph is out of date?}
-Particularly, most allocators coming with \texttt{pkg64c}
-crashed with a segmentation fault on execution of our tests. \andrei{Hopefully
-we can test these shortly} Furthermore, at the moment of writing, we do not
-have access to a CHERI Linux system, meaning we are unable to test the
-\memalloc{musl} and \memalloc{newlib} ports.
-
-
-\subsection{Existing CheriBSD allocators}
+\subsection{How Much Have the Allocators Been Adapted for CHERI?}
 \label{sec:rqs}
 
-\input{./data/results/slocs.tex}
+As we saw from \autoref{lst:bump_alloc1}, simple allocators don't need to be
+adapted for CHERI at all, though they then derive only minor security gains. In
+practise, we expect most allocators to at least reflect the capability bound
+changes of \autoref{lst:bump_alloc2}. \laurie{this is speculative: andrei,
+jeremy, is this correct?} More sophisticated allocators will also tend to tend
+to crash without at least some modifications. For example, as memory is freed
+and reused, different sized blocks will sometimes be handed out by
+\texttt{malloc}: if, as in \autoref{lst:bump_alloc2}, an allocator wants to
+hand out correctly bounded capabilities, it will need to derive a new child
+capability from a parent capability that has sufficiently wide bounds.
 
-How difficult is it to port a standard memory allocator to pure capability
-CheriBSD\@? In this section we briefly examine several existing allocators. We
-show the allocators we consider in \autoref{tab:allocator_summary}, as well as
-their size, and the quantity and proportion of lines changed for the CHERI
-port.
+Understanding all of the CHERI modifications to all of the allocators under
+consideration would lead to us not being able to see the forest for the trees.
+Instead, \autoref{tab:allocator_summary} shows what proportion of an
+allocator's LoC are `CHERI specific' by calculating the percentage of lines of code contained between
+\texttt{\#ifdef CHERI} blocks. This count is an under-approximation, as some
+code outside such \texttt{\#ifdef} blocks may also have been adapted, but it
+gives a rough idea of the extent of changes. \laurie{jeremy: what tool did you use for this?}
 
-As \autoref{tab:allocator_summary} shows, with the exception of the extremely
-small libmalloc-simple, the pure capability CheriBSD ports require around
-0.3-0.9\% of lines to be changed. This is an order of magnitude bigger than the
-0.026\% lines changed for porting a desktop environment (including X11 and
-KDE)~\cite{watson21assessing}. Given the lower-level, and thus more platform
-dependent, nature of memory allocators, this relative difference seems
-reasonable.
+With the exception of the extremely small \texttt{libmalloc-simple}, the pure capability CheriBSD allocators
+have had around 0.3--0.9\% of their LoC adapted. Although this is a relatively small portion,
+it is an order of magnitude bigger than the
+0.026\% lines that were adapted when porting a desktop environment (including X11 and
+KDE)~\cite{watson21assessing}. It is a reasonable assumption that the
+lower-level, and more platform dependent, nature of allocator has
+caused more LoC to be adapted.
 
-\laurie{i don't think we need to go into too much detail, but there is some
-value IMHO in seeing how much of the static API different allocators use.
-unfortunately i don't fully understand some of the original text so the rest of
-this section from this point onwards needs careful consideration.} A different
-proxy for porting complexity is to measure the number of different CHERI API
+A different proxy for the complexity of CHERI adaption is the number of CHERI API
 calls a ported memory allocator makes use of: broadly speaking, the more of the
-CHERI API is used, the harder the porting effort was likely to have been.
+CHERI API is used, the `deeper' we might consider the adaption to be.
 Comparing across the allocators is somewhat muddied because there are (at
-least) three CHERI APIs in common use. This is due to the gradual evolution of
-the software ecosystem over the past decade.
+least) three CHERI APIs in common use. We define these APIs as follows:
 
-The most fundamental C-level API is provided by compiler builtins, such as
-\texttt{\_\_builtin\_cheri\_base\_get}. There are currently 39 such builtins,
-plus another four that are Morello-specific. In addition, the CHERI port of
-LLVM introduces three generic builtins for managing alignment, which we do not
-count as CHERI features for this analysis. Three of the memory allocators we
-study -- newlib, Musl and Trivial -- make use of this
-"builtin" API\@.
+\begin{itemize}
+  \item
+The \emph{builtin} API consists of C functions provided as LLVM / Clang
+extensions (e.g.~\texttt{\_\_builtin\_cheri\_base\_get}). There are 39 generic
+CHERI functions, with Morello defining four more.
 
-Another API is provided by \filename{cheric.h}. This is considered to be a
-legacy, deprecated API\@. However, it is still in use, including by two of the
-memory allocators we study (BSD malloc and jemalloc). \texttt{cheric.h}
-provides 63 functions (or function-like macros), 29 of which are implemented as
-trivial pass-throughs to compiler builtins. Several of the remaining 34
-functions are fairly complicated compound operations. For example,
-\texttt{cheri\_is\_subset} involves eight unique calls to four other functions.
-\texttt{cheric.h} also provides some additional utilities for kernel use
-(\texttt{cheri\_kern\_*}), and exposes some implementation details
-(\texttt{\_\_cheri\_*}), but we disregard both subsets for this analysis.
+\item
+The \emph{cheric.h} is a deprecated, but still frequently used, API,
+providing 63 functions and macros (29 of \laurie{just the macros?} which are,
+in essence, simple wrappers around the \emph{builtin} API).
 
-\jacob{We should analyse how many of the cheric.h calls are to pass-through
-functions, because they'll be easy to compare with cheriintrin.h
-etc.}\andrei{What is a pass-through function? I can have a look}
+\item
+The \emph{cheriintr.h} API is similar to, but supersedes, the \emph{cheric.h}
+API. \laurie{can we explain why it supersedes \laurie{cheric.h}?} It provides
+34 functions and macros, 30 of which map directly to the \emph{builtin} API.
+\end{itemize}
 
-The current preferred API is \filename{cheriintrin.h}, which provides 34
-functions (or function-like macros), of which the vast majority (30) map
-directly onto builtins, and the remaining four are very simple wrappers.
+\laurie{obvious question: why does cheriintr.h exist if it's just wrapping
+the builtins?!}
 
-\jacob{Do we study anything using \texttt{cheriintrin.h}?}
-\andrei{Add links/versions of these CHERI APIs we mention}
-
-For each of the allocators, we inspect the source code to count the number of
-distinct CHERI API calls. Note that if the same function is called in multiple
+\laurie{table 2 doesn't always make sense to me: we say that e.g.~bump-alloc uses 10
+API calls when Listing 2 suggests it uses more like 4. And we also say it uses
+10 builtins, but we've just defined that as a separate API? And we say that
+dlmalloc-cheribuild uses the builtin API which uses 10 API calls and 10
+builtins?}
+For each of the allocators, we explain which of these three APIs it uses,
+and the number of distinct API calls it makes.
+Note that if the same function is called in multiple
 source code locations, we only count it once.  This gives us a static measure
 of API coverage, for each allocator. \autoref{tab:rq1} shows the results,
 indicating that some allocators have a broader spread of API calls. \emph{What
 does this imply?} \emph{What are the API calls doing?}
 
 \input{./data/results/cheri_api.tex}
-
-%\begin{table}
-  %\begin{center}
-    %\begin{tabular}{ccrr}
-    %\toprule
-      %\textbf{allocator} & \textbf{API} & \textbf{\# API calls} & \textbf{API coverage} \\
-      %\midrule
-      %BSD malloc & cheric & 10 & 10/57 \\
-      %jemalloc & cheric & 11 & 11/57 \\
-      %Musl & builtin & ?? 22 or 6 ?? & 6/37 \\
-      %Newlib & builtin & 9 & 9/37 \\
-      %Trivial & builtin & 3 & 3/37 \\ 
-      %\bottomrule
-    %\end{tabular}
-  %\end{center}
-  %\caption{\label{tab:rq1}Coverage of CHERI API calls by various allocators}
-%\end{table}
-
-\jacob{Ok, it's time for a difficult question, sorry! Basically, why are we
-asking this question (\textbf{RQ1}), and what are we hoping to learn from it?
-Static API usage is relatively easy to measure, but I'm not sure what~table~\ref{tab:rq1} tells me.
-Dynamic usage is more difficult to measure, but has more obvious uses (e.g.~for performance analysis).
-However, for \emph{security} analysis, we probably want to count uses with the
-vague property of ``sequences that require careful thought''.
-Typically, it seems, these are cases affected by bounds imprecision (where
-simple tests might work even for invalid code). Such sequences require significant work to
-implement, and carry a greater risk of vulnerability.
-For example: the bump allocator required a sequence with a critcial order of
-operations, buT it was probably only a handful of API calls in the end. I think there were similar sequences in BoehmGC too.
-Section~\ref{sec:atk}~goes into more detail there (by counter-example).}
-\andrei{I will second this. My first impression of RQ1 was that it's more to do with performance analysis.}
-
-\jacob{What \emph{are} the most common API calls? That was what \textbf{RQ1} asked.}
-
-
-%%%
 
 
 \section{Performance}
