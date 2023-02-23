@@ -9,10 +9,16 @@
 #include <stdint.h>
 #include <stdio.h>
 
-int main(void) {
+#include "cli.h"
+
+int main(int argc, char const * argv[]) {
+    struct Args args = process_args(argc, argv);
+    before_test(&args);
     uint64_t i;
-    for (i = 0; i < 4200000000; i++) {
+    uint64_t count = args.fast ? 42 : 4200000000;
+    for (i = 0; i < count; i++) {
         __asm__ volatile("");
     }
+    after_test(&args);
     printf("Busy-looped %" PRIu64 " times.\n", i);
 }

@@ -18,11 +18,16 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "cli.h"
 #include "random-graph-walk.h"
 
-int main(void) {
+int main(int argc, char const * argv[]) {
+    struct Args args = process_args(argc, argv);
     struct Node * entry = generate_with_max_size(64 * 1024); // TODO: Is this correct?
-    size_t visits = 420000000;
+    before_test(&args);
+    size_t visits = args.fast ? 42 : 420000000;
     uint64_t result = walk(entry, visits);
+    after_test(&args);
     printf("Visited %zu nodes. Value: 0x%016" PRIx64 ".\n", visits, result);
 }

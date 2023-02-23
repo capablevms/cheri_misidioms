@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "cli.h"
+
 // A reasonably good, no-stack factorial, but recursing indirectly (by invoking
 // a capability).
 
@@ -34,8 +36,11 @@ uint64_t fact(uint64_t n) {
     return fact_impl((uintptr_t)fact_impl, 1, n);
 }
 
-int main(void) {
-    uint64_t start = 4200000000;
+int main(int argc, char const * argv[]) {
+    struct Args args = process_args(argc, argv);
+    before_test(&args);
+    uint64_t start = args.fast ? 42 : 4200000000;
     uint64_t result = fact(start);
+    after_test(&args);
     printf("(%" PRIu64 "! mod 2^64) = %" PRIu64 "\n", start, result);
 }
