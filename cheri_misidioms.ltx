@@ -9,10 +9,8 @@
 Several memory allocators have been ported to CHERI, a hardware capability
 platform. In this paper we examine the security and performance of these
 allocators. We show that the allocators are subject to simple security vulnerabilities,
-which we categorise and explain. However, we show that it is difficult
-to make statements about performance, because compilers adapted to CHERI do not optimise code
-as fully as one would hope, particularly in idioms that are common in allocators,
-leading to a muddled performance picture.
+which we categorise and explain. However, we show that current versions of LLVM
+inconsistently optimises CHERI code, leading to a muddled performance picture.
 \end{abstract}
 
 \maketitle
