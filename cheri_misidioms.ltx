@@ -10,7 +10,7 @@ Several memory allocators have been ported to CHERI, a hardware capability
 platform. In this paper we examine the security and performance of these
 allocators. We show that the allocators are subject to simple security vulnerabilities,
 which we categorise and explain. However, we show that current versions of LLVM
-inconsistently optimises CHERI code, leading to a muddled performance picture.
+inconsistently optimise CHERI code, leading to a muddled performance picture.
 \end{abstract}
 
 \maketitle
@@ -31,7 +31,7 @@ memory allocators (henceforth just ``allocators''). Apart from some embedded
 systems (which preallocate fixed quantities of memory), allocators are
 ubiquitous, because they allow us to write programs that are generic over a
 variety of memory usage patterns. Since allocators are used so frequently,
-their performance and security properties are a major part of the
+their performance and security properties are a major part of
 performance and security properties of software in general. In other words,
 slow memory allocators and/or those with security flaws have significant
 and widespread consequences.
@@ -102,7 +102,7 @@ which we consider in this paper). Amongst the permissions are \emph{bounds} -- t
 authentic capability is allowed to read/write from/to. A capability's bounds
 are from a \emph{low} (inclusive) to a \emph{high} (exclusive) address and we
 refer to `a bound of $x$ bytes' to mean a capability where
-$\textit{high}-\textit{low}=x$. An address, or range or addressses, is
+$\textit{high}-\textit{low}=x$. An address, or range of addressses, is
 \emph{in-bounds} for a given capability if it is wholly contained within the
 capability's bounds, or \emph{out-of-bounds} otherwise. The
 capability as a whole is considered \emph{in-bounds} or \emph{out-of-bounds} if
@@ -121,13 +121,14 @@ for a given operation is provided by a given capability.
 A \emph{bounds check} is said to be successful if a given capability, address or
 address range is in-bounds for a given capability.
 
-We consider a capability to be \emph{exercised} if an operation is successfully
-performed that requires authenticity, a permission check, and a bounds check
-according to the operation. Failed attempts to exercise capabilities usually
-result in hardware exceptions. However, some CHERI implementations instead
-provide inauthentic results, where permitted by the security model. For example:
-a failed attempt to exercie a capability for a sealing operation on Morello
-produces an inauthentic result, rather than an exception.
+We consider a capability to be \emph{exercised} if successfully performing an
+operation requires authenticity, a permission check, and a bounds check of that
+capability, according to the operation. Failed attempts to exercise
+capabilities usually result in hardware exceptions. However, some CHERI
+implementations instead provide inauthentic results, where permitted by the
+security model. For example: a failed attempt to exercie a capability for a
+sealing operation on Morello produces an inauthentic result, rather than an
+exception.
 
 \jacob{This is slightly narrower than Morello's own definition of \emph{using} a
 capability, which depends only on the permissions. However, in practice, all
@@ -140,7 +141,7 @@ undermine fundamental aspects of the security model (e.g.~memory safety)' to
 hammer home the point}
 
 As well as capabilities (which on Morello and CHERI RISC-V, for example, are
-128 bits), CHERI also allows `traditional' single-width
+128 bits\andrei{Not 129?}), CHERI also allows `traditional' single-width
 pointers-as-addresses (which on Morello and CHERI RISC-V are 64-bit addresses)
 to be used. Although CHERI processors allow both double-width capabilities and
 single-width addresses-as-pointers to exist alongside each other at any time,
@@ -157,7 +158,7 @@ is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD exclusively.
 \subsection{A Basic Pure Capability Allocator}
 \label{sec:bumppointerallocator}
 
-To illustrate how CHERI affects allocator, in this subsection we adapt a simple
+To illustrate how CHERI affects allocators, in this subsection we adapt a simple
 non-CHERI aware allocator to become CHERI aware.
 
 \begin{figure}[t]
@@ -165,23 +166,23 @@ non-CHERI aware allocator to become CHERI aware.
   language=C,
   caption={
     A simple, but complete, non-CHERI aware, bump pointer allocator:
-    \texttt{malloc} works as per normal; \texttt{free} is a no-op; and
-    \texttt{realloc} always allocates a new chunk of memory.
-    \texttt{\_\_builtin\_align\_up(v, a)} is an LLVM / clang primitive which rounds
+    \fnc{malloc} works as per normal; \fnc{free} is a no-op; and
+    \fnc{realloc} always allocates a new chunk of memory.
+    \fnc{\_\_builtin\_align\_up(v, a)} is an LLVM / clang primitive which rounds
     \texttt{v} up to the next smallest multiple of \texttt{a}: in this example,
-    every memory block returned by \texttt{malloc} is sufficiently aligned to
+    every memory block returned by \fnc{malloc} is sufficiently aligned to
     store a pointer.
   },
 label=lst:bump_alloc1]{code/bump_alloc1.c}
 \end{figure}
 
-We start with a simple, complete, example of
-a C bump allocator in Listing~\ref{lst:bump_alloc1}: \texttt{malloc} works as per normal; \texttt{free}
-is a no-op; and \texttt{realloc} always allocates a new chunk of memory. The
+We start with a simple, complete, example of a C bump allocator in
+Listing~\ref{lst:bump_alloc1}: \fnc{malloc} works as per normal; \fnc{free} is
+a no-op; and \fnc{realloc} always allocates a new chunk of memory. The
 allocator reserves a large chunk of memory using a single \fnc{mmap} call then
-doles out chunks on each \fnc{malloc} / \texttt{realloc}
-calls. The bump pointer moves through the \texttt{mmap}ed chunk until it
-reaches the upper limit, at which point the allocator returns \texttt{NULL}s.
+doles out chunks on each \fnc{malloc} / \fnc{realloc} calls. The bump pointer
+moves through the \fnc{mmap}ed chunk until it reaches the upper limit, at which
+point the allocator returns \texttt{NULL}s.
 
 Our simple bump allocator works as expected on non-CHERI systems. Perhaps
 surprisingly, it also compiles and runs correctly on CHERI systems too, with
@@ -189,15 +190,15 @@ pointers transparently `upgraded' to capabilities. As this suggests,
 CHERI C is largely source compatible with normal C code. However, compiling and
 running Listing~\ref{lst:bump_alloc1} on CHERI gives little additional security
 over the non-CHERI version\footnote{On CheriBSD, the capability returned by our
-\texttt{malloc} will have the bounds returned by the \texttt{mmap} call.}.
+\fnc{malloc} will have the bounds returned by the \fnc{mmap} call.}.
 
 \begin{figure}[t]
 \lstinputlisting[language=C,
   caption={
-    Replacing the non-CHERI aware \texttt{malloc} from
+    Replacing the non-CHERI aware \fnc{malloc} from
     Listing~\ref{lst:bump_alloc1} with a CHERI-aware alternative
     using the idioms suggested in~{\cite[p.~30]{watson20chericprogramming}}.
-    This \texttt{malloc} returns a capability whose bounds are sufficient
+    This \fnc{malloc} returns a capability whose bounds are sufficient
     to cover \texttt{size} bytes starting at the capability's address: in other
     words, the capability returned allows the caller to access memory in the
     way they would expect.
@@ -255,45 +256,67 @@ programmer errors becoming security violations.
 properties, and then security properties. Is this sufficient, or is there
 something else?}
 
-A number of allocators are available for CheriBSD,
-installable via three different routes: as part of the base distribution; via
-CheriBSD \emph{packages}; or via external source. In this paper we consider
-allocators obtained via all three routes.
-The standard way to build a CheriBSD distribution is to use
-the \texttt{cheribuild} tool: this also offers multiple flavours of CheriBSD,
-where different flavours can, and do, include different allocators. In one case
-the version of an allocator available via \texttt{cheribuild} is sufficiently
-old and broken that we felt it necessary to build it directly from a GitHub
-repository. We document by which route we obtained all of the allocators
-we consider.
+A number of allocators are available for CheriBSD, installable via three
+different routes: as part of the base distribution; via CheriBSD
+\emph{packages}; or via external sources. In this paper we consider allocators
+obtained via all three routes.  \andrei{I don't think the previous text was
+correct; @Laurie, please double check} The standard way to build various CHERI
+tools, including CheriBSD distributions and allocators, is to use the
+\texttt{cheribuild} tool. However, each target in \texttt{cheribuild} is
+versioned independently. Thus, in the case of one target allocator, the
+version available via \texttt{cheribuild} is sufficiently old and broken that
+we felt it necessary to build it directly from a GitHub repository.  We
+document by which route we obtained all of the allocators we consider.
 
 On that basis, the allocators we consider in this paper, and the names we use
 for them for the rest of this paper, are as follows:
 \begin{itemize}
-  \item \memalloc{jemalloc}, a modified version of the well-known \emph{jemalloc} \laurie{cite} allocator,
-is the default allocator for CheriBSD.
+\item \memalloc{jemalloc}, a modified version of the well-known
+    \emph{jemalloc}~\cite{evans06scalable} allocator, is the default allocator
+    for CheriBSD.
 
-\item \memalloc{libmalloc-simple} is \laurie{what is it?} \laurie{is it installed in the default CheriBSD distribution? how do we access it?}.
+\item \memalloc{libmalloc-simple}
+    \footnoteurl{https://github.com/CTSRD-CHERI/cheribsd/commit/e85ccde6d78d40f130ebf126a001589d75d60473,
+    23rd February 2023} is a port of the allocator present in FreeBSD`s
+    \texttt{rtld-elf} utility
+    \footnoteurl{https://github.com/freebsd/freebsd-src/blob/releng/4.3/libexec/rtld-elf/malloc.c,
+    23rd of February 2023}.
 
 \item \memalloc{snmalloc-cheribuild} is an old version of
-  \emph{snmalloc}~\cite{snmalloc} that can be installed via \texttt{cheribuild}. We
-    found that this version to have several problems which we rectified by
-    manually building a version from \emph{snmalloc}'s GitHub repository. We term this
-    latter version \texttt{snmalloc-repo}. Note that \emph{snmalloc} has adaptions for
-    CHERI included as default \laurie{I think -- please check!} \laurie{Table 1
-    suggests i'm wrong as snmalloc has non-zero LoC changed}.
+    \emph{snmalloc}~\cite{lietar19snmalloc} that can be installed via
+    \texttt{cheribuild}. We found that this version to have several problems
+    which we rectified by manually building a version from \emph{snmalloc}'s
+    GitHub repository, which includes the \texttt{cheribuild} version, but has
+    more recent updates. We term this latter version \texttt{snmalloc-repo}.
 
-  \item \memalloc{dlmalloc-cheribuild} is a version of the well-known \emph{dlmalloc} allocator \laurie{cite} modified for CHERI, installable via \texttt{cheribuild}. CheriBSD's packages include \memalloc{dlmalloc-pkg64c} which is an unmodified version of dlmalloc. \laurie{are these the same `underlying' version of dlmalloc?}
+\item \memalloc{dlmalloc-cheribuild} is a version of the well-known
+    \emph{dlmalloc} allocator~\cite{lea96memory} modified for CHERI,
+    installable via \texttt{cheribuild}. CheriBSD's packages include
+    \memalloc{dlmalloc-pkg64c} which is an unmodified version of dlmalloc. The
+    ported version in \texttt{cheribuild} is based on the same as those in the
+    packages, namely 2.8.6.
 
-\item \memalloc{ptmalloc} is \laurie{dunno}.
+\item \memalloc{ptmalloc}~\cite{gloger06wolfram} is an extension of
+    \memalloc{dlmalloc}, with added support for multiple threads.
 
-\item \memalloc{libxmalloc} is \laurie{dunno}.
+\item \memalloc{libxalloc}~\cite{huseby22xalloc} is a library which includes
+    error checking for allocations. Instead of overriding the usual
+    \fnc{malloc} functions, it provides its own variations, prepended with an
+    \texttt{x} (e.g., \fnc{xmalloc}).
 
-\item \emph{musl} is an implementation of the standard C library, which includes an allocator. We found two \emph{musl} ports to CHERI on GitHub: \texttt{musl-huawei} and \texttt{musl-morello} from Huawei and Arm respectively. \laurie{i guess these two musl's aren't forked from the same underlying version?}.
+\item \emph{musl} is an implementation of the standard C library, which
+    includes an allocator. We found two \emph{musl} ports to CHERI on GitHub:
+    \texttt{musl-huawei} (forked from \emph{musl} 1.2.0) and
+    \texttt{musl-morello} (from \emph{musl} 1.2.2) from Huawei and Arm
+    respectively. \laurie{i guess these two musl's aren't forked from the same
+    underlying version?}.
 
 \item \memalloc{newlib} is \laurie{dunno}.
 
-\item \memalloc{bump-alloc} is the simple bump allocator from Section~\ref{sec:bumppointerallocator}. \laurie{there are two bump allocators: is this the CHERI aware or non-CHERI aware variant? perhaps we should include both?}
+\item \memalloc{bump-alloc} is the simple bump allocator from
+    Section~\ref{sec:bumppointerallocator}. \laurie{there are two bump
+    allocators: is this the CHERI aware or non-CHERI aware variant? perhaps we
+    should include both?}
 \end{itemize}
 
 We are aware of at least two other major memory allocators that have been
@@ -304,11 +327,12 @@ complete, we have not included them in this paper.
 \autoref{tab:allocator_summary} shows further details about the allocators,
 including the precise version we used, and their total number of Source Lines
 of Code (SLoC) as calculated by the \texttt{cloc} tool. We also show
-approximately what proportion of the allocator's source has been adapted for CHERI by
-calculating the percentage of lines of code contained between \texttt{\#ifdef
-CHERI} blocks. This count is an under-approximation, as some code outside such
-\texttt{\#ifdef} blocks may also have been adapted, but it gives a rough idea
-of the extent of changes. \laurie{what tool did we use to do the IFDEF counting?}
+approximately what proportion of the allocator's source has been adapted for
+CHERI by calculating the percentage of lines of code contained between
+\texttt{\#ifdef CHERI} blocks. This count is an under-approximation, as some
+code outside such \texttt{\#ifdef} blocks may also have been adapted, but it
+gives a rough idea of the extent of changes. \laurie{what tool did we use to do
+the IFDEF counting?} \andrei{I was given a script by Jeremy which I reused}
 
 \laurie{i think the rest of this paragraph is out of date?}
 Particularly, most allocators coming with \texttt{pkg64c}
@@ -464,7 +488,7 @@ When we survey existing CHERI memory allocators `in-the-wild', we
 see that they currently provide support for spatial memory safety
 on the heap.
 
-In terms of the Common Weakness Enumeration (CWE \andrei{cite}), all the
+In terms of the Common Weakness Enumeration (CWE~\cite{martin08common}), all the
 allocators we surveyed only mitigate CWE-125: Out-of-bounds
 Read~\footnote{\url{https://cwe.mitre.org/data/definitions/125.html}} and
 CWE-787: Out-of-bounds
