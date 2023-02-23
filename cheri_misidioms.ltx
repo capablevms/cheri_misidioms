@@ -255,16 +255,17 @@ programmer errors becoming security violations.
 properties, and then security properties. Is this sufficient, or is there
 something else?}
 
-A number of allocators are available for CheriBSD, though they are mostly
-installed via three different routes: as part of the base distribution; via
-CheriBSD \emph{packages}; or via external source. The standard way to build a CheriBSD distribution is to use
+A number of allocators are available for CheriBSD,
+installable via three different routes: as part of the base distribution; via
+CheriBSD \emph{packages}; or via external source. In this paper we consider
+allocators obtained via all three routes.
+The standard way to build a CheriBSD distribution is to use
 the \texttt{cheribuild} tool: this also offers multiple flavours of CheriBSD,
 where different flavours can, and do, include different allocators. In one case
-the version of one allocator available via \texttt{cheribuild} is sufficiently
+the version of an allocator available via \texttt{cheribuild} is sufficiently
 old and broken that we felt it necessary to build it directly from a GitHub
-repository. When describing the set of allocators under consideration in this
-paper, we therefore need to describe not just the allocator itself, but also
-the route via which we obtained it.
+repository. We document by which route we obtained all of the allocators
+we consider.
 
 On that basis, the allocators we consider in this paper, and the names we use
 for them for the rest of this paper, are as follows:
@@ -292,7 +293,7 @@ is the default allocator for CheriBSD.
 
 \item \memalloc{newlib} is \laurie{dunno}.
 
-\item \memalloc{bump-alloc} is the simple bump allocator from Section~\ref{sec:bumppointerallocator}.
+\item \memalloc{bump-alloc} is the simple bump allocator from Section~\ref{sec:bumppointerallocator}. \laurie{there are two bump allocators: is this the CHERI aware or non-CHERI aware variant? perhaps we should include both?}
 \end{itemize}
 
 We are aware of at least two other major memory allocators that have been
@@ -300,10 +301,10 @@ partly ported to CHERI: the \emph{Boehm-Demers-Weiser} conservative garbage
 collector; and the \emph{WebKit} garbage collector. Since neither port is yet
 complete, we have not included them in this paper.
 
-\autoref{tab:allocator_summary} shows further detail about the allocators,
+\autoref{tab:allocator_summary} shows further details about the allocators,
 including the precise version we used, and their total number of Source Lines
 of Code (SLoC) as calculated by the \texttt{cloc} tool. We also show
-approximately what proportion of the allocator has been adapted for CHERI by
+approximately what proportion of the allocator's source has been adapted for CHERI by
 calculating the percentage of lines of code contained between \texttt{\#ifdef
 CHERI} blocks. This count is an under-approximation, as some code outside such
 \texttt{\#ifdef} blocks may also have been adapted, but it gives a rough idea
