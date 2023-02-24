@@ -31,7 +31,7 @@ for bin in bin/*; do
     tracefile="trace/${bin#bin/}"
     echo "Tracing $bin -> $tracefile..."
     before=$(stat -c '%s' "$FVPTRACE")
-    ssh -t "$SSHHOST" "$dst/$bin" --fast --fvp-mti-toggle
+    ssh -t "$SSHHOST" "$dst/$bin" --fast --dump-map --fvp-mti-toggle
     after=$(stat -c '%s' "$FVPTRACE")
     echo "  Reading $(( after - before )) bytes from $FVPTRACE [$before,$after)..."
     dd bs=1 if="$FVPTRACE" skip="$before" of="$tracefile" status=none
