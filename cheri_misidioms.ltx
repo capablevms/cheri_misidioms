@@ -31,18 +31,18 @@ memory allocators (henceforth just ``allocators''). Apart from some embedded
 systems (which preallocate fixed quantities of memory), allocators are
 ubiquitous, because they allow us to write programs that are generic over a
 variety of memory usage patterns. Since allocators are used so frequently,
-their performance and security properties are a major part of
-performance and security properties of software in general. In other words,
-slow memory allocators and/or those with security flaws have significant
-and widespread consequences.
+their security properties and performance are a major part of
+the security properties and performance of software in general. In other words,
+allocators with security flaws and/or performance problems have significant,
+widespread consequences.
 
-In this paper we examine allocators and pure capability CHERI from both performance
-and security angles. In Section~\ref{sec:atk} we introduce a number of `attacks' and
+In this paper we examine allocators and CHERI from both security and performance
+angles. In Section~\ref{sec:atk} we introduce a number of `attacks' and
 show that many of the allocators are vulnerable to at least some of the attacks
 (note that since we first made a pre-print of this paper available, some
 allocators have fixed some or all vulnerabilities). In
 Section~\ref{performance} we attempt to examine the performance of CHERI
-allocators. To our surprise, it is difficult to draw meaningful conclusions. We
+allocators but, to our surprise, it is difficult to draw meaningful conclusions. We
 show that compilers on CHERI platforms do not optimise code as fully as one
 would expect, leading to a muddled performance picture.
 
