@@ -23,6 +23,8 @@
     [
         "bump_alloc1",
         "bump_alloc2",
-        "bump_alloc_lib"
+        "bump_alloc_lib",
+        "test_bump_alloc1",
+        "test_bump_alloc2"
     ]
 }
