@@ -1,5 +1,5 @@
 #include <string.h>
-#include <stdin.h>
+#include <stdio.h>
 #include <sys/mman.h>
 #include <cheriintrin.h>
 
