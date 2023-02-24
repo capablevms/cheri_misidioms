@@ -415,6 +415,14 @@ does this imply?} \emph{What are the API calls doing?}
 \section{Security Properties}
 \label{sec:rqs:rq4}
 
+CHERI's raison d'être is security: how secure are allocators under CHERI? This
+is a harder question to answer than it may first appear, because non-trivial
+software cannot be generically `secure'. Broadly speaking, allocators are
+subject to spatial (e.g.~buffer overrun) or temporal (e.g.~a sequence of
+function calls) attacks, and those attacks can be either on an allocators'
+internals (e.g.~corrupting its private data-structures) or its interface
+(e.g.~allowing code using the allocator to subvert expectations).
+
 \laurie{We show that it is surprisingly difficult to make a `secure' allocator for pure
 capability CHERI\@. We first show the basic problems with a simple bump-pointer
 allocator example (\autoref{sec:bumppointerallocator}). We then
