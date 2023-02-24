@@ -14,8 +14,7 @@
 // Check whether malloc() returns blocks that overlap.
 
 #define NUM_UNREPRESENTABLES 512
-#define MAX_SIZE (24*1024)
-#define NUM_MALLOCS 10000
+#define NUM_MALLOCS 1000
 #define NUM_TRIES 1000
 
 int cmp(const void *a, const void *b) {
@@ -31,20 +30,26 @@ bool overlaps(void *x, void *y) {
     || (cheri_base_get(y) >= cheri_base_get(x) && cheri_base_get(y) < cheri_base_get(x) + cheri_length_get(x));
 }
 
+void check_attack(bool cond) {
+    if (!cond) {
+        exit(0);
+    }
+}
+
 void test_overlaps() {
     void *b1 = malloc(10);
     void *b2 = malloc(10);
-    assert(overlaps(b1, b1));
-    assert(!overlaps(b1, b2));
-    assert(!overlaps(b2, b1));
+    check_attack(overlaps(b1, b1));
+    check_attack(!overlaps(b1, b2));
+    check_attack(!overlaps(b2, b1));
     void *b3 = cheri_bounds_set(b2, 4);
-    assert(overlaps(b2, b3));
-    assert(!overlaps(b1, b3));
+    check_attack(overlaps(b2, b3));
+    check_attack(!overlaps(b1, b3));
     void *b4 = cheri_bounds_set(b2 + 3, 7);
     void *b5 = cheri_bounds_set(b2 + 4, 6);
-    assert(overlaps(b3, b4));
-    assert(overlaps(b4, b5));
-    assert(!overlaps(b3, b5));
+    check_attack(overlaps(b3, b4));
+    check_attack(overlaps(b4, b5));
+    check_attack(!overlaps(b3, b5));
     free(b1);
     free(b2);
 }

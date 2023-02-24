@@ -201,10 +201,13 @@ def prepare_cheri():
     return None
 
 def prepare_cheribsd_ports():
-    repo = git.Repo.clone_from(url = get_config('cheribsd_ports_url'),
-                               to_path = os.path.join(work_dir_local,
-                                                      'cheribsd-ports'),
-                               multi_options = ["--depth 1", "--single-branch"])
+    to_path = os.path.join(work_dir_local, 'cheribsd-ports')
+    if not os.path.exists(to_path):
+        repo = git.Repo.clone_from(url = get_config('cheribsd_ports_url'),
+                                   to_path = to_path,
+                                   multi_options = ["--depth 1", "--single-branch"])
+    else:
+        repo = git.Repo(to_path)
     return repo
 
 def do_install(info, compile_env):
@@ -241,7 +244,6 @@ def do_install(info, compile_env):
             return check_cmd.returncode == 0
         else:
             subprocess.run(make_install_alloc_cmd(info['target'], info['version']))
-        assert(os.path.exists(os.path.join(cheribsd_ports_repo.working_tree_dir, info['ports_path'])))
     else:
         return False
     return True
@@ -353,7 +355,7 @@ def do_table_tests_entries(result, test_names):
     return new_entry
 
 def do_table_tests(results):
-    latexify = lambda x : r'\tbl' + x.replace('_', '').replace('2', "two")
+    latexify = lambda x : r'\tbl' + x.replace('_', '').replace('2', "two").replace('3', "three")
     test_names = [os.path.splitext(x)[0] for x in map(os.path.basename, sorted(tests)) if not os.path.splitext(x)[0] in (config["table_tests_to_ignore"] + config["tests_to_ignore"])]
     header_fields = len(test_names) * 'c'
     preamble = [r'\begin{table}[t]', r'\begin{center}', r'\begin{tabular}{l' + header_fields + r'}']
@@ -526,8 +528,10 @@ for alloc_folder in allocators:
         alloc_data['sloc'] = do_line_count(alloc_path)
         alloc_data['cheri_loc'] = do_cheri_line_count(alloc_path)
     elif alloc_info['install']['mode'] == 'pkg64c':
-        cheribsd_ports_repo.checkout(alloc_info['commit'])
+        cheribsd_ports_repo.git.fetch("origin", alloc_info['commit'])
+        cheribsd_ports_repo.git.checkout(alloc_info['commit'])
         alloc_path = os.path.join(cheribsd_ports_repo.working_dir, alloc_info['cheribsd_ports_path'])
+        assert(os.path.exists(alloc_path))
         alloc_data['api'] = do_cheri_api(alloc_path, api_fns)
         alloc_data['cheri_loc'] = do_cheri_line_count(alloc_path)
 
