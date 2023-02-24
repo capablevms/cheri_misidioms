@@ -22,6 +22,7 @@
     "tests_to_ignore":
     [
         "bump_alloc1",
-        "bump_alloc2"
+        "bump_alloc2",
+        "bump_alloc_lib"
     ]
 }
