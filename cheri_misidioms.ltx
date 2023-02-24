@@ -64,10 +64,10 @@ before introducing a very basic CHERI-aware allocator (Section~\ref{sec:bumppoin
 
 In this subsection,
 we provide a simple overview of CHERI, and its major concepts.
-Because CHERI has been developed over a number of years, and is explained over
+Since CHERI has been developed over a number of years, and is explained over
 a variety of documentation and papers, some concepts have acquired more than one name,
-and/or have names which subtly conflict with definitions common in mainstream
-software development. We use a single name for each concept, sometimes
+or names that subtly conflict with mainstream
+software development definitions. We use a single name for each concept, sometimes
 introducing new names where we believe that makes things clearer.
 
 A \emph{capability} is a token that gives those who bear it the ability to
@@ -83,18 +83,22 @@ processor instruction sets.
 We use the term \emph{CHERI} to refer to the `abstract capability machine'
 that software can observe: that is, the combination of a capability hardware
 instruction set, an ABI (e.g.~\cite{brooks19cheriabi}), a user-facing library that exposes
-capability-related functions, and a CHERI-aware language. (e.g.~CHERI C~\cite{watson20chericprogramming}).
+capability-related functions, and a CHERI-aware language. (e.g.~CHERI C~\cite{watson20chericprogramming},
+an adaption, in the sense of both extending and occasionally altering, of C).
 We refer to specific hardware implementations by
 their name (e.g.~Arm's `Morello', an extension of the AArch64 instruction
 set, or `CHERI RISC-V').
 
-A fundamental property of CHERI capabilities is that they cannot be forged. Each
+Conceptually, a CHERI system starts with a `super' capability. Each
 new \emph{child} capability must be derived from one or more \emph{parent}
 capabilities. An \emph{authentic}\footnote{CHERI calls these
 `tagged' or `valid' (and their inauthentic counterparts `untagged' or `invalid').}
 capability is one that has been derived from authentic parents according to
-CHERI's rules. Attempts to create capabilities by other means produce
-\emph{inauthentic} results.
+CHERI's rules. Attempts to create capabilities that violate CHERI rules
+cause the hardware to produce an \emph{inauthentic} result. These rules
+are enforced by hardware: software cannot forge a capability. For example,
+there is no mechanism to set a capability as `valid'; only a child capability
+derived, correctly, from valid parent capabilities can itself be valid.
 
 A capability consists of an
 \emph{address} in memory and a set of \emph{permissions} (only a subset of
@@ -186,11 +190,13 @@ point the allocator returns \texttt{NULL}s.
 
 Our simple bump allocator works as expected on non-CHERI systems. Perhaps
 surprisingly, it also compiles and runs correctly on CHERI systems too, with
-pointers transparently `upgraded' to capabilities. As this suggests,
-CHERI C is largely source compatible with normal C code. However, compiling and
+pointers transparently `upgraded' to capabilities. As this suggests, CHERI C is
+largely source compatible with normal C code, though types are now
+\emph{capability types}, occupying on Morello exactly twice the space of a
+non-capability pointer. However, compiling and
 running Listing~\ref{lst:bump_alloc1} on CHERI gives little additional security
 over the non-CHERI version\footnote{On CheriBSD, the capability returned by our
-\fnc{malloc} will have the bounds returned by the \fnc{mmap} call.}.
+\fnc{malloc} will have the same bounds as the capability returned by \fnc{mmap}.}.
 
 \begin{figure}[t]
 \lstinputlisting[language=C,
@@ -207,8 +213,8 @@ over the non-CHERI version\footnote{On CheriBSD, the capability returned by our
   {code/bump_alloc2.c}
 \end{figure}
 
-There is no single definition of what a `CHERI aware' allocator should do
-but, at a minimum, one might reasonably expect that \texttt{malloc} returns a
+There can be no single definition of what a `CHERI aware' allocator should do,
+but a reasonable first step is to make \texttt{malloc} return a
 capability whose bounds are
 restricted to the block of memory allocated. Listing~\ref{lst:bump_alloc2}
 shows how to adapt \texttt{malloc} to do this.
@@ -220,17 +226,16 @@ be, enough bits in CHERI's bounds to precisely represent every possible address
 and size. Modern CHERI therefore uses an encoding for bounds that allows small
 bounds to be precisely represented, at the expense of larger bounds becoming
 progressively less precise~\cite{woodruff19chericoncentrate}. On Morello,
-16,385 bytes is the smallest bound which can not be precisely represented in a
-capability, and which is thus rounded up to the next representable bound (in
-this case 16,392\footnote{For CHERI RISC-V the first unrepresentable length is
-4,097 bytes, which is rounded up to 4,104.}). Our capability aware
+the smallest bound that cannot be precisely represented is 16,385 bytes,
+which is rounded up to 16,392 bytes\footnote{For CHERI RISC-V the first unrepresentable length is
+4,097 bytes, which is rounded up to 4,104.}. Our capability aware
 \texttt{malloc} thus has to ensure that both the capability's low and high
 bound addresses are rounded down and up (respectively) in a way that ensures
 that the address and size can be fully covered.
 
 The two versions of our allocator have meaningfully different security properties,
 even when we run both on a CHERI system. For example, consider this simple
-C snippet:
+C snippet which models a buffer overrun:
 
 \begin{lstlisting}[language=C]
 char *b = malloc(1);
@@ -238,13 +243,11 @@ b[0] = 'a';
 b[1] = 'b';
 \end{lstlisting}
 
-Unsurprisingly, on a non-CHERI system this code compiles and runs without
-error. If we compile and run it on a CHERI system, we get two different
-outcomes. With the \texttt{malloc} from \autoref{lst:bump_alloc1} the code
-still compiles and runs without error. However, with the \texttt{malloc} from
-\autoref{lst:bump_alloc2} the code compiles but crashes with a security violation
-when attempting to execute line 3. This is due to the tighter capability bounds
-returned by the latter \texttt{malloc}, showing how CHERI can prevent
+On a non-CHERI system, or a CHERI system with \autoref{lst:bump_alloc1}
+as an allocator, this snippet compiles and runs without error. However, with
+the allocator from \autoref{lst:bump_alloc2} the code compiles but crashes with
+a security violation when attempting to execute line 3, due to the tighter
+capability bounds returned by its \texttt{malloc}, showing how CHERI can prevent
 programmer errors becoming security violations.
 
 
