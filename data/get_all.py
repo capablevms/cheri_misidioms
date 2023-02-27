@@ -333,6 +333,16 @@ def do_table_cheri_api(results):
     table = '\n'.join(['\n'.join(preamble), '\\\\\n'.join(entries), '\n'.join(epilogue)])
     return table
 
+def do_table_tests_parse_result(result, test):
+    if result["results"][test]["exit_code"] == 0:
+        result_stdout = result["results"][test]["stdout"]
+        if "Attack unsuccessful" in result_stdout:
+            return r'$\checkmark$'
+        elif "Attack successful" in result_stdout:
+            return r'$\times$'
+    else:
+        return r'$\oslash$'
+
 def do_table_tests_entries(result, test_names):
     new_entry = []
     if args.parse_data_only:
@@ -340,18 +350,10 @@ def do_table_tests_entries(result, test_names):
             if os.path.basename(test) in config["table_tests_to_ignore"]:
                 continue
             assert(os.path.basename(test) in test_names)
-            if result["results"][test]["exit_code"] == 0:
-                new_entry.append(r'\times')
-            elif "Assertion failed" in result["results"][test]["stderr"]:
-                new_entry.append(r'$\checkmark$')
-            else:
-                new_entry.append(r'$\oslash$')
+            new_entry.append(do_table_tests_parse_result(result, test))
     else:
         for test in tests:
-            if result["results"][test]["exit_code"] == 0:
-                new_entry.append(r'\checkmark')
-            else:
-                new_entry.append(r'$\times$')
+            new_entry.append(do_table_tests_parse_result(result, test))
     return new_entry
 
 def do_table_tests(results):
@@ -370,7 +372,7 @@ def do_table_tests(results):
         entries.append(' & '.join(entry))
     epilogue = [r'\input{./data/results/tests_extra.tex}']
     epilogue += [r'\\ \bottomrule', r'\end{tabular}']
-    epilogue += [r'\caption{Attacks which succeed on a given allocator are marked with a $\times$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}']
+    epilogue += [r'\caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}']
     epilogue += [r'\label{tab:atks}', r'\end{center}', r'\end{table}']
     table = '\n'.join(['\n'.join(preamble), '\\\\\n'.join(entries), '\n'.join(epilogue)])
     return table
