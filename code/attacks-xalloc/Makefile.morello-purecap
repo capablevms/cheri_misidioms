@@ -1,0 +1,4 @@
+CC = ${CHERIBASE}/output/morello-sdk/bin/clang
+CFLAGS = --std=c11 -Wall --config cheribsd-morello-purecap.cfg
+
+include Makefile.inc
