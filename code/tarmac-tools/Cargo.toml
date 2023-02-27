@@ -12,6 +12,7 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 clap = { version = "4.1.6", features = ["derive"] }
 csv = "1.2.0"
+elf = "0.7.2"
 itertools = "0.10.5"
 regex = "1.7.1"
 serde = { version = "1.0.152", features = ["derive"] }

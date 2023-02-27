@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use clap::Parser;
+use elf::ElfStream;
 use itertools::Itertools as _;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -10,6 +11,7 @@ use std::error::Error;
 use std::fs;
 use std::io;
 use std::io::BufRead as _;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Parser)]
 #[command()]
@@ -22,6 +24,31 @@ struct Args {
 
     #[arg(short, long, help = "Show per-instruction analysis")]
     annotate_trace: bool,
+
+    #[arg(
+        long,
+        help = "Local directories to search for ELF files",
+        long_help = "
+            Directories containing local copies of ELF files named in the VM map. All directory
+            components from the VM map are ignored. This is most useful for locating the executable
+            and non-system libraries.
+
+            --elf-dir is searched before --rootfs, but otherwise in the order specified.
+          "
+    )]
+    elf_dir: Vec<PathBuf>,
+
+    #[arg(
+        long,
+        help = "Local directories reflecting the rootfs",
+        long_help = "
+            A local copy of the rootfs, used to find ELF files. May be specified multiple times, to
+            support overlays (like cheribuild's --disk-image/extra-files).
+
+            --elf-dir is searched before --rootfs, but otherwise in the order specified.
+          "
+    )]
+    rootfs: Vec<PathBuf>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -37,7 +64,7 @@ struct VmMapEntry {
     #[serde(rename = "Offset")]
     offset: u64,
     #[serde(rename = "Path")]
-    path: Option<String>,
+    path: Option<PathBuf>,
 }
 
 impl VmMapEntry {
@@ -52,7 +79,7 @@ struct VmMap {
 }
 
 impl VmMap {
-    pub fn file_for_insn(&self, pc: u64) -> Option<&str> {
+    pub fn file_for_insn(&self, pc: u64) -> Option<&Path> {
         self.map
             .iter()
             .find(|entry| entry.contains(pc) && entry.path.is_some())
@@ -79,6 +106,47 @@ fn read_vmmap(file: &str) -> Result<VmMap, Box<dyn Error>> {
     } else {
         read_vmmap_csv(&text)
     }
+}
+
+type MorelloElfFile = ElfStream<elf::endian::LittleEndian, fs::File>;
+
+fn try_load_elf(name: &Path) -> Result<Option<MorelloElfFile>, Box<dyn Error>> {
+    if let Ok(file) = fs::File::open(name) {
+        return Ok(Some(MorelloElfFile::open_stream(file)?));
+    }
+    // Failure to open the file is not an error.
+    Ok(None)
+}
+
+fn find_elf(name: &Path, args: &Args) -> Result<Option<(PathBuf, MorelloElfFile)>, Box<dyn Error>> {
+    if let Some(file_name) = name.file_name() {
+        for dir in args.elf_dir.iter() {
+            let local = dir.join(file_name);
+            if let Some(elf) = try_load_elf(&local)? {
+                println!(
+                    "  Using '{}' to represent '{}'.",
+                    local.display(),
+                    name.display()
+                );
+                return Ok(Some((local, elf)));
+            }
+        }
+    }
+
+    for dir in args.rootfs.iter() {
+        let local = dir.join(name.strip_prefix("/")?);
+        if let Some(elf) = try_load_elf(&local)? {
+            println!(
+                "  Using '{}' to represent '{}'.",
+                local.display(),
+                name.display()
+            );
+            return Ok(Some((local, elf)));
+        }
+    }
+
+    println!("  No local ELF found to represent '{}'.", name.display());
+    Ok(None)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -110,12 +178,16 @@ fn main() -> Result<(), Box<dyn Error>> {
             .unwrap();
 
     let mut insn_count: u64 = 0;
-    let mut insn_count_by_file: HashMap<&str, u64> = HashMap::new();
+    let mut insn_count_by_file: HashMap<&Path, u64> = HashMap::new();
 
-    let tarmac = fs::File::open(args.tarmac)?;
+    let mut elf_map: HashMap<&Path, Option<(PathBuf, MorelloElfFile)>> = HashMap::new();
+
+    let tarmac = fs::File::open(&args.tarmac)?;
     for line in io::BufReader::new(tarmac).lines() {
         let line = line?;
         if let Some(caps) = it_re.captures(&line) {
+            insn_count += 1;
+
             let pcc = caps.name("pcc").unwrap().as_str();
             let insn = caps.name("insn").unwrap().as_str();
             let asm = caps.name("asm").unwrap().as_str();
@@ -125,17 +197,33 @@ fn main() -> Result<(), Box<dyn Error>> {
             let pcc_addr = u64::from_str_radix(pcc_addr, 16).unwrap();
 
             // TODO: Extend this to show the symbol and offset.
-            let file = vmmap.file_for_insn(pcc_addr).unwrap_or("Unknown file");
-            if args.annotate_trace {
-                println!("{pcc} {insn} : {asm:32} // {file}");
-            }
+            let comment;
+            if let Some(tgt_elf) = vmmap.file_for_insn(pcc_addr) {
+                *insn_count_by_file.entry(tgt_elf).or_insert(0) += 1;
 
-            insn_count += 1;
-            *insn_count_by_file.entry(file).or_insert(0) += 1;
+                let local = match elf_map.get(tgt_elf) {
+                    Some(local) => local,
+                    None => {
+                        let local = find_elf(tgt_elf, &args)?;
+                        elf_map.entry(tgt_elf).or_insert(local)
+                    }
+                };
+
+                if let Some(local_elf) = local {
+                    comment = format!("{} ({})", tgt_elf.display(), local_elf.0.display());
+                } else {
+                    comment = format!("{}", tgt_elf.display());
+                }
+            } else {
+                comment = "Unknown file".to_string();
+            }
+            if args.annotate_trace {
+                println!("{pcc} {insn} : {asm:32} // {comment}");
+            }
         }
     }
     for (file, count) in insn_count_by_file.iter().sorted() {
-        println!("{file}: {count} instructions");
+        println!("{file}: {count} instructions", file = file.display());
     }
     println!("Counted {insn_count} EL0 instructions in total.");
     Ok(())

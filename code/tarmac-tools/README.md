@@ -11,7 +11,10 @@ For example
 % SSHHOST=fvp-morello-purecap FVPTRACE=/tmp/fvp-trace ./run-fast-fvp-trace.sh
 ...
 % cd ../tarmac-tools
-% cargo run -- ../microbenchmarks/trace/11-random-graph-walk-fixed-purecap.{tarmac,stdout}
+% cargo run -- \
+    --elf-dir ../microbenchmarks/bin \
+    --rootfs ~/cheri/output/rootfs-morello-purecap \
+    ../microbenchmarks/trace/11-random-graph-walk-fixed-purecap.{tarmac,stdout}
 ...
 /root/capablevms/microbenchmarks/bin/11-random-graph-walk-fixed-purecap: 488 instructions
 Counted 488 EL0 instructions in total.
