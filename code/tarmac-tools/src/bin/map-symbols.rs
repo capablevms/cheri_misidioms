@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::io;
-use std::io::BufRead as _;
+use std::io::{BufRead as _, Read as _, Seek as _};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Parser)]
@@ -21,6 +21,18 @@ struct Args {
 
     #[arg(help = "CSV-formatted VM map, optionally embedded in a stdout recording")]
     vmmap: String,
+
+    #[arg(
+        long,
+        help = "Start reading tarmac from (and including) the TARGET_START'th byte"
+    )]
+    tarmac_start: Option<u64>,
+
+    #[arg(
+        long,
+        help = "Stop reading tarmac at (and not including) the TARGET_END'th byte"
+    )]
+    tarmac_end: Option<u64>,
 
     #[arg(short, long, help = "Show per-instruction analysis")]
     annotate_trace: bool,
@@ -182,7 +194,19 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut elf_map: HashMap<&Path, Option<(PathBuf, MorelloElfFile)>> = HashMap::new();
 
-    let tarmac = fs::File::open(&args.tarmac)?;
+    let tarmac_start = args.tarmac_start.unwrap_or(0);
+    let tarmac_end = args.tarmac_end.unwrap_or(u64::MAX);
+    if tarmac_end <= tarmac_start {
+        return Err(format!(
+            "--tarmac-end ({tarmac_end}) <= --tarmac-start ({tarmac_start}); nothing to analyse"
+        )
+        .into());
+    }
+    let tarmac_length = tarmac_end - tarmac_start;
+
+    let mut tarmac = fs::File::open(&args.tarmac)?;
+    tarmac.seek(std::io::SeekFrom::Start(tarmac_start))?;
+    let tarmac = tarmac.take(tarmac_length);
     for line in io::BufReader::new(tarmac).lines() {
         let line = line?;
         if let Some(caps) = it_re.captures(&line) {
