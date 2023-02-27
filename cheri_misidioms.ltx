@@ -408,8 +408,8 @@ does this imply?} \emph{What are the API calls doing?}
 \input{./data/results/cheri_api.tex}
 
 
-\section{Security Properties}
-\label{sec:rqs:rq4}
+\section{Attacking CHERI Allocators}
+\label{sec:atk}
 
 CHERI's raison d'être is security: how secure are allocators under CHERI? This
 is a harder question to answer than it may first appear, because non-trivial
@@ -419,97 +419,41 @@ function calls) attacks, and those attacks can be either on an allocators'
 internals (e.g.~corrupting its private data-structures) or its interface
 (e.g.~allowing code using the allocator to subvert expectations).
 
-\laurie{We show that it is surprisingly difficult to make a `secure' allocator for pure
-capability CHERI\@. We first show the basic problems with a simple bump-pointer
-allocator example (\autoref{sec:bumppointerallocator}). We then
-examine~\alloccount{} existing allocators that have been ported to CHERI
-(\autoref{sec:cheriallocators}). Finally we introduce and name~\allocbugs{}
-simple `attacks' on pure capability memory allocators, showing that most of the
-allocators are vulnerable to most of the attacks (\autoref{sec:atk}). Since
-we first made a pre-print of this paper available, some allocators have
-fixed some or all vulnerabilities, but many remain vulnerable.
-}
-
-The CHERI hardware extensions supports a variety of enforceable security
-policies, but these require careful coding in software.
-For memory allocators, CHERI offers the possibility of:
-\begin{itemize}
-\item lightweight software compartmentalization
-\item temporal memory safety on the heap
-\item spatial memory safety on the heap
-\end{itemize}
-
-\jacob{We should define "lightweight software compartmentalization".}
-
-\jacob{I find it useful, in general, to distinguish between language-level
-temporal safety (like Rust or \fnc{unique\_ptr}) and strict temporal safety (at
-the machine level). The former is sufficient for the majority of UaF
-vulnerabilities, but the latter is required if the code is malicious (since
-residual register values could be read by inline assembly, for example). Is that
-too far for this paper?}
-
-When we survey existing CHERI memory allocators `in-the-wild', we
-see that they currently provide support for spatial memory safety
-on the heap.
-
-In terms of the Common Weakness Enumeration (CWE~\cite{martin08common}), all the
-allocators we surveyed only mitigate CWE-125: Out-of-bounds
-Read~\footnote{\url{https://cwe.mitre.org/data/definitions/125.html}} and
-CWE-787: Out-of-bounds
-Write~\footnote{\url{https://cwe.mitre.org/data/definitions/787.html}}, for
-dynamically allocated memory in the managed heap.
-
-While this is stronger security than the equivalent non-CHERI versions of
-these allocators, it is apparent that the CHERI allocators do not yet
-take advantage of the full range of security mechanisms afforded by the
-hardware. The next section goes on to explore potential security
-vulnerabilities, mostly concerning temporal memory safety.
-
-
-%%%%%
-
-
-\section{Attacking Pure Capability Memory Allocators}
-\label{sec:atk}
-
 \input{./data/results/tests.tex}
 
-%\begin{table}[t]
-%\begin{center}
-%\begin{tabular}{lcc}
-%  \toprule
-%Attack            & BSD simple & jemalloc \\
-%\midrule
-%narrow            & $\times$   & $\times$ \\
-%narrow\_realloc   & $\times$   & $\times$ \\
-%narrow\_widen     & $\times$   & $\times$ \\
-%privesc           & $\times$   & $\times$ \\
-%privesc2          &            & $\times$ \\
-%undef             & $\times$   & $\times$ \\
-%\bottomrule
-%\end{tabular}
-%\caption{Attacks which succeed on a given allocator are marked with a $\times$.}
-%\label{tab:atks}
-%\end{center}
-%\end{table}
+In this section we introduce a number of `attacks' on CHERI allocators
+(1 spatial and 4 temporal) and then run those attacks on the allocators from
+Section~\ref{sec:cheriallocators}. The results are shown in \autoref{tab:atks}
+which shows that many allocators, including the default CheriBSD allocator,
+are vulnerable. It is beyond the scope of this paper to ascertain whether these
+vulnerabilities are because the allocators have not yet been fully adapted to
+CHERI or whether the necessary adaptations to the allocator are impractical.
 
-We came up with \numattacks{} potential memory allocator vulnerabilities, which
-could be used to undermine the security guarantees offered by CHERI\@. We
-prepared tests exercising each of these vulnerability, and execute them over
-the allocators mentioned in~\autoref{sec:cheriallocators}, except those
-allocators which have not passed our validation test. We observe a total of
-\allocbugs{} attack successes (\autoref{tab:atks}), indicating potential CHERI
-security violations.
 
-Conceptually, the capability memory allocator vulnerabilities we identified
-come in two flavours: the allocator can initially hand out more permissions
-than expected; or can later be tricked in to escalating a capability's
-privileges. As these undermine the security guarantees of using capabilities,
-we refer to these issues as \emph{attacks}. In this section we start with three
-serious attacks in the latter category, before detailing one minor attack in
-the former category\andrei{Since we have names for these attacks, could we use
-them, to refer back to the actual test sources}, as well as discuss theoretical
-mitigations for each of the issues.
+\subsection{How can a CHERI Allocator be Attacked?}
+
+Our definition of CHERI in Section~\ref{sec:cheri} might suggest that software
+running on CHERI hardware is invulnerable to attack. Alas, while CHERI gives us the
+tools to make secure software, it is up to us to use them correctly --- and wisely.
+We must decide which attack model is relevant to our software, and then write,
+or adjust, the software, to withstand such attacks. There is, as yet, no
+common understanding of what attack model allocators should be robust against,
+and therefore it is unsurprising that many allocators are vulnerable to seemingly
+simple attacks.
+
+For example, consider this C snippet:
+
+\begin{lstlisting}[language=C]
+char *a = malloc(16);
+char *b = malloc(16);
+a[16] = 'c';
+printf("%c\n", b[0]);
+\end{lstlisting}
+
+With the capability-unaware allocator from \autoref{lst:bump_alloc1} this code will
+compile successfully and, when run, print `\texttt{c}'. However, with the
+capability-aware allocator from \autoref{lst:bump_alloc2}, the program aborts
+with a security exception when executing line 3.
 
 Formally speaking, CHERI capabilities have monotonically decreasing privileges:
 in other words, when taking an existing capability \emph{C1} as input, any
