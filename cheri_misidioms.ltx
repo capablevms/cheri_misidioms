@@ -89,9 +89,12 @@ We refer to specific hardware implementations by
 their name (e.g.~Arm's `Morello', an extension of the AArch64 instruction
 set, or `CHERI RISC-V').
 
+\label{abilities}
 Conceptually, a CHERI system starts with a `super' capability. Each
 new \emph{child} capability must be derived from one or more \emph{parent}
-capabilities. An \emph{authentic}\footnote{CHERI calls these
+capabilities. Capabilities \emph{abilities} monotonically decrease:
+a child capability must have the same, or fewer, abilities than its
+parent. An \emph{authentic}\footnote{CHERI calls these
 `tagged' or `valid' (and their inauthentic counterparts `untagged' or `invalid').}
 capability is one that has been derived from authentic parents according to
 CHERI's rules. Attempts to create capabilities that violate CHERI rules
@@ -473,29 +476,42 @@ shall see later, it is not just our bump allocator that is subject to this
 particular attack.
 
 
-\subsection{\privesc: Insufficient validation of the input capability}
+\subsection{The Attacks}
 
-Consider a memory allocator whose \fnc{realloc(cap, size)} function takes in a
-capability \texttt{cap} whose address references the beginning of a block of
-memory and returns a new capability whose address references the beginning of a
-block of memory sufficient for storing \texttt{size} bytes.  A common
-\fnc{realloc} optimisation is to avoid moving memory if the requested size fits
-within the `bucket' that the block already resides within.  We might then write
-a simple \fnc{realloc} as follows, assuming that we have access to a
-high-privileged capability \texttt{MC} (e.g.~from
-\fnc{mmap}~\cite{brooks19cheriabi}):
+In this subsection we explain the attacks from \autoref{tab:atks} in detail.
+
+\subsubsection{\escbounds and \escperms: Allocator Optimisations can Cause
+Bounds or Permissions Escalation}
+
+In the simple bump allocator of \autoref{lst:bump_alloc1}, \texttt{realloc} always
+allocates a new block of memory. While this is always correct, it is inefficient,
+in part because it requires copying part of the block's existing content. Performance
+focussed allocators thus try to avoid allocating a new block of memory when
+shrinking or maintaining a block's size, or if increasing the block's size does not
+make it overwrite its nearest neighbour. The latter optimisation is dangerous
+for a CHERI allocator.
+
+To see the danger, consider the case where \texttt{realloc} wants to increase a
+block in size, and there is sufficient room to do so without moving the block.
+\texttt{realloc} needs to return a capability whose bounds encompass the new
+(larger) size --- but such a capability cannot be derived from the input
+capability, since doing so would require increasing a capabilities abilities
+(see \pageref{abilities}). Thus the allocator needs access to a `super'
+capability which it can use to derive a capability representing the new bounds.
+Let us call the `super' capability \texttt{SC} and introduce a function
+\texttt{size\_of\_bucket} which tells us the maximum space available for
+the block starting at \texttt{ptr}:
 
 \begin{lstlisting}[language=C]
-void *realloc(void *cap, size_of size) {
-  if (size_of_bucket(cap) <= size) {
+void *realloc(void *ptr, size_of size) {
+  if (size_of_bucket(ptr) <= size) {
     // No need to reallocate.
     return cheri_bounds_set(
       cheri_address_set(MC, cap),
       size);
   } else {
-    // Allocate a larger region of memory and copy
-    // cap's contents over.
-    ...
+    // Allocate a larger region of memory
+    // and copy the old contents.
   }
 }
 \end{lstlisting}
@@ -506,8 +522,8 @@ address as the original capability but with an increased upper bound. By
 definition, reducing the size of a block means that it will always fit within
 its existing bucket so the above optimisation is guaranteed to be correct.
 
-Unfortunately this implementation of \fnc{realloc} is subject to privilege
-escalation. For example, one can pass in a capability with narrow bounds and
+We can now observe two related attacks on this \fnc{realloc}, the first
+of which we term \escbounds. We can pass in a capability with narrow bounds and
 receive back a capability with wider bounds:
 
 \begin{lstlisting}[language=C]
@@ -524,14 +540,10 @@ bounds $0\ldots{}m$ bytes where $m < n$ (lines 2 and 3). We can then use
 \fnc{realloc} to turn \emph{C2} back into \emph{C1} -- even though we had
 lost access to \emph{C1} entirely!
 
-This is not just a theoretical attack: our example \fnc{realloc} is effectively
-a simplified version of CheriBSD's \fnc{realloc}, which (as of
-2021-08-18\footnote{\href{https://github.com/CTSRD-CHERI/cheribsd/issues/1065}{https://github.com/CTSRD-CHERI/cheribsd/issues/1065}})
-is vulnerable to this attack. Any capability whose bounds contain the base
-address of a memory block can potentially have its privileges escalated, with
-\fnc{realloc} returning a capability with the same permissions as the memory
-system's main capability (as well as widening bounds, this allows
-e.g.~upgrading a read-only capability to a read/write capability).
+An important variant of this attack is \escperms, where the bounds are
+set correctly, but other permissions (e.g.~read/write) are incorrectly changed:
+
+\laurie{XYZ}
 
 \subsubsection{Mitigations}
 
