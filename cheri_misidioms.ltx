@@ -171,7 +171,10 @@ non-CHERI aware allocator to become CHERI aware.
   caption={
     A simple, but complete, non-CHERI aware, bump pointer allocator:
     \fnc{malloc} works as per normal; \fnc{free} is a no-op; and
-    \fnc{realloc} always allocates a new chunk of memory.
+    \fnc{realloc} always allocates a new chunk of memory copying
+    over the old block (note that because the bump allocator does not
+    free memory, \fnc{realloc}'s use of \fnc{memcpy} is correct even
+    when the block is increased in size).
     \fnc{\_\_builtin\_align\_up(v, a)} is an LLVM / clang primitive which rounds
     \texttt{v} up to the next smallest multiple of \texttt{a}: in this example,
     every memory block returned by \fnc{malloc} is sufficiently aligned to
