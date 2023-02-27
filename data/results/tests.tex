@@ -1,20 +1,22 @@
 \begin{table}[t]
 \begin{center}
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccccc}
 \toprule
-Allocator & \tblnarrowwiden & \tbloverlap & \tbloverlapthree & \tblprivesc & \tblprivesctwo & \tblundef\\
+Allocator & \tblnarrowwiden & \tbloverlap & \tblprivesc & \tblprivesctwo & \tblundef\\
 \midrule
-bump-alloc & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
-dlmalloc-cheribuild & $\times$ & $\oslash$ & $\times$ & $\times$ & $\times$ & $\checkmark$\\
-jemalloc & $\times$ & $\oslash$ & $\times$ & $\times$ & $\times$ & $\times$\\
-libmalloc-simple & $\times$ & $\oslash$ & $\oslash$ & $\times$ & $\checkmark$ & $\times$\\
-libxalloc & $\times$ & $\oslash$ & $\times$ & $\times$ & $\times$ & $\times$\\
-snmalloc-cheribuild & $\checkmark$ & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
-snmalloc-repo & $\checkmark$ & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\checkmark$
+bump-alloc-cheri & $\oslash$ & $\oslash$ & $\oslash$ & $\oslash$ & $\checkmark$\\
+bump-alloc-nocheri & $\oslash$ & $\oslash$ & $\oslash$ & $\oslash$ & $\checkmark$\\
+dlmalloc-cheribuild & $\times$ & $\checkmark$ & $\times$ & $\times$ & $\checkmark$\\
+dmalloc & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
+jemalloc & $\times$ & $\checkmark$ & $\times$ & $\times$ & $\times$\\
+libmalloc-simple & $\times$ & $\oslash$ & $\times$ & $\checkmark$ & $\times$\\
+libxalloc & $\times$ & $\checkmark$ & $\times$ & $\times$ & $\times$\\
+snmalloc-cheribuild & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
+snmalloc-repo & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\oslash$
 % \input{./data/results/tests_extra.tex}
 \\ \bottomrule
 \end{tabular}
-\caption{Attacks which succeed on a given allocator are marked with a $\times$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}
+\caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}
 \label{tab:atks}
 \end{center}
 \end{table}

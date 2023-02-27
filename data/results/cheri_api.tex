@@ -4,9 +4,12 @@
 \toprule
 allocator & API & \# API calls & \# builtin calls \\
 \midrule
-bump-alloc & cheriintrin & 10 & 8\\
+ElectricFence & cheric & 0 & 0\\
+bump-alloc-cheri & builtin & 39 & 39\\
+bump-alloc-nocheri & builtin & 39 & 39\\
 dlmalloc-cheribuild & builtin & 10 & 10\\
 dlmalloc-pkg64c & cheric & 0 & 0\\
+dmalloc & cheric & 0 & 0\\
 jemalloc & cheric & 12 & 0\\
 libmalloc-simple & cheric & 9 & 0\\
 libxalloc & cheric & 0 & 0\\
