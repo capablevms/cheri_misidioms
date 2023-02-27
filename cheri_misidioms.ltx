@@ -441,7 +441,7 @@ common understanding of what attack model allocators should be robust against,
 and therefore it is unsurprising that many allocators are vulnerable to seemingly
 simple attacks.
 
-For example, consider this C snippet:
+For example, consider this C snippet, which models a buffer overrun:
 
 \begin{lstlisting}[language=C]
 char *a = malloc(16);
@@ -450,26 +450,25 @@ a[16] = 'c';
 printf("%c\n", b[0]);
 \end{lstlisting}
 
-With the capability-unaware allocator from \autoref{lst:bump_alloc1} this code will
-compile successfully and, when run, print `\texttt{c}'. However, with the
+With the capability-unaware bump allocator from \autoref{lst:bump_alloc1} this
+code compiles successfully and, when run, prints `\texttt{c}'\footnote{Note
+that the example is in the realm of undefined behaviour, so a compiler could
+compile this code to do something entirely different -- though, at the time of
+writing, CheriBSD's LLVM does not do so.}. It does this because the bump
+allocator allocates the second block immediately after the first in memory, so
+writing 1 past the end of the first block in fact writes to the first byte of
+the second block. However, with the
 capability-aware allocator from \autoref{lst:bump_alloc2}, the program aborts
 with a security exception when executing line 3.
 
-Formally speaking, CHERI capabilities have monotonically decreasing privileges:
-in other words, when taking an existing capability \emph{C1} as input, any
-capability \emph{C2} we derive from \emph{C1} must have the same or fewer
-privileges. This may seem to make it impossible to increase a capability's
-privileges, but software components can store high privilege capabilities that,
-if misused, could give the appearance of returning a capability with increased
-privileges. Due to the nature of memory allocators, they must be able to make
-use of a higher-privileged capability in order to function.
+Buffer overruns are so common in C code that we expect most people to consider
+the possibility part of their attack model: by extension we expect that they
+would want a CHERI allocator to protect against such attacks. However, the
+difference between Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2}
+shows that such protection does not happen without careful thought. As we will
+shall see later, it is not just our bump allocator that is subject to this
+particular attack.
 
-Functions which take in a low privileged capability and use a higher privileged
-capability\footnote{More formally, which take as input a capability \emph{C1}
-and make internal use of a capability \emph{C2}, where \emph{C2}'s set of
-privileges are not a subset of \emph{C1}'s privileges.} to perform calculations
-are at risk of privilege escalation, and need to be carefully audited for bad
-idioms.
 
 \subsection{\privesc: Insufficient validation of the input capability}
 
