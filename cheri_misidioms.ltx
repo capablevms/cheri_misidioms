@@ -37,33 +37,29 @@ allocators with security flaws and/or performance problems have significant,
 widespread consequences.
 
 In this paper we examine allocators and CHERI from both security and performance
-angles. In Section~\ref{sec:atk} we introduce a number of `attacks' and
-show that many of the allocators are vulnerable to at least some of the attacks
-(note that since we first made a pre-print of this paper available, some
-allocators have fixed some or all vulnerabilities). In
-Section~\ref{performance} we attempt to examine the performance of CHERI
-allocators but, to our surprise, it is difficult to draw meaningful conclusions. We
-show that compilers on CHERI platforms do not optimise code as fully as one
-would expect, leading to a muddled performance picture.
+angles. We show that all CHERI allocators are subject to at least some simple attacks
+that are likely to surprise reasonable programmers. To our surprise, we also
+show that it is difficult to draw meaningful conclusions about performance:
+we show that compilers on CHERI platforms do not optimise code as fully as one
+would expect, leading to a muddled performance picture. We do not claim our
+work is definitive, though it does suggest two things: that some allocators
+undermine the security properties one might expect from software running on
+pure capability CHERI; and that it is currently difficult to reason about the
+performance of software on CHERI.
 
-We do not claim our work is definitive, though it does suggest two things:
-that some allocators undermine the security properties one might
-expect from software running on pure capability CHERI; and that it is
-currently difficult to reason about the performance of software on CHERI.
-
-
-\section{Background}
-
-We expect that few readers are expert in both CHERI and allocators: in this
-section, we first provide a brief overview of CHERI (Section~\ref{sec:cheri}),
-before introducing a very basic CHERI-aware allocator (Section~\ref{sec:bumppointerallocator}).
+In essence the paper is split in two. First, we introduce the necessary
+background: a brief overview of CHERI for those unfamiliar with it (\autoref{sec:cheri});
+our running example, a simple bump allocator (\autoref{sec:bumppointerallocator}; and
+a simple example of how allocators can be vulnerable, or invulnerable, to attack on CHERI
+(\autoref{sec:atk}). Second, we introduce our experiments: the allocators
+under consideration (\autoref{sec:cheriallocators}); our attacks (\autoref{sec:atks});
+and our (attempted) performance evaluation (\autoref{performance}).
 
 
-\subsection{CHERI}
+\section{CHERI Overview}
 \label{sec:cheri}
 
-In this subsection,
-we provide a simple overview of CHERI, and its major concepts.
+In this section, we provide a simple overview of CHERI, and its major concepts.
 Since CHERI has been developed over a number of years, and is explained over
 a variety of documentation and papers, some concepts have acquired more than one name,
 or names that subtly conflict with mainstream
@@ -162,7 +158,7 @@ CHERI Linux port, at the time of writing the most mature OS for CHERI hardware
 is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD exclusively.
 
 
-\subsection{A Basic Pure Capability Allocator}
+\section{A Basic Pure Capability Allocator}
 \label{sec:bumppointerallocator}
 
 To illustrate how CHERI affects allocators, in this subsection we adapt a simple
@@ -255,6 +251,48 @@ the allocator from \autoref{lst:bump_alloc2} the code compiles but crashes with
 a security violation when attempting to execute line 3, due to the tighter
 capability bounds returned by its \texttt{malloc}, showing how CHERI can prevent
 programmer errors becoming security violations.
+
+
+\section{How can a CHERI Allocator be Attacked?}
+\label{sec:atk}
+
+Our definition of CHERI in Section~\ref{sec:cheri} might suggest that software
+running on CHERI hardware is invulnerable to attack. Alas, while CHERI gives us the
+tools to make secure software, it is up to us to use them correctly --- and wisely.
+We must decide which attack model is relevant to our software, and then write,
+or adjust, the software, to withstand such attacks. Broadly speaking, allocators are
+subject to spatial (e.g.~buffer overrun) or temporal (e.g.~a sequence of
+function calls) attacks, and those attacks can be either on an allocators'
+internals (e.g.~corrupting its private data-structures) or its interface
+(e.g.~allowing code using the allocator to subvert expectations).
+
+For example, consider this C snippet, which models a buffer overrun:
+
+\begin{lstlisting}[language=C]
+char *a = malloc(16);
+char *b = malloc(16);
+a[16] = 'c';
+printf("%c\n", b[0]);
+\end{lstlisting}
+
+With the capability-unaware bump allocator from \autoref{lst:bump_alloc1} this
+code compiles successfully and, when run, prints `\texttt{c}'\footnote{Note
+that the example is in the realm of undefined behaviour, so a compiler could
+compile this code to do something entirely different -- though, at the time of
+writing, CheriBSD's LLVM does not do so.}. It does this because the bump
+allocator allocates the second block immediately after the first in memory, so
+writing 1 past the end of the first block in fact writes to the first byte of
+the second block. However, with the
+capability-aware allocator from \autoref{lst:bump_alloc2}, the program aborts
+with a security exception when executing line 3.
+
+Buffer overruns are so common in C code that we expect most people to consider
+the possibility part of their attack model: by extension we expect that they
+would want a CHERI allocator to protect against such attacks. However, the
+difference between Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2}
+shows that such protection does not happen without careful thought. As we will
+shall see later, it is not just our bump allocator that is subject to this
+particular attack.
 
 
 \section{CHERI Allocators}
@@ -414,16 +452,8 @@ does this imply?} \emph{What are the API calls doing?}
 \input{./data/results/cheri_api.tex}
 
 
-\section{Attacking CHERI Allocators}
-\label{sec:atk}
-
-CHERI's raison d'être is security: how secure are allocators under CHERI? This
-is a harder question to answer than it may first appear, because non-trivial
-software cannot be generically `secure'. Broadly speaking, allocators are
-subject to spatial (e.g.~buffer overrun) or temporal (e.g.~a sequence of
-function calls) attacks, and those attacks can be either on an allocators'
-internals (e.g.~corrupting its private data-structures) or its interface
-(e.g.~allowing code using the allocator to subvert expectations).
+\section{The Attacks}
+\label{sec:atks}
 
 \input{./data/results/tests.tex}
 
@@ -434,49 +464,6 @@ which shows that many allocators, including the default CheriBSD allocator,
 are vulnerable. It is beyond the scope of this paper to ascertain whether these
 vulnerabilities are because the allocators have not yet been fully adapted to
 CHERI or whether the necessary adaptations to the allocator are impractical.
-
-
-\subsection{How can a CHERI Allocator be Attacked?}
-
-Our definition of CHERI in Section~\ref{sec:cheri} might suggest that software
-running on CHERI hardware is invulnerable to attack. Alas, while CHERI gives us the
-tools to make secure software, it is up to us to use them correctly --- and wisely.
-We must decide which attack model is relevant to our software, and then write,
-or adjust, the software, to withstand such attacks. There is, as yet, no
-common understanding of what attack model allocators should be robust against,
-and therefore it is unsurprising that many allocators are vulnerable to seemingly
-simple attacks.
-
-For example, consider this C snippet, which models a buffer overrun:
-
-\begin{lstlisting}[language=C]
-char *a = malloc(16);
-char *b = malloc(16);
-a[16] = 'c';
-printf("%c\n", b[0]);
-\end{lstlisting}
-
-With the capability-unaware bump allocator from \autoref{lst:bump_alloc1} this
-code compiles successfully and, when run, prints `\texttt{c}'\footnote{Note
-that the example is in the realm of undefined behaviour, so a compiler could
-compile this code to do something entirely different -- though, at the time of
-writing, CheriBSD's LLVM does not do so.}. It does this because the bump
-allocator allocates the second block immediately after the first in memory, so
-writing 1 past the end of the first block in fact writes to the first byte of
-the second block. However, with the
-capability-aware allocator from \autoref{lst:bump_alloc2}, the program aborts
-with a security exception when executing line 3.
-
-Buffer overruns are so common in C code that we expect most people to consider
-the possibility part of their attack model: by extension we expect that they
-would want a CHERI allocator to protect against such attacks. However, the
-difference between Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2}
-shows that such protection does not happen without careful thought. As we will
-shall see later, it is not just our bump allocator that is subject to this
-particular attack.
-
-
-\subsection{The Attacks}
 
 In this subsection we explain the attacks from \autoref{tab:atks} in detail.
 
