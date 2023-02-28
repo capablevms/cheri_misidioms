@@ -35,5 +35,9 @@ main()
     assert(vars != new_vars);
     assert(new_vars != NULL);
     assert(sum_arr(new_vars, vars_count) == 204);
+
+    char *m = malloc(16);
+    m = realloc(m, 32);
+    assert(m != NULL);
     return 0;
 }

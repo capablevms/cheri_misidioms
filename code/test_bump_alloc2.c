@@ -24,13 +24,6 @@ void *malloc_init() {
 }
 
 void free(void *ptr) { }
-
-void *realloc(void *ptr, size_t size) {
-  void *new_ptr = malloc(size);
-  if (new_ptr == NULL) return NULL;
-  memcpy(new_ptr, ptr, size);
-  return new_ptr;
-}
 // End from
 
 #include "bump_alloc2.c"
@@ -63,6 +56,10 @@ main()
     assert(ptr_var != vars);
     printf("Allocated new pointer %p.\n", ptr_var);
     assert(malloc(0x1000000UL) == NULL);
+
+    char *m = malloc(16);
+    m = realloc(m, 32);
+    assert(m != NULL);
     return 0;
 }
 
