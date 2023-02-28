@@ -2,16 +2,20 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use clap::Parser;
+use elf::segment::ProgramHeader;
 use elf::ElfStream;
 use itertools::Itertools as _;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::cell::RefCell;
+use std::collections::{BTreeSet, HashMap};
 use std::error::Error;
+use std::fmt;
 use std::fs;
 use std::io;
 use std::io::{BufRead as _, Read as _, Seek as _};
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 #[derive(Clone, Debug, Parser)]
 #[command()]
@@ -36,6 +40,9 @@ struct Args {
 
     #[arg(short, long, help = "Show per-instruction analysis")]
     annotate_trace: bool,
+
+    #[arg(short, long, help = "Verbose output (e.g. including address calculations)", action = clap::ArgAction::Count)]
+    verbose: u8,
 
     #[arg(
         long,
@@ -63,6 +70,58 @@ struct Args {
     rootfs: Vec<PathBuf>,
 }
 
+type MorelloElfFile = ElfStream<elf::endian::LittleEndian, fs::File>;
+
+#[derive(Clone)]
+struct NamedMorelloElfFile {
+    path: PathBuf,
+    elf: Rc<RefCell<MorelloElfFile>>,
+}
+
+impl PartialOrd for NamedMorelloElfFile {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.path.partial_cmp(&other.path)
+    }
+}
+impl Ord for NamedMorelloElfFile {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.path.cmp(&other.path)
+    }
+}
+impl PartialEq for NamedMorelloElfFile {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+    }
+}
+impl Eq for NamedMorelloElfFile {}
+
+impl fmt::Debug for NamedMorelloElfFile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "NamedMorelloElfFile {{ path: {}, .. }}",
+            self.path.display()
+        )
+    }
+}
+
+impl NamedMorelloElfFile {
+    /// Load the specified ELF.
+    ///
+    /// It's not an error if the file couldn't be opened (including if it doesn't exist). This
+    /// results in `Ok(None)`.
+    ///
+    /// It is an error if a file exists that cannot be loaded as an ELF.
+    pub fn try_load(path: PathBuf) -> Result<Option<Self>, Box<dyn Error>> {
+        if let Ok(file) = fs::File::open(&path) {
+            let elf = Rc::new(RefCell::new(MorelloElfFile::open_stream(file)?));
+            Ok(Some(Self { path, elf }))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct VmMapEntry {
     #[serde(rename = "Start")]
@@ -77,93 +136,336 @@ struct VmMapEntry {
     offset: u64,
     #[serde(rename = "Path")]
     path: Option<PathBuf>,
+
+    #[serde(skip)]
+    local_elf: Option<NamedMorelloElfFile>,
 }
 
 impl VmMapEntry {
     pub fn contains(&self, va: u64) -> bool {
         self.start <= va && va < self.end
     }
+
+    pub fn find_local_elf<'a>(
+        &mut self,
+        elf_dirs: &'a [PathBuf],
+        rootfs: &'a [PathBuf],
+    ) -> Result<Option<&Path>, Box<dyn Error>> {
+        if let Some(ref tgt_elf) = self.path {
+            if let Some(basename) = tgt_elf.file_name() {
+                for dir in elf_dirs.iter() {
+                    let path = dir.join(basename);
+                    if let Some(elf) = NamedMorelloElfFile::try_load(path)? {
+                        self.local_elf = Some(elf);
+                        return Ok(self.local_elf_path());
+                    }
+                }
+            }
+            for dir in rootfs.iter() {
+                let path = dir.join(tgt_elf.strip_prefix("/")?);
+                if let Some(elf) = NamedMorelloElfFile::try_load(path)? {
+                    self.local_elf = Some(elf);
+                    return Ok(self.local_elf_path());
+                }
+            }
+        }
+        return Ok(None);
+    }
+
+    pub fn tgt_elf_path(&self) -> Option<&Path> {
+        self.path.as_ref().map(|path| path.as_path())
+    }
+
+    pub fn local_elf_path(&self) -> Option<&Path> {
+        self.local_elf.as_ref().map(|elf| elf.path.as_path())
+    }
+
+    pub fn vm_addr_info(&self, vm_addr: u64) -> Result<VmAddrInfo<'_>, Box<dyn Error>> {
+        assert!(self.contains(vm_addr));
+        // ELF symbols are defined in terms of the ELF's idea of the virtual address. The actual
+        // virtual address (vm_addr) typically differs, due to dynamic loading, so we have to do
+        // some work to map it back to the ELF address.
+
+        let map_offset = vm_addr - self.start;
+        let file_offset = map_offset + self.offset;
+
+        // Find the segment that refers to `file_offset`.
+        let mut elf_vm_addr = None;
+        let mut sym_info = None;
+        if let Some(NamedMorelloElfFile { ref elf, .. }) = self.local_elf {
+            for segment in elf.borrow().segments() {
+                let ProgramHeader {
+                    p_offset,
+                    p_vaddr,
+                    p_memsz,
+                    ..
+                } = *segment;
+                if p_offset <= file_offset && file_offset < (p_offset + p_memsz) {
+                    elf_vm_addr = Some(file_offset - p_offset + p_vaddr);
+                    break;
+                }
+            }
+
+            if let Some(elf_vm_addr) = elf_vm_addr {
+                if let Some((symtab, strtab)) = elf.borrow_mut().symbol_table()? {
+                    for sym in symtab.iter() {
+                        if sym.st_name == 0 || sym.st_size == 0 || sym.is_undefined() {
+                            continue;
+                        }
+                        let start = sym.st_value & !1; // Strip C64 bit.
+                        let end = start + sym.st_size;
+                        if start <= elf_vm_addr && elf_vm_addr < end {
+                            sym_info = Some(SymbolicVmAddrInfo {
+                                name: strtab.get(sym.st_name.try_into().unwrap())?.to_string(),
+                                sym_offset: elf_vm_addr - start,
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(VmAddrInfo {
+            entry: self,
+            elf_vm_addr,
+            sym_info,
+        })
+    }
 }
 
-#[derive(Clone, Debug)]
+struct SymbolicVmAddrInfo {
+    name: String,
+    sym_offset: u64,
+}
+
+impl fmt::Display for SymbolicVmAddrInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{:+#x}", self.name, self.sym_offset)
+    }
+}
+
+struct VmAddrInfo<'a> {
+    entry: &'a VmMapEntry,
+    elf_vm_addr: Option<u64>,
+    sym_info: Option<SymbolicVmAddrInfo>,
+}
+
+impl<'a> fmt::Display for VmAddrInfo<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(path) = self.entry.local_elf_path() {
+            if f.alternate() {
+                write!(f, "{}", path.display())?;
+            } else {
+                let simple_name = path
+                    .file_name()
+                    .unwrap_or(path.as_os_str())
+                    .to_string_lossy();
+                write!(f, "{simple_name}")?;
+            }
+        } else {
+            write!(f, "(no local ELF)")?;
+        }
+        if let Some(elf_vm_addr) = self.elf_vm_addr {
+            write!(f, ":{elf_vm_addr:#x}")?;
+        }
+        match self.sym_info {
+            None => write!(f, ": (unknown)"),
+            Some(ref sym_info) => write!(f, ": {sym_info}"),
+        }
+    }
+}
+
 struct VmMap {
     map: Vec<VmMapEntry>,
 }
 
 impl VmMap {
-    pub fn file_for_insn(&self, pc: u64) -> Option<&Path> {
-        self.map
-            .iter()
-            .find(|entry| entry.contains(pc) && entry.path.is_some())
-            .map(|entry| entry.path.as_deref().unwrap())
+    fn from_csv(source: &str) -> Result<Self, Box<dyn Error>> {
+        let mut reader = csv::Reader::from_reader(source.as_bytes());
+        let map = reader.deserialize().try_collect()?;
+        // TODO: Check that entries don't overlap.
+        // TODO: Discard entries that aren't executable.
+        Ok(VmMap { map })
     }
-}
 
-fn read_vmmap_csv(source: &str) -> Result<VmMap, Box<dyn Error>> {
-    let mut reader = csv::Reader::from_reader(source.as_bytes());
-    let map = reader.deserialize().try_collect()?;
-    Ok(VmMap { map })
-}
-
-fn read_vmmap(file: &str) -> Result<VmMap, Box<dyn Error>> {
-    let text = fs::read_to_string(file)?;
-    // If the file contains a delimited region, use that. Otherwise, use the whole file.
-    let mut lines = text.lines();
-    if let Some(begin) = lines.position(|line| line.trim() == "---- BEGIN VM MAP ----") {
-        if let Some(len) = lines.position(|line| line.trim() == "---- END VM MAP ----") {
-            read_vmmap_csv(&text.lines().skip(begin + 1).take(len).join("\n"))
+    pub fn from_stdout(file: &str) -> Result<Self, Box<dyn Error>> {
+        let text = fs::read_to_string(file)?;
+        // If the file contains a delimited region, use that. Otherwise, use the whole file.
+        let mut lines = text.lines();
+        if let Some(begin) = lines.position(|line| line.trim() == "---- BEGIN VM MAP ----") {
+            if let Some(len) = lines.position(|line| line.trim() == "---- END VM MAP ----") {
+                Self::from_csv(&text.lines().skip(begin + 1).take(len).join("\n"))
+            } else {
+                Err("'BEGIN VM MAP' marker found with no matching 'END VM MAP'".into())
+            }
         } else {
-            Err("'BEGIN VM MAP' marker found with no matching 'END VM MAP'".into())
+            Self::from_csv(&text)
         }
-    } else {
-        read_vmmap_csv(&text)
+    }
+
+    pub fn find_local_elfs<'a>(
+        &mut self,
+        elf_dirs: &'a [PathBuf],
+        rootfs: &'a [PathBuf],
+    ) -> Result<(), Box<dyn Error>> {
+        // TODO: We already wrap the ElfStream in an Rc, and the same ELF tends to be mapped
+        // multiple times, so it might make sense to coalesce them.
+        for entry in self.map.iter_mut() {
+            entry.find_local_elf(elf_dirs, rootfs)?;
+        }
+        Ok(())
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &VmMapEntry> {
+        self.map.iter()
+    }
+
+    pub fn entry_for(&self, vm_addr: u64) -> Option<&VmMapEntry> {
+        self.iter().find(|entry| entry.contains(vm_addr))
     }
 }
 
-type MorelloElfFile = ElfStream<elf::endian::LittleEndian, fs::File>;
-
-fn try_load_elf(name: &Path) -> Result<Option<MorelloElfFile>, Box<dyn Error>> {
-    if let Ok(file) = fs::File::open(name) {
-        return Ok(Some(MorelloElfFile::open_stream(file)?));
-    }
-    // Failure to open the file is not an error.
-    Ok(None)
+#[derive(Default, Debug, Clone)]
+struct FileInsnCount {
+    by_symbol: HashMap<Option<String>, u64>,
 }
 
-fn find_elf(name: &Path, args: &Args) -> Result<Option<(PathBuf, MorelloElfFile)>, Box<dyn Error>> {
-    if let Some(file_name) = name.file_name() {
-        for dir in args.elf_dir.iter() {
-            let local = dir.join(file_name);
-            if let Some(elf) = try_load_elf(&local)? {
+impl FileInsnCount {
+    pub fn total(&self) -> u64 {
+        self.by_symbol.values().sum()
+    }
+
+    pub fn add(&mut self, symbol: Option<String>) {
+        *self.by_symbol.entry(symbol).or_default() += 1;
+    }
+
+    pub fn by_symbol(&self) -> impl Iterator<Item = (&Option<String>, &u64)> {
+        self.by_symbol.iter()
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+struct InsnCount<'a> {
+    by_file: HashMap<Option<&'a Path>, FileInsnCount>,
+
+    // We query this often, so cache it.
+    total: u64,
+}
+
+impl<'a> InsnCount<'a> {
+    pub fn total(&self) -> u64 {
+        self.total
+    }
+
+    pub fn add(&mut self, file: Option<&'a Path>, symbol: Option<String>) {
+        self.total += 1;
+        self.by_file.entry(file).or_default().add(symbol);
+    }
+
+    pub fn by_file(&self) -> impl Iterator<Item = (&Option<&'a Path>, &FileInsnCount)> {
+        self.by_file.iter()
+    }
+
+    pub fn report(&self) {
+        println!("----------------");
+        for (path, file_insn_count) in self.by_file().sorted_by_key(|(_, c)| !c.total()) {
+            println!(
+                "{path}: {total}",
+                path = path.unwrap_or(Path::new("unknown file")).display(),
+                total = file_insn_count.total()
+            );
+            for (name, symbol_insn_count) in file_insn_count.by_symbol().sorted_by_key(|(_, c)| !*c)
+            {
                 println!(
-                    "  Using '{}' to represent '{}'.",
-                    local.display(),
-                    name.display()
+                    "  {name}: {symbol_insn_count}",
+                    name = name.as_deref().unwrap_or("unknown symbol")
                 );
-                return Ok(Some((local, elf)));
             }
         }
+        println!("Total: {total}", total = self.total());
     }
-
-    for dir in args.rootfs.iter() {
-        let local = dir.join(name.strip_prefix("/")?);
-        if let Some(elf) = try_load_elf(&local)? {
-            println!(
-                "  Using '{}' to represent '{}'.",
-                local.display(),
-                name.display()
-            );
-            return Ok(Some((local, elf)));
-        }
-    }
-
-    println!("  No local ELF found to represent '{}'.", name.display());
-    Ok(None)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
-    let vmmap = read_vmmap(&args.vmmap)?;
+    let mut vmmap = VmMap::from_stdout(&args.vmmap)?;
+    vmmap.find_local_elfs(&args.elf_dir, &args.rootfs)?;
+
+    // BTreeSet naturally sorts.
+    let mut unique_elfs: BTreeSet<&NamedMorelloElfFile> = BTreeSet::new();
+
+    if args.verbose >= 1 {
+        for entry in vmmap.iter() {
+            let VmMapEntry {
+                start,
+                end,
+                offset,
+                path,
+                local_elf,
+                ..
+            } = entry;
+            if let Some(path) = path {
+                print!("[{start:#x},{end:#x})  {}  +{offset:#x}", path.display());
+                if let Some(local_elf) = local_elf {
+                    println!("  (represented by {})", local_elf.path.display());
+                    // We might load an ELF multiple times, but only want to print it (with -v) once,
+                    // so use a map to avoid duplication.
+                    unique_elfs.insert(&local_elf);
+                } else {
+                    println!("  (no local ELF found)");
+                }
+            }
+        }
+
+        println!("Loaded ELFs for analysis:");
+        for local_elf in unique_elfs.iter() {
+            println!("  {}", local_elf.path.display());
+            println!("    Loadable segments:");
+            for segment in local_elf.elf.borrow().segments() {
+                let elf::segment::ProgramHeader {
+                    p_type,
+                    p_offset,
+                    p_vaddr,
+                    p_filesz,
+                    p_memsz,
+                    p_flags,
+                    ..
+                } = segment;
+                if *p_type == elf::abi::PT_LOAD {
+                    print!("    ");
+                    print!("  offset:{p_offset:#x}");
+                    print!("  va:{p_vaddr:#x}");
+                    print!("  file_sz:{p_filesz:#x}");
+                    print!("  mem_sz:{p_memsz:#x}");
+                    if (*p_flags & elf::abi::PF_X) != 0 {
+                        print!("  (executable)");
+                    }
+                    println!();
+                }
+            }
+            if let Some((symtab, strtab)) = local_elf.elf.borrow_mut().symbol_table()? {
+                if args.verbose >= 2 {
+                    println!("    Symbols with non-zero size:");
+                    for sym in symtab.iter().sorted_by_key(|s| s.st_value) {
+                        if sym.st_name == 0 || sym.st_size == 0 || sym.is_undefined() {
+                            continue;
+                        }
+                        let name = strtab.get(sym.st_name.try_into().unwrap())?;
+                        let isa = match sym.st_value & 1 {
+                            1 => "C64",
+                            _ => "A64/data",
+                        };
+                        let start = sym.st_value & !1;
+                        let end = start + sym.st_size;
+                        println!("      [{start:#x},{end:#x}) {name} ({isa})");
+                    }
+                }
+            } else {
+                println!("  (no symbol table)\n");
+            }
+        }
+    }
 
     // Reference:
     // https://developer.arm.com/documentation/102225/0200/Reference-information/Morello-specific-changes-to-tarmac-trace
@@ -189,10 +491,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Regex::new(r"^(?P<tag>[01])\|(?P<high64>[[:xdigit:]]+)\|(?P<low64>[[:xdigit:]]+)$")
             .unwrap();
 
-    let mut insn_count: u64 = 0;
-    let mut insn_count_by_file: HashMap<&Path, u64> = HashMap::new();
-
-    let mut elf_map: HashMap<&Path, Option<(PathBuf, MorelloElfFile)>> = HashMap::new();
+    let mut insn_count = InsnCount::default();
 
     let tarmac_start = args.tarmac_start.unwrap_or(0);
     let tarmac_end = args.tarmac_end.unwrap_or(u64::MAX);
@@ -210,8 +509,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     for line in io::BufReader::new(tarmac).lines() {
         let line = line?;
         if let Some(caps) = it_re.captures(&line) {
-            insn_count += 1;
-
             let pcc = caps.name("pcc").unwrap().as_str();
             let insn = caps.name("insn").unwrap().as_str();
             let asm = caps.name("asm").unwrap().as_str();
@@ -220,35 +517,32 @@ fn main() -> Result<(), Box<dyn Error>> {
             let pcc_addr = pcc_caps.name("low64").unwrap().as_str();
             let pcc_addr = u64::from_str_radix(pcc_addr, 16).unwrap();
 
-            // TODO: Extend this to show the symbol and offset.
-            let comment;
-            if let Some(tgt_elf) = vmmap.file_for_insn(pcc_addr) {
-                *insn_count_by_file.entry(tgt_elf).or_insert(0) += 1;
-
-                let local = match elf_map.get(tgt_elf) {
-                    Some(local) => local,
-                    None => {
-                        let local = find_elf(tgt_elf, &args)?;
-                        elf_map.entry(tgt_elf).or_insert(local)
-                    }
-                };
-
-                if let Some(local_elf) = local {
-                    comment = format!("{} ({})", tgt_elf.display(), local_elf.0.display());
-                } else {
-                    comment = format!("{}", tgt_elf.display());
-                }
-            } else {
-                comment = "Unknown file".to_string();
-            }
             if args.annotate_trace {
-                println!("{pcc} {insn} : {asm:32} // {comment}");
+                print!("{pcc}  {insn}  {asm:32}");
+                // We'll append a comment below.
+            }
+            match vmmap.entry_for(pcc_addr) {
+                Some(entry) => {
+                    let info = entry.vm_addr_info(pcc_addr)?;
+                    if args.annotate_trace {
+                        println!("  # {info}");
+                    }
+                    let file = entry.tgt_elf_path();
+                    let sym = info.sym_info.map(|sym| sym.name.clone());
+                    insn_count.add(file, sym);
+                }
+                None => {
+                    if args.annotate_trace {
+                        println!("");
+                    }
+                    insn_count.add(None, None);
+                }
+            }
+            if !args.annotate_trace && insn_count.total() % (1024 * 1024) == 0 {
+                insn_count.report();
             }
         }
     }
-    for (file, count) in insn_count_by_file.iter().sorted() {
-        println!("{file}: {count} instructions", file = file.display());
-    }
-    println!("Counted {insn_count} EL0 instructions in total.");
+    insn_count.report();
     Ok(())
 }
