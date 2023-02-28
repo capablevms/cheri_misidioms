@@ -100,9 +100,9 @@ there is no mechanism to set a capability as `valid'; only a child capability
 derived, correctly, from valid parent capabilities can itself be valid.
 
 A capability consists of an
-\emph{address} in memory and a set of \emph{permissions} (only a subset of
-which we consider in this paper). Amongst the permissions are \emph{bounds} -- the region of memory an
-authentic capability is allowed to read/write from/to. A capability's bounds
+\emph{address} (typically in memory), a set of \emph{permissions} (only a subset of
+which we consider in this paper), and \emph{bounds} -- the range on which an
+authentic capability is allowed to operate. A capability's bounds
 are from a \emph{low} (inclusive) to a \emph{high} (exclusive) address and we
 refer to `a bound of $x$ bytes' to mean a capability where
 $\textit{high}-\textit{low}=x$. An address, or range of addressses, is
@@ -114,10 +114,6 @@ See~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
 capability might have an out-of-bounds address. Other permissions include
 boolean flags, for example to indicate whether a capability can read from or
 write to memory addresses within its bounds.
-
-\jacob{I plan to change our \emph{permissions} to not include the \emph{bounds},
-since all other CHERI authorities seem to treat them separately, and I think
-there's little value in deviating here. If anyone objects, please let me know!}
 
 A \emph{permissions check} is said to be successful if the permission required
 for a given operation is provided by a given capability.
@@ -142,6 +138,10 @@ permitted by the security model' to something like `operate on and produce
 inauthentic capabilities (mostly for performance reasons) where this does not
 undermine fundamental aspects of the security model (e.g.~memory safety)' to
 hammer home the point}
+\jacob{I worry that "performance reasons" is an assumption, and one that isn't
+especially relevant to the terminology that we're trying to describe. The
+Morello supplement (where this behaviour occurs) seems to make no particular
+statement about it.}
 
 As well as capabilities (which on Morello and CHERI RISC-V, for example, are
 128 bits\andrei{Not 129?}), CHERI also allows `traditional' single-width
