@@ -26,7 +26,7 @@ int main() {
 
     // realloc allows us to launder C2 back into C1
     arr = realloc(arr, 16);
-    if (cheri_tag_get(arr) && cheri_length_get(arr) == 16) {
+    if (cheri_tag_get(arr) && cheri_length_get(arr) >= 16) {
 	printf("Attack successful\n");
     } else {
         printf("Attack unsuccessful\n");

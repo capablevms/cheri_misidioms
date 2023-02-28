@@ -31,7 +31,7 @@ int main() {
 
     // realloc allows us to turn C2 back into C1
     arr = realloc(arr, 16);
-    if (cheri_tag_get(arr) && cheri_length_get(arr) == 16 && cheri_perms_get(arr) & CHERI_PERM_STORE) {
+    if (cheri_tag_get(arr) && cheri_length_get(arr) >= 16 && cheri_perms_get(arr) & CHERI_PERM_STORE) {
 	printf("Attack successful\n");
     } else {
         printf("Attack unsuccessful\n");
