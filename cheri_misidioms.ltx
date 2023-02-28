@@ -66,10 +66,10 @@ or names that subtly conflict with mainstream
 software development definitions. We use a single name for each concept, sometimes
 introducing new names where we believe that makes things clearer.
 
-A \emph{capability} is a token that gives those who bear it the ability to
+A \emph{capability} is a token that gives those who bear it \emph{abilities} to
 perform certain actions. By restricting who has access to a given capability,
 one can enforce security properties (e.g.~`this part of the software can
-only read from heap memory'). Capabilities have a long and storied history: \cite{levy84capability}
+only read from memory address X to Y'). Capabilities have a long and storied history: \cite{levy84capability}
 provides an approachable historical overview of capability architectures, and
 may usefully be augmented by more recent work such as~\cite{miller06robust}.
 A good first intuition is that CHERI is a modern update of this venerable
@@ -81,70 +81,59 @@ that software can observe: that is, the combination of a capability hardware
 instruction set, an ABI (e.g.~\cite{brooks19cheriabi}), a user-facing library that exposes
 capability-related functions, and a CHERI-aware language. (e.g.~CHERI C~\cite{watson20chericprogramming},
 an adaption, in the sense of both extending and occasionally altering, of C).
-We refer to specific hardware implementations by
-their name (e.g.~Arm's `Morello', an extension of the AArch64 instruction
-set, or `CHERI RISC-V').
+We refer to specific hardware implementations by their name (e.g.~CHERI
+RISC-V). In this paper, we mostly use Arm's `Morello' implementation, which is an
+ARMv8 chip extended with CHERI instructions.
 
 \label{abilities}
-Conceptually, a CHERI system starts with a `super' capability. Each
+Conceptually, a CHERI system starts with a `super' capability that has
+the maximum set of abilities. Each
 new \emph{child} capability must be derived from one or more \emph{parent}
-capabilities. Capabilities \emph{abilities} monotonically decrease:
-a child capability must have the same, or fewer, abilities than its
-parent. An \emph{authentic}\footnote{CHERI calls these
+capabilities. Child capabilities must have the same, or fewer, abilities than its
+parent: put another way, capabilites' abilities monotonically decrease.
+An \emph{authentic}\footnote{CHERI calls these
 `tagged' or `valid' (and their inauthentic counterparts `untagged' or `invalid').}
 capability is one that has been derived from authentic parents according to
-CHERI's rules. Attempts to create capabilities that violate CHERI rules
-cause the hardware to produce an \emph{inauthentic} result. These rules
-are enforced by hardware: software cannot forge a capability. For example,
+CHERI's rules. Attempts to create capabilities that violate CHERI's rules
+cause the hardware to produce an \emph{inauthentic} result, guaranteeing
+that capabilities cannot be forged. For example,
 there is no mechanism to set a capability as `valid'; only a child capability
 derived, correctly, from valid parent capabilities can itself be valid.
 
 A capability consists of an
-\emph{address} (typically in memory), a set of \emph{permissions} (only a subset of
-which we consider in this paper), and \emph{bounds} -- the range on which an
-authentic capability is allowed to operate. A capability's bounds
-are from a \emph{low} (inclusive) to a \emph{high} (exclusive) address and we
-refer to `a bound of $x$ bytes' to mean a capability where
-$\textit{high}-\textit{low}=x$. An address, or range of addressses, is
-\emph{in-bounds} for a given capability if it is wholly contained within the
-capability's bounds, or \emph{out-of-bounds} otherwise. The
-capability as a whole is considered \emph{in-bounds} or \emph{out-of-bounds} if
-its inherent (singular) address is in-bounds or out-of-bounds, respectively.
-See~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
-capability might have an out-of-bounds address. Other permissions include
-boolean flags, for example to indicate whether a capability can read from or
-write to memory addresses within its bounds.
+\emph{address} (typically in memory \laurie{this clause sounds weird: are we trying to cover sealed capabilities or similar?}), and its abilities: a set of \emph{permissions} (only a subset of
+which we consider in this paper);
+and \emph{bounds}, the memory range on which
+the capability can operate.
 
+Permissions include the ability to read / write from memory.
 A \emph{permissions check} is said to be successful if the permission required
 for a given operation is provided by a given capability.
-A \emph{bounds check} is said to be successful if a given capability, address or
-address range is in-bounds for a given capability.
 
-We consider a capability to be \emph{exercised} if successfully performing an
-operation requires authenticity, a permission check, and a bounds check of that
-capability, according to the operation. Failed attempts to exercise
-capabilities usually result in hardware exceptions. However, some CHERI
-implementations instead provide inauthentic results, where permitted by the
-security model. For example: a failed attempt to exercie a capability for a
+A capability's bounds
+are from a \emph{low} (inclusive) to a \emph{high} (exclusive) address: when
+we refer to a capability's bounds being of `$x$' bytes we mean that
+$\textit{high}-\textit{low}=x$. An address is
+\emph{in-bounds} for a given capability if it is wholly contained within the
+capability's bounds, or \emph{out-of-bounds} otherwise; a capability is
+in (or out) of bounds if its address is in (or out) of bounds
+\footnote{See~\cite{woodruff19chericoncentrate} \laurie{can we give a page reference?} for an explanation of why an authentic
+capability might have an out-of-bounds address.}.
+A \emph{bounds check} is said to be successful if a given capability, address, or
+address range, is in-bounds for a given capability.
+
+Hardware that operates on a capability requires one or more of: an authenticity
+check, a permissions check, or a bounds check. If a capability passes the
+relevant checks, then the operation \emph{exercises} the capability. If a
+capability fails the relevant checks then either: the hardware produces an
+exception; or produces an inauthentic capability as a result (where this is not
+in violation of the CHERI rules). For example, a failed attempt to exercise a capability for a
 sealing operation on Morello produces an inauthentic result, rather than an
 exception.
 
-\jacob{This is slightly narrower than Morello's own definition of \emph{using} a
-capability, which depends only on the permissions. However, in practice, all
-such uses also check authenticity and bounds, so I think our definition is more
-useful. Do we all agree?}
-\laurie{i'm broadly fine with this, though i think I might tweak `instead
-permitted by the security model' to something like `operate on and produce
-inauthentic capabilities (mostly for performance reasons) where this does not
-undermine fundamental aspects of the security model (e.g.~memory safety)' to
-hammer home the point}
-\jacob{I worry that "performance reasons" is an assumption, and one that isn't
-especially relevant to the terminology that we're trying to describe. The
-Morello supplement (where this behaviour occurs) seems to make no particular
-statement about it.}
-
-As well as capabilities (which on Morello and CHERI RISC-V, for example, are
-128 bits\andrei{Not 129?}), CHERI also allows `traditional' single-width
+On Morello and CHERI RISC-V capabilities are 128 bits big, though note that
+each capability has a separate validity bit which cannot be accessed at the
+same time as the `main' 128 bits. CHERI also allows `traditional' single-width
 pointers-as-addresses (which on Morello and CHERI RISC-V are 64-bit addresses)
 to be used. Although CHERI processors allow both double-width capabilities and
 single-width addresses-as-pointers to exist alongside each other at any time,
