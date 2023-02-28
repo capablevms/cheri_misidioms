@@ -83,7 +83,7 @@ capability-related functions, and a CHERI-aware language. (e.g.~CHERI C~\cite{wa
 an adaption, in the sense of both extending and occasionally altering, of C).
 We refer to specific hardware implementations by their name (e.g.~CHERI
 RISC-V). In this paper, we mostly use Arm's `Morello' implementation, which is an
-ARMv8 chip extended with CHERI instructions.
+experimental ARMv8 chip extended with CHERI instructions.
 
 \label{abilities}
 Conceptually, a CHERI system starts with a `super' capability that has
@@ -159,10 +159,8 @@ non-CHERI aware allocator to become CHERI aware.
   caption={
     A simple, but complete, non-CHERI aware, bump pointer allocator:
     \fnc{malloc} works as per normal; \fnc{free} is a no-op; and
-    \fnc{realloc} always allocates a new chunk of memory copying
-    over the old block (note that because the bump allocator does not
-    free memory, \fnc{realloc}'s use of \fnc{memcpy} is correct even
-    when the block is increased in size).
+    \fnc{realloc} always allocates a new chunk, copying
+    over the old block.
     \fnc{\_\_builtin\_align\_up(v, a)} is an LLVM / clang primitive which rounds
     \texttt{v} up to the next smallest multiple of \texttt{a}: in this example,
     every memory block returned by \fnc{malloc} is sufficiently aligned to
@@ -177,17 +175,23 @@ a no-op; and \fnc{realloc} always allocates a new chunk of memory. The
 allocator reserves a large chunk of memory using a single \fnc{mmap} call then
 doles out chunks on each \fnc{malloc} / \fnc{realloc} calls. The bump pointer
 moves through the \fnc{mmap}ed chunk until it reaches the upper limit, at which
-point the allocator returns \texttt{NULL}s.
+point the allocator returns \texttt{NULL}s. \fnc{realloc} is intentionally
+simplistic, but correct even when the block is increased in size.
 
-Our simple bump allocator works as expected on non-CHERI systems. Perhaps
-surprisingly, it also compiles and runs correctly on CHERI systems too, with
-pointers transparently `upgraded' to capabilities. As this suggests, CHERI C is
-largely source compatible with normal C code, though types are now
-\emph{capability types}, occupying on Morello exactly twice the space of a
-non-capability pointer. However, compiling and
-running Listing~\ref{lst:bump_alloc1} on CHERI gives little additional security
-over the non-CHERI version\footnote{On CheriBSD, the capability returned by our
-\fnc{malloc} will have the same bounds as the capability returned by \fnc{mmap}.}.
+
+\subsection{Adapting the Allocator to CHERI}
+
+Perhaps surprisingly, our simple bump allocator compiles, and \fnc{malloc} runs
+correctly, on CHERI systems too. As this suggests, CHERI C is largely source
+compatible with normal C code, though pointer types are transparently `upgraded' to become
+\emph{capability types} (on Morello occupying exactly twice the space of a
+non-capability pointer). CHERI also implies changes in libraries: on CheriBSD,
+for example, \fnc{mmap} returns a capability whose bounds are at least those of
+the sized requested: from that capability our bump allocator derives new
+capabilities that differ in their address, but not their bounds. In other
+words, two calls to \fnc{malloc} will produce two capabilities that have the
+same bounds, allowing anyone who possesses one of the capabilities to read and
+write from any portion of \fnc{malloc}ed memory.
 
 \begin{figure}[t]
 \lstinputlisting[language=C,
@@ -196,18 +200,23 @@ over the non-CHERI version\footnote{On CheriBSD, the capability returned by our
     Listing~\ref{lst:bump_alloc1} with a CHERI-aware alternative
     using the idioms suggested in~{\cite[p.~30]{watson20chericprogramming}}.
     This \fnc{malloc} returns a capability whose bounds are sufficient
-    to cover \texttt{size} bytes starting at the capability's address: in other
-    words, the capability returned allows the caller to access memory in the
-    way they would expect.
+    to cover \texttt{size} bytes starting at the capability's address
+    (calculated in lines 5--10),
+    such that two callers to \fnc{malloc} cannot read or write from
+    another block. We also have to update \fnc{realloc} so that it never tries to copy
+    more data from the old block than the \texttt{ptr} capability gives
+    it access to.
   },
     label=lst:bump_alloc2]
   {code/bump_alloc2.c}
 \end{figure}
 
-There can be no single definition of what a `CHERI aware' allocator should do,
-but a reasonable first step is to make \texttt{malloc} return a
-capability whose bounds are
-restricted to the block of memory allocated. Listing~\ref{lst:bump_alloc2}
+As this suggests, using CHERI without careful consideration may lead to
+no additional security benefits of using CHERI. This then raises the question:
+how should a secure `CHERI aware' allocator behave? There can be no single
+answer to this question, but we believe that most programmers would expect
+\texttt{malloc} to return a capability restricted to the block of memory
+allocated. Listing~\ref{lst:bump_alloc2}
 shows how to adapt \texttt{malloc} to do this.
 
 The code to create the capability (using the idioms suggested
@@ -240,6 +249,19 @@ the allocator from \autoref{lst:bump_alloc2} the code compiles but crashes with
 a security violation when attempting to execute line 3, due to the tighter
 capability bounds returned by its \texttt{malloc}, showing how CHERI can prevent
 programmer errors becoming security violations.
+
+However, just because a program compiles with CHERI C does not guarantee that
+it will always run without issue: when run on CHERI, \fnc{realloc} in
+Listing~\ref{lst:bump_alloc1} causes a hardware security exception if asked to
+increase the size of a block. This occurs because \fnc{memcpy} tries to copy
+beyond the bounds of the input capability (e.g.~if the existing block is 8
+bytes and we ask to resize it to 16 bytes, \fnc{memcpy} tries to read
+16 bytes from a capability whose bounds are 8 bytes). On a non-CHERI system,
+this is not a security violation, but it is treated as one on CHERI. In
+\autoref{lst:bump_alloc2} we thus provide an updated \fnc{realloc} which
+uses \texttt{cheri\_length\_get} (which returns a capability's bounds
+in bytes) to ensure that it never copies more data than the input capability's
+bounds allow.
 
 
 \section{How can a CHERI Allocator be Attacked?}
