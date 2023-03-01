@@ -478,10 +478,34 @@ including the default CheriBSD allocator, are vulnerable. It is beyond the
 scope of this paper to ascertain whether these vulnerabilities are because the
 allocators have not yet been fully adapted to CHERI or whether the necessary
 adaptations to the allocator are impractical.
+In the rest of this section we explain each attack in detail, giving
+C code using the CHERI API when possible. We make use of the following
+CHERI functions:
 
-In this subsection we explain the attacks from \autoref{tab:atks} in detail.
+\setlength{\leftskip}{6pt}
 
-\subsubsection{\escbounds and \escperms: Allocator Optimisations can Cause
+\vspace{6pt}
+\noindent\texttt{void *cheri\_address\_set(void *c, \\vaddr\_t a)}\\
+Takes a capability \texttt{c} as input and produces a new capability
+that is a copy of \texttt{c} except with the address \texttt{a}.
+\texttt{vaddr\_t} is a CHERI C integer type that is guaranteed to be big enough
+to represent addresses but, unlike \texttt{intptr\_t} is not big enough to
+represent capabilities.
+
+\vspace{6pt}
+\noindent\texttt{void *cheri\_bounds\_set(void *c, \\size\_t s)}\\
+Takes a capability \texttt{c} as input and produces a new capability
+that is a copy of \texttt{c} except with bounds of size \texttt{s}.
+
+\vspace{6pt}
+\noindent\texttt{size\_t cheri\_length\_get(void *c)}\\
+Returns the bounds of a capability \texttt{c}.
+
+\vspace{6pt}
+\noindent\texttt{\_Bool cheri\_tag\_get(void *c)}\\
+Returns true if the capability \texttt{c} is authentic or false otherwise.
+
+\setlength{\leftskip}{0pt}
 Bounds or Permissions Escalation}
 
 In the simple bump allocator of \autoref{lst:bump_alloc1}, \texttt{realloc} always
