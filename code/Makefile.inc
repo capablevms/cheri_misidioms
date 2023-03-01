@@ -8,7 +8,7 @@ SSHPORT ?= 0
 
 TARGETS = \
 	narrow_widen \
-	escbound \
+	escbounds \
 	escperms \
 	undef \
 	overlap \
