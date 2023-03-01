@@ -842,6 +842,40 @@ them:
 
 \jacob{TODO: All the scbnds instructions. These are important for security.}
 
+
+\section{Allocator Performance Study}
+%% Glasgow contribution here
+
+This section analyses the runtime performance of various
+CHERI memory allocator implementations when linked against a
+set of compute- and memory-intensive benchmarks written in C.
+The selected benchmarks are listed in Table \ref{tab:benchmarks}; they are
+drawn from the \emph{mimalloc-bench} test suite \cite{leijen19mimalloc}
+chosen for their minimal library dependences, along with other common pointer-intensive
+workloads \cite{boehm14artificial,richards99bench} that are frequently used for allocator performance evaluation.
+
+\begin{table}
+  \begin{center}
+    \begin{tabular}{l|l|l}
+      \emph{name} & \emph{source} & \emph{character} \\ \hline
+      barnes & mimalloc & floating-point compute \\
+      binary-tree & boehm & alloc, pointer chasing \\
+      cfrac & mimalloc & alloc, int compute \\
+      espresso & mimalloc & alloc, int compute \\
+      glibc-simple & mimalloc & alloc \\
+      glibc-thread & mimalloc & alloc, multi-thread \\
+      mstress & mimalloc & alloc \\
+      richards & richards & pointer chasing \\
+      rptest & mimalloc & ? \\
+      xmalloc & mimalloc & alloc, multi-thread \\ \hline
+    \end{tabular}
+  \end{center}
+  \caption{\label{tab:benchmarks}Benchmarks used for CHERI allocator performance evaluation}
+\end{table}
+
+
+
+
 \section{Conclusions}
 
 % \textbf{Acknowledgements:} We thank Ruben Ayrapetyan and David Chisnall for
