@@ -345,15 +345,11 @@ def do_table_tests_parse_result(result, test):
 
 def do_table_tests_entries(result, test_names):
     new_entry = []
-    if args.parse_data_only:
-        for test in sorted(result["results"].keys()):
-            if os.path.basename(test) in config["table_tests_to_ignore"]:
-                continue
-            assert(os.path.basename(test) in test_names)
-            new_entry.append(do_table_tests_parse_result(result, test))
-    else:
-        for test in tests:
-            new_entry.append(do_table_tests_parse_result(result, test))
+    test_sources = tests if not args.parse_data_only else sorted(result["results"].keys())
+    for test in test_sources:
+        if os.path.basename(test) in config["table_tests_to_ignore"]:
+            continue
+        new_entry.append(do_table_tests_parse_result(result, test))
     return new_entry
 
 def do_table_tests(results):
