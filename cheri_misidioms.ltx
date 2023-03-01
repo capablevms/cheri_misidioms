@@ -673,7 +673,7 @@ for restricting the region of memory that the capability can access for
 reading and writing. However, while small bounds can be precisely represented,
 large bounds are over-approximated, raising the possibility of the capability
 for one memory block having bounds which overlap with that of another nearby
-memory block. For example, we expect that the following code never succeeds:
+memory block. For example, we expect that the following code never succeeds\andrei{Meaning the assert never triggers?}:
 
 \begin{lstlisting}[language=C]
 void *b1 = malloc(size);
@@ -683,7 +683,6 @@ assert(
   cheri_base_get(b1) <
     cheri_base_get(b2) + cheri_length_get(f2)
 );
-}
 \end{lstlisting}
 
 The underlying issue is that capabilities have to be able to cover the full
@@ -691,7 +690,7 @@ span of virtual memory without having enough bits to do so precisely. For
 example, Morello's capabilities have 31 bits to express the bounds for a 64-bit
 address space. Modern CHERI systems use `CHERI
 Concentrate'~\cite{woodruff19chericoncentrate} to encode bounds. A good analogy
-is that CHERI Concentrate is similar IEEE 754 floating point numbers: the wider
+is that CHERI Concentrate is similar to IEEE 754 floating point numbers: the wider
 the bound, the less accurately it will be represented. When a desired length
 cannot be precisely represented, the next largest precisely representable
 length is used in the bound. On Morello, 16,385 bytes is the smallest bound
@@ -716,7 +715,7 @@ narrowed capability with \fnc{cheri\_length\_get}.
 Second, one can lay out memory in advance such that, no matter what imprecise
 bounds are used, secrets will not leak. In essence, this requires adding
 padding to each object to take account of imprecise bounds. One could rewrite
-\fnc{array\_with\_hidden\_secret} using this technique, provided that the
+\fnc{array\_with\_hidden\_secret}\andrei{Don't see another reference to this function} using this technique, provided that the
 number of secret items at the end of the array does not vary after array
 creation time.
 
