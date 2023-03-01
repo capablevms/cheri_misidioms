@@ -304,10 +304,11 @@ capability-aware allocator from \autoref{lst:bump_alloc2}, the program aborts
 with a security exception when executing line 3.
 
 Buffer overruns are so common in C code that we expect most people to consider
-the possibility part of their attack model: by extension we expect that they
-would want a CHERI allocator to protect against such attacks. However, the
+that part of their attack model: by extension, we believe that they
+would expect a CHERI allocator to protect against such attacks. However, the
 difference between Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2}
-shows that such protection does not happen without careful thought. As we
+shows that such protection often requires careful adjustments of code to
+take advantage of CHERI. As we
 shall see later, it is not just our bump allocator that is subject to this
 particular attack.
 
