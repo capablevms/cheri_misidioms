@@ -328,14 +328,14 @@ CHERI.
 
 A number of allocators are available for CheriBSD, installable via three
 different routes: as part of the base distribution; via CheriBSD
-\emph{packages}; or via external sources. In this paper we consider allocators
-obtained via all three routes.  \andrei{I don't think the previous text was
-correct; @Laurie, please double check} The standard way to build various CHERI
-tools, including CheriBSD distributions and allocators, is to use the
-\texttt{cheribuild} tool. However, each target in \texttt{cheribuild} is
-versioned independently. Thus, in the case of one target allocator, the
-version available via \texttt{cheribuild} is sufficiently old and broken that
-we felt it necessary to build it directly from a GitHub repository.  We
+\emph{packages}; or via external sources.  We examined allocators
+available via all three routes \andrei{I don't think the previous text was
+correct; @Laurie, please double check}\laurie{i have no idea, since you did
+this part :) please adjust the text to be correct!}. We excluded
+allocators aimed only for debugging purposes (e.g.~ElectricFence).
+We then ran a simple validation test, \fnc{malloc}ing a block of memory,
+copying data into the block, and then \fnc{free}ing the block: we
+excluded any allocator which failed this test. We
 document by which route we obtained all of the allocators we consider.
 
 On that basis, the allocators we consider in this paper, and the names we use
@@ -473,13 +473,7 @@ are the API calls doing?}
 
 In this section we introduce a number of `attacks' on CHERI allocators (1
 spatial and 4 temporal) and then run those attacks on the allocators from
-Section~\ref{sec:cheriallocators}. The results are shown in \autoref{tab:atks}.
-We first run a validation pass over each allocator, where we attempt to
-\fnc{malloc} some memory, copy it, then \fnc{free} it; this is done in order to
-filter out allocators which are nominally available on CHERI, but don't work
-(such as the ones provided as packages in CheriBSD, which seemingly are able to
-be compiled, but offer no internal capability awareness). We only show
-allocators which pass our validation in~\autoref{tab:atks}.  Many allocators,
+Section~\ref{sec:cheriallocators}. The results are shown in \autoref{tab:atks}. Many allocators,
 including the default CheriBSD allocator, are vulnerable. It is beyond the
 scope of this paper to ascertain whether these vulnerabilities are because the
 allocators have not yet been fully adapted to CHERI or whether the necessary
