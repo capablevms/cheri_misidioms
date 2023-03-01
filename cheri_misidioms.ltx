@@ -582,10 +582,15 @@ architectures have different bounds representations and permissions.
 
 \subsection{\narrowwiden: Narrowing then widening}
 
-Assuming that a child capability with narrow bounds has been derived while
-respecting the issues raised in \narrowingdoesnt (\autoref{sec:narrow}), it may
-seem that our issues with capability bounds are over. However, if one later
-widens those bounds again, one may unintentionally leak secrets.
+When working with allocated memory, we are free to \fnc{realloc} a previously
+\fnc{malloc}ed chunk of memory to whatever aribtrary size we required. However,
+in the world of capabilities, this becomes a slightly tricky issue.
+Capabilities themselves are intrinsically monotonically decreasing. As such,
+``widening'' a capability needs to be handled differently than increasing the
+bounds of that capability, as that is impossible.  Nevertheless, current memory
+allocator do support increasing the bounds of a fnc{malloc}ed capability, as
+expected. However, this might inadvertently reclaim secrets that were thought
+to be hidden via clever use of capability bounds.
 
 CheriBSD's default \fnc{realloc} is subject to this problem. The following
 code executes successfully, with the capability returned by \fnc{realloc}
