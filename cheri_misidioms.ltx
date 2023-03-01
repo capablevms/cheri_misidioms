@@ -101,7 +101,9 @@ there is no mechanism to set a capability as `valid'; only a child capability
 derived, correctly, from valid parent capabilities can itself be valid.
 
 A capability consists of an
-\emph{address} (typically in memory \laurie{this clause sounds weird: are we trying to cover sealed capabilities or similar?}), and its abilities: a set of \emph{permissions} (only a subset of
+\emph{address} (typically in memory \laurie{this clause sounds weird: are we trying to cover sealed capabilities or similar?}
+\jacob{I didn't want that diversion, but didn't want to leave a gap for pedantry either.}
+), and its abilities: a set of \emph{permissions} (only a subset of
 which we consider in this paper);
 and \emph{bounds}, the memory range on which
 the capability can operate.
