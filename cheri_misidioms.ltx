@@ -832,7 +832,30 @@ them:
 
 \subsection{Purecap ABI difficulties}
 
-\jacob{TODO: PLT lookup example. These are arguably important for security.}
+We have observed some toolchain behaviours that differ between hybrid and
+purecap. For example, this is a store (of zero) to a global variable in Morello
+hybrid:
+
+\begin{lstlisting}
+    adrp x8, #+0x20000
+    str xzr, [x8, #2472]
+\end{lstlisting}
+
+In that case, the \texttt{adrp} combined with the \texttt{str} offset locate
+the global, and the store can write to it directly. However, the purecap ABI
+requires another level of indirection in order to obtain a capability with
+tight bounds:
+
+\begin{lstlisting}
+    adrp c1, #+0x10000
+    ldr c1, [c1, #3776]
+    str xzr, [c1]
+\end{lstlisting}
+
+Behaviours of this sort may be required (or at least be beneficial) under the
+purecap security model, and may therefore be difficult to optimise. However, we
+have completed neither security nor performance analysis for the examples we've
+seen.
 
 \subsection{Toolchain maturity}
 
@@ -841,7 +864,6 @@ them:
 \subsection{Security behaviours}
 
 \jacob{TODO: All the scbnds instructions. These are important for security.}
-
 
 \section{Allocator Performance Study}
 %% Glasgow contribution here
