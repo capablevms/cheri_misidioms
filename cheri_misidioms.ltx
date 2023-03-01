@@ -97,7 +97,7 @@ capability is one that has been derived from authentic parents according to
 CHERI's rules. Attempts to create capabilities that violate CHERI's rules
 cause the hardware to produce an \emph{inauthentic} result, guaranteeing
 that capabilities cannot be forged. For example,
-there is no mechanism to set a capability as `valid'; only a child capability
+there is no user-space mechanism to set a capability as `valid'; only a child capability
 derived, correctly, from valid parent capabilities can itself be valid.
 
 A capability consists of an
@@ -133,9 +133,12 @@ in violation of the CHERI rules). For example, a failed attempt to exercise a ca
 sealing operation on Morello produces an inauthentic result, rather than an
 exception.
 
-On Morello and CHERI RISC-V capabilities are 128 bits big, though note that
-each capability has a separate validity bit which cannot be accessed at the
-same time as the `main' 128 bits. CHERI also allows `traditional' single-width
+On Morello and CHERI RISC-V, capabilities behave as if they are 128 bits in
+size, but also carry an additional bit that tracks the authenticity of each
+capability.\footnote{Authenticity bits are supported by both registers and the memory
+system, and will be automatically cleared if any attempt is made to modify a
+capability without using an approved derivation method.}
+CHERI also allows `traditional' single-width
 pointers-as-addresses (which on Morello and CHERI RISC-V are 64-bit addresses)
 to be used. Although CHERI processors allow both double-width capabilities and
 single-width addresses-as-pointers to exist alongside each other at any time,
