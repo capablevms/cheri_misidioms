@@ -119,7 +119,7 @@ $\textit{high}-\textit{low}=x$. An address is
 \emph{in-bounds} for a given capability if it is wholly contained within the
 capability's bounds, or \emph{out-of-bounds} otherwise; a capability is
 in (or out) of bounds if its address is in (or out) of bounds
-\footnote{See~\cite{woodruff19chericoncentrate} \laurie{can we give a page reference?} for an explanation of why an authentic
+\footnote{See~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
 capability might have an out-of-bounds address.}.
 A \emph{bounds check} is said to be successful if a given capability, address, or
 address range, is in-bounds for a given capability.
@@ -134,10 +134,11 @@ sealing operation on Morello produces an inauthentic result, rather than an
 exception.
 
 On Morello and CHERI RISC-V, capabilities behave as if they are 128 bits in
-size, but also carry an additional bit that tracks the authenticity of each
-capability.\footnote{Authenticity bits are supported by both registers and the memory
-system, and will be automatically cleared if any attempt is made to modify a
-capability without using an approved derivation method.}
+size, but also carry an additional bit that records the authenticity of each
+capability: the authenticity bit can be read, and can be unset, but cannot
+be set (i.e.~authentic capabilities must be created via hardware following
+CHERI's rules).
+
 CHERI also allows `traditional' single-width
 pointers-as-addresses (which on Morello and CHERI RISC-V are 64-bit addresses)
 to be used. Although CHERI processors allow both double-width capabilities and
@@ -151,8 +152,6 @@ CHERI does not presuppose a particular Operating System (OS). While there is a
 CHERI Linux port, at the time of writing the most mature OS for CHERI hardware
 is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD exclusively.
 
-\jacob{We need to define purecap and hybrid here, since we'll refer to them
-later.}
 
 \section{A Basic Pure Capability Allocator}
 \label{sec:bumppointerallocator}
