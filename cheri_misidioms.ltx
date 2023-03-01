@@ -881,10 +881,43 @@ relative to the platform default allocator which is a CHERI-extended version of 
 Figure FIXME presents results for this experiment, showing that \jeremy{the majority of allocators are significantly slower than jemalloc (presumably because they are less optimized)}.
 
 
+For the remainder of this performance analysis, we focus exclusively on jemalloc since it is the default allocator for CheriBSD. We attempt to quantify the overhead of deploying capabilities with jemalloc in our memory-intensive benchmark workloads.
+When looking at individual benchmark performance, it is clear that the slowdown is highly dependent on the nature of each workload.
+Figure FIXME shows the relative slowdown of the purecap binaries for each benchmark with jemalloc, relative to the hybrid binaries.
+Notice which benchmarks have highest relative slowdowns - binary tree cfrac, espresso, mstress - highly allocation intensive. Also richards - which is \emph{not} allocation intensive but performs many pointer-chasing operations.
 
+Next we considered the hardware performance counter metrics for these executions, using the \texttt{pmcstat} tool on CheriBSD. Again, we report purecap results relative to the corresponding hybrid results. We note large overheads in memory access \jeremy{what else?}
+indicating that there is significantly increased pressure on the memory system due to capability values being twice the size of raw pointers.
+\jeremy{also look at RSS sizes}
+
+
+\jeremy{should we report our correlation stats, showing which performance counters correlate with execution time?}
+
+
+Finally we considered the dynamic instruction counts for
+these executions, categorizing instructions based on their
+opcode types (following the classification from the Arm index-by-opcode in the Morello architecture reference manual - cite).
+We generated instruction counts using the Morello QEMU emulator with a custom plugin, and validated a subset of these results by cross-checking them against the Arm FVP emulator for Morello.
+Instructions captured are user mode instructions (i.e.\ excluding kernel activity) during benchmark execution
+(i.e.\ excluding any OS boot activity).
+Figure FIXME shows the results, with purecap benchmark results presented relative to hybrid dynamic instruction counts.
+For the majority of benchmarks, we see that the pointer arithmetic (which in hybrid mode is captured as data processing) is now morello arithmetic, involving capabilities. Similarly, some load and store operations are now morello operations, loading and storing capabilities.
+We notice that sometoimes there is an overall increase in loads and stores for purecap, possibly caused by immature compiler code generation for Morello.
+The `morello misc' overhead involves capability bounds checks, tag checks, etc --- which are intrinsic features of
+CHERI. This is inescapable overhead, additional instructions that must run to support capability-aware execution. In general, this overhead is within \jeremy{XXX 10?? } \% of the total instruction count. 
 
 
 \section{Conclusions}
+
+CHERI allocator ports don't take full advantage of the new secure features. Is it difficult to backport CHERI features onto legacy allocators? Which allocator does best and why?
+Do we actually need a custom allocator, created specifically for CHERI?
+
+Performance results are difficult to generalize, given we are working with an experimental architecture and a relatively immature software ecosystem / compiler toolchain. However we draw the following high-level conclusions from our performance analysis. CHERI does have a significant impact on memory access, particularly for pointer-intensive workloads. Careful micro-architectural and compiler optimizations are required here.
+The instruction execution overhead of CHERI is not unreasonable - quote geometric mean figures. It's a worthwhile price to pay for improved runtime security of
+legacy C workloads.
+
+Note - ongoing performance analysis and optimization from Arm / CHERI team.
+Also note other security and performance benefits of CHERI (compartmentalization) that we have not considered at all in this study.
 
 % \textbf{Acknowledgements:} We thank Ruben Ayrapetyan and David Chisnall for
 % comments. This work was funded by the Digital Security by Design (DSbD) Programme
