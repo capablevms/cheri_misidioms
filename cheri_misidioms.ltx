@@ -308,7 +308,7 @@ Buffer overruns are so common in C code that we expect most people to consider
 the possibility part of their attack model: by extension we expect that they
 would want a CHERI allocator to protect against such attacks. However, the
 difference between Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2}
-shows that such protection does not happen without careful thought. As we will
+shows that such protection does not happen without careful thought. As we
 shall see later, it is not just our bump allocator that is subject to this
 particular attack.
 
@@ -346,10 +346,10 @@ for them for the rest of this paper, are as follows:
     for CheriBSD.
 
 \item \memalloc{libmalloc-simple}
-    \footnoteurl{https://github.com/CTSRD-CHERI/cheribsd/commit/e85ccde6d78d40f130ebf126a001589d75d60473,
-    23rd February 2023} is a port of the allocator present in FreeBSD`s
+    \footnoteurl{https://github.com/CTSRD-CHERI/cheribsd/commit/e85ccde6d78d40f130ebf126a001589d75d60473}{23rd
+    February 2023} is a port of the allocator present in FreeBSD`s
     \texttt{rtld-elf} utility
-    \footnoteurl{https://github.com/freebsd/freebsd-src/blob/releng/4.3/libexec/rtld-elf/malloc.c,
+    \footnoteurl{https://github.com/freebsd/freebsd-src/blob/releng/4.3/libexec/rtld-elf/malloc.c}{
     23rd of February 2023}.
 
 \item \memalloc{snmalloc-cheribuild} is an old version of
@@ -369,11 +369,6 @@ for them for the rest of this paper, are as follows:
 \item \memalloc{ptmalloc}~\cite{gloger06wolfram} is an extension of
     \memalloc{dlmalloc}, with added support for multiple threads.
 
-\item \memalloc{libxalloc}~\cite{huseby22xalloc} is a library which includes
-    error checking for allocations. Instead of overriding the usual
-    \fnc{malloc} functions, it provides its own variations, prepended with an
-    \texttt{x} (e.g., \fnc{xmalloc}).
-
 \item \emph{musl} is an implementation of the standard C library, which
     includes an allocator. We found two \emph{musl} ports to CHERI on GitHub:
     \texttt{musl-huawei} (forked from \emph{musl} 1.2.0) and
@@ -383,10 +378,10 @@ for them for the rest of this paper, are as follows:
 
 \item \memalloc{newlib} is \laurie{dunno}.
 
-\item \memalloc{bump-alloc} is the simple bump allocator from
-    Section~\ref{sec:bumppointerallocator}. \laurie{there are two bump
-    allocators: is this the CHERI aware or non-CHERI aware variant? perhaps we
-    should include both?}
+\item \memalloc{bump-alloc-nocheri} is the simple, non-CHERI-aware bump
+    allocator from~\autoref{lst:bump_alloc1}. Conversely,
+    \memalloc{bump-alloc-cheri} is the CHERI aware version, presented
+    in~\autoref{lst:bump_alloc2}.
 \end{itemize}
 
 \input{./data/results/slocs.tex}
@@ -425,7 +420,7 @@ have had around 0.3--0.9\% of their LoC adapted. Although this is a relatively s
 it is an order of magnitude bigger than the
 0.026\% lines that were adapted when porting a desktop environment (including X11 and
 KDE)~\cite{watson21assessing}. It is a reasonable assumption that the
-lower-level, and more platform dependent, nature of allocator has
+lower-level, and more platform dependent, nature of allocators has
 caused more LoC to be adapted.
 
 A different proxy for the complexity of CHERI adaption is the number of CHERI API
@@ -441,7 +436,7 @@ extensions (e.g.~\texttt{\_\_builtin\_cheri\_base\_get}). There are 39 generic
 CHERI functions, with Morello defining four more.
 
 \item
-The \emph{cheric.h} is a deprecated, but still frequently used, API,
+The \emph{cheric.h} API is deprecated, but still frequently used,
 providing 63 functions and macros (29 of \laurie{just the macros?} which are,
 in essence, simple wrappers around the \emph{builtin} API).
 
@@ -458,14 +453,15 @@ the builtins?!}
 API calls when Listing 2 suggests it uses more like 4. And we also say it uses
 10 builtins, but we've just defined that as a separate API? And we say that
 dlmalloc-cheribuild uses the builtin API which uses 10 API calls and 10
-builtins?}
+builtins?}\andrei{This table needs fixing}
 For each of the allocators, we explain which of these three APIs it uses,
 and the number of distinct API calls it makes.
 Note that if the same function is called in multiple
 source code locations, we only count it once.  This gives us a static measure
 of API coverage, for each allocator. \autoref{tab:rq1} shows the results,
-indicating that some allocators have a broader spread of API calls. \emph{What
-does this imply?} \emph{What are the API calls doing?}
+indicating that some allocators have a broader spread of API
+calls.\andrei{Presumably left TODO>} \emph{What does this imply?} \emph{What
+are the API calls doing?}
 
 \input{./data/results/cheri_api.tex}
 
@@ -475,13 +471,19 @@ does this imply?} \emph{What are the API calls doing?}
 
 \input{./data/results/tests.tex}
 
-In this section we introduce a number of `attacks' on CHERI allocators
-(1 spatial and 4 temporal) and then run those attacks on the allocators from
-Section~\ref{sec:cheriallocators}. The results are shown in \autoref{tab:atks}
-which shows that many allocators, including the default CheriBSD allocator,
-are vulnerable. It is beyond the scope of this paper to ascertain whether these
-vulnerabilities are because the allocators have not yet been fully adapted to
-CHERI or whether the necessary adaptations to the allocator are impractical.
+In this section we introduce a number of `attacks' on CHERI allocators (1
+spatial and 4 temporal) and then run those attacks on the allocators from
+Section~\ref{sec:cheriallocators}. The results are shown in \autoref{tab:atks}.
+We first run a validation pass over each allocator, where we attempt to
+\fnc{malloc} some memory, copy it, then \fnc{free} it; this is done in order to
+filter out allocators which are nominally available on CHERI, but don't work
+(such as the ones provided as packages in CheriBSD, which seemingly are able to
+be compiled, but offer no internal capability awareness). We only show
+allocators which pass our validation in~\autoref{tab:atks}.  Many allocators,
+including the default CheriBSD allocator, are vulnerable. It is beyond the
+scope of this paper to ascertain whether these vulnerabilities are because the
+allocators have not yet been fully adapted to CHERI or whether the necessary
+adaptations to the allocator are impractical.
 
 In this subsection we explain the attacks from \autoref{tab:atks} in detail.
 
