@@ -896,7 +896,7 @@ workloads \cite{boehm14artificial,richards99bench} that are frequently used for 
 \end{table}
 
 For each benchmark, we compile \emph{hybrid} (i.e.\ with no capability support) and
-\emph{purecap} (i.e.\ using capabilities) binaries at O2 optimization level with the Morello LLVM toolchain.
+\emph{purecap} (i.e.\ using capabilities) binaries at O3 optimization level with the Morello LLVM toolchain.
 We use \texttt{LD\_{}PRELOAD} to link with the various memory allocators. We measure execution times for each benchmark (hybrid and purecap variants) with
 each allocator on CheriBSD and report geometric mean slowdown across the benchmarks
 relative to the platform default allocator which is a CHERI-extended version of \emph{jemalloc}.
