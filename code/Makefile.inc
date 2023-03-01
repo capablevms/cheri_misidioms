@@ -7,20 +7,14 @@ SSHPORT ?= 0
 	${CC} ${CFLAGS} -Wall -Wextra -Wno-unused-parameter -o $@ $<
 
 TARGETS = \
-	narrow \
-	narrow_realloc \
 	narrow_widen \
-	privesc \
-	privesc2 \
+	escbound \
+	escperms \
 	undef \
-	unrepresentable_length \
 	overlap \
-	overlap2 \
-	overlap3 \
-	test_bump_alloc1 \
-	test_bump_alloc2
+    validate
 
-ALL_COPYEXEC_TARGETS = narrow narrow_realloc narrow_widen privesc privesc2 test_bump_alloc2 undef unrepresentable_length
+ALL_COPYEXEC_TARGETS = ${TARGETS}
 
 all: ${TARGETS}
 

@@ -31,6 +31,10 @@ int main() {
     // ...and then immediately allocate a block the same size as C1.
     uint8_t *c3 = malloc(16);
     // malloc returns a capability C3 that is identical to C1.
-    assert(cheri_tag_get(c3) && cheri_length_get(c3) == 16);
-    assert(cheri_address_get(c3) == c1_addr);
+    if (cheri_tag_get(c3) && cheri_length_get(c3) == 16 && cheri_address_get(c3) == c1_addr) {
+	printf("Attack successful\n");
+    } else {
+        printf("Attack unsuccessful\n");
+    }
+    return 0;
 }

@@ -19,10 +19,17 @@ int main() {
     for (uint8_t i = 0; i < 255; i++)
         arr[i] = i;
     arr = realloc(arr, 1);
-    assert(cheri_tag_get(arr) && cheri_length_get(arr) == 1);
+    assert(cheri_tag_get(arr) && cheri_length_get(arr) >= 1);
     // We cannot increase the bounds of a capability, so the following line
     // should fail
     arr = realloc(arr, 256);
+    if (arr == NULL) {
+        printf("Attack unsuccessful\n");
+        return 0;
+    }
     for (uint8_t i = 0; i < 255; i++)
         assert(arr[i] == i);
+
+    printf("Attack successful\n");
+    return 0;
 }
