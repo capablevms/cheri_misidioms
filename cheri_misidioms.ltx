@@ -324,15 +324,11 @@ CHERI.
 
 \subsection{The Allocators Under Consideration}
 
-\laurie{we need to add citations for the allocators where possible}
-
 A number of allocators are available for CheriBSD, installable via three
 different routes: as part of the base distribution; via CheriBSD
 \emph{packages}; or via external sources.  We examined allocators
-available via all three routes \andrei{I don't think the previous text was
-correct; @Laurie, please double check}\laurie{i have no idea, since you did
-this part :) please adjust the text to be correct!}. We excluded
-allocators aimed only for debugging purposes (e.g.~ElectricFence).
+available via all three routes. We excluded
+allocators aimed only for debugging purposes (e.g.~\memalloc{ElectricFence}).
 We then ran a simple validation test, \fnc{malloc}ing a block of memory,
 copying data into the block, and then \fnc{free}ing the block: we
 excluded any allocator which failed this test. We
@@ -345,11 +341,9 @@ for them for the rest of this paper, are as follows:
     \emph{jemalloc}~\cite{evans06scalable} allocator, is the default allocator
     for CheriBSD.
 
-\item \memalloc{libmalloc-simple}
-    \footnoteurl{https://github.com/CTSRD-CHERI/cheribsd/commit/e85ccde6d78d40f130ebf126a001589d75d60473}{23rd
+\item \memalloc{libmalloc-simple}\footnoteurl{https://github.com/CTSRD-CHERI/cheribsd/commit/e85ccde6d78d40f130ebf126a001589d75d60473}{23rd
     February 2023} is a port of the allocator present in FreeBSD`s
-    \texttt{rtld-elf} utility
-    \footnoteurl{https://github.com/freebsd/freebsd-src/blob/releng/4.3/libexec/rtld-elf/malloc.c}{
+    \texttt{rtld-elf} utility\footnoteurl{https://github.com/freebsd/freebsd-src/blob/releng/4.3/libexec/rtld-elf/malloc.c}{
     23rd of February 2023}.
 
 \item \memalloc{snmalloc-cheribuild} is an old version of
@@ -366,17 +360,8 @@ for them for the rest of this paper, are as follows:
     ported version in \texttt{cheribuild} is based on the same as those in the
     packages, namely 2.8.6.
 
-\item \memalloc{ptmalloc}~\cite{gloger06wolfram} is an extension of
+\item \memalloc{ptmalloc}~\cite{gloger06ptmalloc} is an extension of
     \memalloc{dlmalloc}, with added support for multiple threads.
-
-\item \emph{musl} is an implementation of the standard C library, which
-    includes an allocator. We found two \emph{musl} ports to CHERI on GitHub:
-    \texttt{musl-huawei} (forked from \emph{musl} 1.2.0) and
-    \texttt{musl-morello} (from \emph{musl} 1.2.2) from Huawei and Arm
-    respectively. \laurie{i guess these two musl's aren't forked from the same
-    underlying version?}.
-
-\item \memalloc{newlib} is \laurie{dunno}.
 
 \item \memalloc{bump-alloc-nocheri} is the simple, non-CHERI-aware bump
     allocator from~\autoref{lst:bump_alloc1}. Conversely,
