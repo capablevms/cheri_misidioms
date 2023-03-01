@@ -634,15 +634,15 @@ assert(cheri_address_get(c3) == c1_addr);
 
 In this example, we first derive a capability \emph{C1} with bounds of 16 bytes
 (line 1) before deriving a narrower capability \emph{C2} from it (line 3). It
-is then possible that after \fnc{free}ing the block of memory addressed by \emph{C1},
+is then possible that after \fnc{free}ing the block of memory addressed by \emph{C1}\andrei{example frees C2, actual code sets C1 to NULL and frees C2},
 a subsequent \fnc{malloc} of 16 bytes returns a
 capability \emph{C3} that is identical to \emph{C1}. This attack relies
 on the underlying memory allocator reusing memory blocks, which many do in a
-predictable fashion: this example runs successfully on CheriBSD (as of
+predictable fashion: this example runs successfully on CheriBSD\andrei{jemalloc?} (as of
 2021-08-19).
 
 Interestingly, C's pointer provenance rules mean that, after the code above has
-executed, using \emph{C1} is no longer defined behaviour though this will not
+executed, using \emph{C1} is no longer defined behaviour. Although this will not
 trouble an attacker, who will find that most programs still execute as expected
 and who now has a capability \emph{C3} giving the same access as \emph{C1}.
 
@@ -650,12 +650,12 @@ and who now has a capability \emph{C3} giving the same access as \emph{C1}.
 \subsubsection{Mitigations}
 
 There are no general mitigations for \myundef. For the particular concrete
-example, a partial mitigation is for \texttt{free} to scrub memory so that, at
-least, whatever was present in the buffer cannot read by the attacker: however,
+example, a partial mitigation is for \fnc{free} to scrub memory so that, at
+least, whatever was present in the buffer cannot be read by the attacker: however,
 since the attack has in effect `aliased' the capability, future writes can be
 observed and tampered with by the attacker.
 
-A more complete mitigation for the concrete example is for \texttt{free} to
+A more complete mitigation for the concrete example is for \fnc{free} to
 revoke all references to the capability. In other words, CHERI allows one to
 scan memory looking for all capabilities with bounds encompassing an address
 $p$ and render them inauthentic~\cite{xia29cherivoke}. In this case, this
