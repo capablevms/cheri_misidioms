@@ -27,8 +27,12 @@ int main() {
         printf("Attack unsuccessful\n");
         return 0;
     }
-    for (uint8_t i = 0; i < 255; i++)
-        assert(arr[i] == i);
+    for (uint8_t i = 1; i < 255; i++) {
+        if (arr[i] != i) {
+            printf("Attack unsuccessful\n");
+            return 0;
+        }
+    }
 
     printf("Attack successful\n");
     return 0;
