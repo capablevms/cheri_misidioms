@@ -176,7 +176,7 @@ label=lst:bump_alloc1]{code/bump_alloc1.c}
 \end{figure}
 
 We start with a simple, complete, example of a C bump allocator in
-Listing~\ref{lst:bump_alloc1}: \fnc{malloc} works as per normal; \fnc{free} is
+~\autoref{lst:bump_alloc1}: \fnc{malloc} works as per normal; \fnc{free} is
 a no-op; and \fnc{realloc} always allocates a new chunk of memory. The
 allocator reserves a large chunk of memory using a single \fnc{mmap} call then
 doles out chunks on each \fnc{malloc} / \fnc{realloc} calls. The bump pointer
@@ -202,8 +202,8 @@ write from any portion of \fnc{malloc}ed memory.
 \begin{figure}[t]
 \lstinputlisting[language=C,
   caption={
-    Replacing the non-CHERI aware \fnc{malloc} from
-    Listing~\ref{lst:bump_alloc1} with a CHERI-aware alternative
+    Replacing the non-CHERI aware \fnc{malloc} from ~\autoref{lst:bump_alloc1}
+    with a CHERI-aware alternative
     using the idioms suggested in~{\cite[p.~30]{watson20chericprogramming}}.
     This \fnc{malloc} returns a capability whose bounds are sufficient
     to cover \texttt{size} bytes starting at the capability's address
@@ -222,7 +222,7 @@ no additional security benefits of using CHERI. This then raises the question:
 how should a secure `CHERI aware' allocator behave? There can be no single
 answer to this question, but we believe that most programmers would expect
 \texttt{malloc} to return a capability restricted to the block of memory
-allocated. Listing~\ref{lst:bump_alloc2}
+allocated. \autoref{lst:bump_alloc2}
 shows how to adapt \texttt{malloc} to do this.
 
 The code to create the capability (using the idioms suggested
@@ -257,8 +257,8 @@ capability bounds returned by its \texttt{malloc}, showing how CHERI can prevent
 programmer errors becoming security violations.
 
 However, just because a program compiles with CHERI C does not guarantee that
-it will always run without issue: when run on CHERI, \fnc{realloc} in
-Listing~\ref{lst:bump_alloc1} causes a hardware security exception if asked to
+it will always run without issue: when run on CHERI, \fnc{realloc} in~\autoref{lst:bump_alloc1}
+causes a hardware security exception if asked to
 increase the size of a block. This occurs because \fnc{memcpy} tries to copy
 beyond the bounds of the input capability (e.g.~if the existing block is 8
 bytes and we ask to resize it to 16 bytes, \fnc{memcpy} tries to read
@@ -273,7 +273,7 @@ bounds allow.
 \section{How can a CHERI Allocator be Attacked?}
 \label{sec:atk}
 
-Our definition of CHERI in Section~\ref{sec:cheri} might suggest that software
+Our definition of CHERI in~\autoref{sec:cheri} might suggest that software
 running on CHERI hardware is invulnerable to attack. Alas, while CHERI gives us the
 tools to make secure software, it is up to us to use them correctly --- and wisely.
 We must decide which attack model is relevant to our software, and then write,
@@ -306,7 +306,7 @@ with a security exception when executing line 3.
 Buffer overruns are so common in C code that we expect most people to consider
 that part of their attack model: by extension, we believe that they
 would expect a CHERI allocator to protect against such attacks. However, the
-difference between Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2}
+difference between~\autoref{lst:bump_alloc1} and~\autoref{lst:bump_alloc2}
 shows that such protection often requires careful adjustments of code to
 take advantage of CHERI. As we
 shall see later, it is not just our bump allocator that is subject to this
@@ -459,8 +459,8 @@ are the API calls doing?}
 \input{./data/results/tests.tex}
 
 In this section we introduce a number of `attacks' on CHERI allocators (1
-spatial\andrei{which} and 4 temporal) and then run those attacks on the allocators from
-Section~\ref{sec:cheriallocators}. The results are shown in \autoref{tab:atks}. Many allocators,
+spatial\andrei{which} and 4 temporal) and then run those attacks on the allocators from~\autoref{sec:cheriallocators}.
+The results are shown in \autoref{tab:atks}. Many allocators,
 including the default CheriBSD allocator, are vulnerable. It is beyond the
 scope of this paper to ascertain whether these vulnerabilities are because the
 allocators have not yet been fully adapted to CHERI or whether the necessary
@@ -882,7 +882,7 @@ seen.
 This section analyses the runtime performance of various
 CHERI memory allocator implementations when linked against a
 set of compute- and memory-intensive benchmarks written in C.
-The selected benchmarks are listed in Table \ref{tab:benchmarks},
+The selected benchmarks are listed in~\autoref{tab:benchmarks},
 drawn from the \emph{mimalloc-bench} test suite \cite{leijen19mimalloc}
 chosen for their minimal library dependences, along with other common pointer-intensive
 workloads \cite{boehm14artificial,richards99bench} that are frequently used for allocator performance evaluation.
