@@ -7,6 +7,7 @@ SSHPORT ?= 0
 	${CC} ${CFLAGS} -Wall -Wextra -Wno-unused-parameter -o $@ $<
 
 TARGETS = \
+	narrow_widen_cap_leak \
 	narrow_widen \
 	escbounds \
 	escperms \
