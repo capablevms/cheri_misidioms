@@ -3,11 +3,11 @@
     {
         "mode": "repo",
         "repo": "https://github.com/capablevms/cheri_misidioms",
-        "commit": "270a3e15d695fa484cad0f58ecb7f38c64f309eb",
-        "lib_file": "./listings/libbumpalloc_nocheri.so",
+        "commit": "5de04dcc5dbb86708c698cbda040eb75bbe105cd",
+        "lib_file": "./code/libbumpalloc_nocheri.so",
         "build_file": "build.sh"
     },
-    "date": "2022-11-21"
+    "date": "2023-03-01"
 }
 
 
