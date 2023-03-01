@@ -151,6 +151,8 @@ CHERI does not presuppose a particular Operating System (OS). While there is a
 CHERI Linux port, at the time of writing the most mature OS for CHERI hardware
 is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD exclusively.
 
+\jacob{We need to define purecap and hybrid here, since we'll refer to them
+later.}
 
 \section{A Basic Pure Capability Allocator}
 \label{sec:bumppointerallocator}
@@ -744,11 +746,101 @@ permitted, so we can write assertions in our \texttt{realloc} implementation, et
 saturating on Morello, and this isn't obvious in the CHERI API\@. This makes
 manually testing the bounds difficult.}
 \laurie{interesting! can we make a simple code example which shows this?}
+\jacob{Yes, if there's time!}
 
 
 \section{Performance}
 \label{performance}
 
+Our measurements on Morello hardware show a performance penalty on most
+`purecap' benchmarks (compared with a `hybrid' baseline).
+\jacob{We should quantify this with one of our graphs.}
+Although the relative performance of purecap code is of great interest, there
+are significant differences between contemporary hybrid and purecap workloads
+that make a fair comparison difficult. Recall that the principle difference
+between the purecap and hybrid ABI is that C pointers are capabilities in
+purecap, but addresses (by default) in hybrid workloads. This also extends to
+the stack pointer, and other ABI details not usually visible to the C language.
+
+Many factors affect the overall performance of purecap allocators:
+
+\begin{itemize}
+  \item Hardware pointer operations (including arithmetic, loads and stores)
+    have different semantics for capabilities, and may show performance
+    difference.
+  \item Capabilities are larger than addresses, and will exert greater pressure
+    on caches and related system resources.
+  \item Hybrid C compilers are likely to inherit many optimisations from the
+    mature, capability-unaware compilers on which they are based. However, we
+    expect purecap toolchains to be much less mature, and therefore more likely
+    to miss possible optimisations.
+  \item Security-related behaviours of purecap code (such as setting bounds on
+    allocations) requires extra work.
+  \item The purecap ABI design may make some common optimisations difficult.
+    Many (or all) of these might be important for maintaining the desired
+    security properties.
+\end{itemize}
+
+To an extent, some of the above affect capability-aware hybrid allocators too,
+for example in comparison with a capability-unaware baseline. For example, a
+hybrid \fnc{memcpy} has to preserve capabilities, and so requires a slightly
+different implementation than the true baseline. However, we were not able to
+measure any performance difference in preliminary tests, and so we focussed our
+analysis on purecap and hybrid.
+\jacob{Do we have data to back this up?}
+
+\subsection{Hardware pointer operations}
+
+To attempt to rule out (or account for) low-level hardware performance
+variation, we wrote a series of very simple microbenchmarks, each designed to
+reveal low-level differences:
+
+\begin{itemize}
+  \item \texttt{00-factorial-asm-minimal} is a tail-recursive factorial
+    implementation, used as a control. This does not use capabilities (or the
+    stack), and should behave identically on hybrid and purecap.
+  \item \texttt{01-factorial-asm-minimal} is similar, but uses an indirect
+    tail call, to attempt to measure any fundamental overhead in executing a
+    capability.
+  \item \texttt{99-busy-loop} is an empty C loop, to act as another control.
+    The C loop uses no capabilities, and compiles to identical code for both
+    hybrid and purecap.
+\end{itemize}
+\jacob{TODO: Test pointer arithmetic too.}
+
+In addition, we included some benchmarks that (for practical reasons) we wrote
+in C, and therefore are influenced by the ability of the C compiler to optimise
+them:
+
+\begin{itemize}
+  \item \texttt{10-random-graph-walk-l1} performs a (C) random walk through a
+    graph that fits in the L1 D cache, to attempt to measure any fundamental
+    overhead in reading from a capability. Note that the purecap workload has a
+    smaller number of graph nodes, since each node is larger.\jacob{TODO:
+    Confirm the L1 cache size.}
+  \item \texttt{11-random-graph-walk-fixed} is the same, but keeping the number
+    of nodes constant. We picked 16384 nodes because this is the first
+    power-of-two working set size at which the hybrid and purecap variants start
+    to perform differently.
+\end{itemize}
+
+\jacob{TODO: Analysis}
+
+\subsection{Cache pressure}
+
+\jacob{Include and describe PMU results.}
+
+\subsection{Purecap ABI difficulties}
+
+\jacob{TODO: PLT lookup example. These are arguably important for security.}
+
+\subsection{Toolchain maturity}
+
+\jacob{TODO: Code examples.}
+
+\subsection{Security behaviours}
+
+\jacob{TODO: All the scbnds instructions. These are important for security.}
 
 \section{Conclusions}
 
