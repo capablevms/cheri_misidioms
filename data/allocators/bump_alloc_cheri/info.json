@@ -3,7 +3,7 @@
     {
         "mode": "repo",
         "repo": "https://github.com/capablevms/cheri_misidioms",
-        "commit": "5de04dcc5dbb86708c698cbda040eb75bbe105cd",
+        "commit": "c5bdf71f9d842d3df7657fade5ebee41121980c7",
         "lib_file": "./code/libbumpalloc_cheri.so",
         "build_file": "build.sh"
     },
