@@ -15,25 +15,29 @@
 // the first bounds length which is not precisely representable.
 
 int main() {
-    uint8_t *arr = malloc(256);
-    for (uint8_t i = 0; i < 255; i++)
-        arr[i] = i;
-    arr = realloc(arr, 1);
-    assert(cheri_tag_get(arr) && cheri_length_get(arr) >= 1);
+    char * secret = malloc(4242);
+    char ** arr = malloc(256 * sizeof(arr[0]));
+    for (int i = 0; i < 256; i++) {
+        arr[i] = secret + i;
+    }
+    arr = realloc(arr, 1 * sizeof(arr[0]));
+    assert(cheri_tag_get(arr) && cheri_length_get(arr) >= (1 * sizeof(arr[0])));
     // We cannot increase the bounds of a capability, so the following line
     // should fail
-    arr = realloc(arr, 256);
+    arr = realloc(arr, 256 * sizeof(arr[0]));
     if (arr == NULL) {
         printf("Attack unsuccessful\n");
         return 0;
     }
-    for (uint8_t i = 1; i < 255; i++) {
-        if (arr[i] != i) {
-            printf("Attack unsuccessful\n");
-            return 0;
-        }
+    printf("Original capability should remain unchanged:\n");
+    printf("  arr[0] = %#lp\n", arr[0]);
+    assert(cheri_is_equal_exact(arr[0], secret));
+    printf("No other capabilities should be exposed by the realloc:\n");
+    for (int i = 1; i < 256; i++) {
+        printf("  arr[%u] = %#lp\n", i, arr[i]);
+        assert(!cheri_tag_get(arr[i]));
     }
 
-    printf("Attack successful\n");
+    printf("Attack unsuccessful\n");
     return 0;
 }
