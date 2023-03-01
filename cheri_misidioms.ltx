@@ -458,13 +458,12 @@ are the API calls doing?}
 
 \input{./data/results/tests.tex}
 
-In this section we introduce a number of `attacks' on CHERI allocators (1
-spatial\andrei{which} and 4 temporal) and then run those attacks on the allocators from~\autoref{sec:cheriallocators}.
-The results are shown in \autoref{tab:atks}. Many allocators,
-including the default CheriBSD allocator, are vulnerable. It is beyond the
-scope of this paper to ascertain whether these vulnerabilities are because the
-allocators have not yet been fully adapted to CHERI or whether the necessary
-adaptations to the allocator are impractical.
+In this section we introduce a number of `attacks' on CHERI allocators (3
+temporal and 1 spatial) and then run those attacks on the allocators from
+\autoref{sec:cheriallocators}, with the results shown in \autoref{tab:atks}.
+As this shows, many allocators, including the default CheriBSD allocator
+jemalloc, are vulnerable to some or all of these attacks.
+
 In the rest of this section we explain each attack in detail, giving
 C code using the CHERI API when possible. We make use of the following
 CHERI functions:
@@ -493,17 +492,19 @@ Returns the bounds of a capability \texttt{c}.
 Returns true if the capability \texttt{c} is authentic or false otherwise.
 
 \setlength{\leftskip}{0pt}
-\subsection{\escbounds and \escperms: Allocator Optimisations can Cause Bounds or Permissions Escalation}
+
+
+\subsection{\narrowwiden: Narrowing then Widening}
 
 In the simple bump allocator of \autoref{lst:bump_alloc1}, \texttt{realloc} always
 allocates a new block of memory. While this is always correct, it is inefficient,
-in part because it requires copying part of the block's existing content. Performance
-focussed allocators thus try to avoid allocating a new block of memory when
-shrinking or maintaining a block's size, or if increasing the block's size does not
-make it overwrite its nearest neighbour. The latter optimisation is dangerous
-for a CHERI allocator.
+in part because it requires copying part of the block's existing content.
+Most allocators thus try to avoid allocating a new block of memory if: the
+new size is the same as, or smaller than, the existing size; or if
+the new size would not lead to the block overwriting its nearest neighbour.
+The latter optimisation is dangerous for a CHERI allocator.
 
-To see the danger, consider the case where \texttt{realloc} wants to increase a
+Consider the case where \texttt{realloc} wants to increase a
 block in size, and there is sufficient room to do so without moving the block.
 \texttt{realloc} needs to return a capability whose bounds encompass the new
 (larger) size --- but such a capability cannot be derived from the input
@@ -512,15 +513,17 @@ capability, since doing so would require increasing a capabilities abilities
 capability which it can use to derive a capability representing the new bounds.
 Let us call the `super' capability \texttt{SC} and introduce a function
 \texttt{size\_of\_bucket} which tells us the maximum space available for
-the block starting at \texttt{ptr}:
+the block starting at \texttt{ptr}. Eliding extraneous details (e.g.~about
+alignment), \texttt{realloc} will then look as follows:
 
 \begin{lstlisting}[language=C]
-void *realloc(void *ptr, size_of size) {
+void *realloc(void *ptr, size_t size) {
   if (size_of_bucket(ptr) <= size) {
     // No need to reallocate.
+    void *new_ptr =
+      cheri_address_set(SC, ptr),
     return cheri_bounds_set(
-      cheri_address_set(MC, cap),
-      size);
+      new_ptr, size);
   } else {
     // Allocate a larger region of memory
     // and copy the old contents.
@@ -528,34 +531,52 @@ void *realloc(void *ptr, size_of size) {
 }
 \end{lstlisting}
 
-\noindent The crucial optimisation is on line 2: if we already have enough
-memory for the resized block, we simply return a new capability with the same
-address as the original capability but with an increased upper bound. By
-definition, reducing the size of a block means that it will always fit within
-its existing bucket so the above optimisation is guaranteed to be correct.
+\noindent The crucial detail is in lines 4--7, which needs to deal with the
+case where the block is increasing in size but does not need to be moved. We
+first use \texttt{cheri\_address\_set} to derive a new capability from
+\texttt{SC} whose address is the same as \texttt{ptr} but whose will be
+those of \texttt{SC} (lines 5 and 6) before narrowing those bounds to
+\texttt{size} (lines 6 and 7).
 
-We can now observe two related attacks on this \fnc{realloc}, the first
-of which we term \escbounds. We can pass in a capability with narrow bounds and
-receive back a capability with wider bounds:
+When implemented in this style, an allocator can be subject to a trivial
+attack we call \narrowwiden:
 
 \begin{lstlisting}[language=C]
-uint8_t *arr = malloc(16);
-arr = cheri_bounds_set(arr, 8);
-assert(cheri_tag_get(arr) && cheri_length_get(arr) == 8);
-arr = realloc(arr, 16);
-assert(cheri_tag_get(arr) && cheri_length_get(arr) == 16);
+uint8_t *arr = malloc(256);
+for (uint8_t i = 0; i < 255; i++)
+  arr[i] = i;
+arr = realloc(arr, 1);
+arr = realloc(arr, 256);
+for (uint8_t i = 0; i < 255; i++)
+  assert(arr[i] == i);
 \end{lstlisting}
 
-We first \fnc{malloc} a block, returning a capability \emph{C1} with bounds
-$0\ldots{}n$ bytes (line 1). We then derive a new capability \emph{C2} with
-bounds $0\ldots{}m$ bytes where $m < n$ (lines 2 and 3). We can then use
-\fnc{realloc} to turn \emph{C2} back into \emph{C1} -- even though we had
-lost access to \emph{C1} entirely!
+This attack first \fnc{malloc}s a block of memory, receiving a capability with
+a bounds of 256 bytes (line 1). We fill the block of memory up with data so
+that we can later test the success of the attack (lines 2 and 3). We then
+\fnc{realloc} the block down to a single byte, receiving back a capability
+whose bounds are (though this is somewhat allocator dependent) 1 byte (line 5).
+At this point, we expect to have permanently lost access to bytes 2-255 (inc.)
+that were written in lines 2 and 3 such that \fnc{realloc}ing the block back to
+its original size should not allow us access to the values written to bytes
+2-255 (inc.). However, allocators using the optimisation above will often
+return a capability that covers the same portion of memory as the original
+block, without zeroing it, allowing us to read the original bytes out
+unchanged.
 
-An important variant of this attack is \escperms, where the bounds are
-set correctly, but other permissions (e.g.~read/write) are incorrectly changed:
+It might seem merely undesirable for \fnc{realloc} to allow us access to the
+original data, but in a capability system this attack is particularly
+egregious, as it may allow us to read capabilities that a programmer thought
+they were hiding from us.
 
-\laurie{XYZ}
+Mitigating this attack is relatively simple. When \fnc{realloc} shrinks a
+block, any excess storage should be zeroed. Note that we consider this safer
+than the seemingly similar alternative of zeroing excess storage when
+\fnc{realloc} enlarges a block, because this implies a delay in zeroing that
+might allow other attacks to read data unexpectedly.
+
+
+\laurie{the rest after this still needs editing}
 
 \subsubsection{Mitigations}
 
@@ -580,7 +601,7 @@ equal capabilities: one may wish to allow \emph{compatible} capabilities. The
 definition of compatibility is then crucial, particularly as different CHERI
 architectures have different bounds representations and permissions.
 
-\subsection{\narrowwiden: Narrowing then widening}
+\subsection{\narrowwiden: Narrwing then widening}
 
 When working with allocated memory, we are free to \fnc{realloc} a previously
 \fnc{malloc}ed chunk of memory to whatever aribtrary size we required. However,
@@ -601,11 +622,14 @@ give the protection expected.
 
 \begin{lstlisting}[language=C]
 uint8_t *arr = malloc(256);
-for (uint8_t i = 0; i < 255; i++) arr[i] = i;
+for (uint8_t i = 0; i < 255; i++)
+  arr[i] = i;
 arr = realloc(arr, 1);
-assert(cheri_tag_get(arr) && cheri_length_get(arr) == 1);
+assert(cheri_tag_get(arr) &&
+  cheri_length_get(arr) >= 1);
 arr = realloc(arr, 256);
-for (uint8_t i = 0; i < 255; i++) assert(arr[i] == i);
+for (uint8_t i = 0; i < 255; i++)
+  assert(arr[i] == i);
 \end{lstlisting}
 
 
@@ -616,6 +640,10 @@ size of a memory block is being narrowed. However, this may not be appropriate
 in all cases, particularly where capability bounds narrowing is being used to
 hide a secret from another compartment. In such cases, code which can widen a
 capability's bounds must be carefully audited.
+
+
+\subsection{\escperms: Allocator Optimisations can Cause
+Permissions Escalation}
 
 
 \subsection{\myundef: Authentic capabilities from undefined behaviour}
@@ -947,6 +975,11 @@ CHERI. This is inescapable overhead, additional instructions that must run to su
 
 
 \section{Conclusions}
+
+It is beyond the
+scope of this paper to ascertain whether these vulnerabilities are because the
+allocators have not yet been fully adapted to CHERI or whether the necessary
+adaptations to the allocator are impractical.
 
 CHERI allocator ports don't take full advantage of the new secure features. Is it difficult to backport CHERI features onto legacy allocators? Which allocator does best and why?
 Do we actually need a custom allocator, created specifically for CHERI?
