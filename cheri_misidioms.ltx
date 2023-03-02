@@ -90,7 +90,7 @@ Conceptually, a CHERI system starts with a `super' capability that has
 the maximum set of abilities. Each
 new \emph{child} capability must be derived from one or more \emph{parent}
 capabilities. Child capabilities must have the same, or fewer, abilities than its
-parent: put another way, capabilites' abilities monotonically decrease.
+parent: put another way, capabilities' abilities monotonically decrease.
 An \emph{authentic}\footnote{CHERI calls these
 `tagged' or `valid' (and their inauthentic counterparts `untagged' or `invalid').}
 capability is one that has been derived from authentic parents according to
@@ -607,10 +607,10 @@ equal capabilities: one may wish to allow \emph{compatible} capabilities. The
 definition of compatibility is then crucial, particularly as different CHERI
 architectures have different bounds representations and permissions.
 
-\subsection{\narrowwiden: Narrwing then widening}
+\subsection{\narrowwiden: Narrowing then widening}
 
 When working with allocated memory, we are free to \fnc{realloc} a previously
-\fnc{malloc}ed chunk of memory to whatever aribtrary size we required. However,
+\fnc{malloc}ed chunk of memory to whatever arbitrary size we required. However,
 in the world of capabilities, this becomes a slightly tricky issue.
 Capabilities themselves are intrinsically monotonically decreasing. As such,
 ``widening'' a capability needs to be handled differently than increasing the
@@ -951,7 +951,7 @@ Figure FIXME presents results for this experiment, showing that \jeremy{the majo
   \begin{center}
     \includegraphics[width=\textwidth]{fig/jemalloc_bm_overall.pdf}
   \end{center}
- \caption{\label{fig:eval jemalloc}Normalized perfomance characteristics of purecap \texttt{jemalloc}}
+ \caption{\label{fig:eval jemalloc}Normalized performance characteristics of purecap \texttt{jemalloc}}
 \end{figure*}
 
 For the remainder of this performance analysis, we focus exclusively on jemalloc since it is the default allocator for CheriBSD. We attempt to quantify the overhead of deploying capabilities with jemalloc in our memory-intensive benchmark workloads.
@@ -975,7 +975,7 @@ Instructions captured are user mode instructions (i.e.\ excluding kernel activit
 (i.e.\ excluding any OS boot activity).
 Figure FIXME shows the results, with purecap benchmark results presented relative to hybrid dynamic instruction counts.
 For the majority of benchmarks, we see that the pointer arithmetic (which in hybrid mode is captured as data processing) is now morello arithmetic, involving capabilities. Similarly, some load and store operations are now morello operations, loading and storing capabilities.
-We notice that sometoimes there is an overall increase in loads and stores for purecap, possibly caused by immature compiler code generation for Morello.
+We notice that sometimes there is an overall increase in loads and stores for purecap, possibly caused by immature compiler code generation for Morello.
 The `morello misc' overhead involves capability bounds checks, tag checks, etc --- which are intrinsic features of
 CHERI. This is inescapable overhead, additional instructions that must run to support capability-aware execution. In general, this overhead is within \jeremy{XXX 10?? } \% of the total instruction count. 
 
