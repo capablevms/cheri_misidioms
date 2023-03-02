@@ -2,15 +2,15 @@
 \begin{center}
 \begin{tabular}{lcccccc}
 \toprule
-Allocator & \tblescbounds & \tblescperms & \tblnarrowwiden & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
+Allocator & \tblescperms & \tblnarrowwiden & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
 \midrule
-bump-alloc-cheri & $\times$ & $\times$ & $\checkmark$ & $\oslash$ & $\oslash$ & $\checkmark$\\
-bump-alloc-nocheri & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
-dlmalloc-cheribuild & $\times$ & $\times$ & $\times$ & $\oslash$ & $\checkmark$ & $\checkmark$\\
-jemalloc & $\times$ & $\times$ & $\times$ & $\oslash$ & $\checkmark$ & $\times$\\
-libmalloc-simple & $\times$ & $\checkmark$ & $\times$ & $\oslash$ & $\oslash$ & $\times$\\
-snmalloc-cheribuild & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
-snmalloc-repo & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\oslash$
+bump-alloc-cheri & $\times$ & $\checkmark$ & $\oslash$ & $\oslash$ & $\checkmark$\\
+bump-alloc-nocheri & $\oslash$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
+dlmalloc-cheribuild & $\times$ & $\times$ & $\oslash$ & $\checkmark$ & $\checkmark$\\
+jemalloc & $\times$ & $\times$ & $\oslash$ & $\checkmark$ & $\times$\\
+libmalloc-simple & $\checkmark$ & $\times$ & $\oslash$ & $\oslash$ & $\times$\\
+snmalloc-cheribuild & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
+snmalloc-repo & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\oslash$
 %\input{./data/results/tests_extra.tex}
 \\ \bottomrule
 \end{tabular}
