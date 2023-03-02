@@ -1009,12 +1009,18 @@ programs \cite{boehm14artificial,richards99bench} frequently used for allocator 
 \end{table}
 
 For each benchmark, we compile \emph{hybrid} (i.e.\ with no capability support) and
-\emph{purecap} (i.e.\ using capabilities) binaries at O3 optimization level with the Morello LLVM toolchain.
+\emph{purecap} (i.e.\ using capabilities) binaries at \texttt{O3} optimization level with the Morello LLVM toolchain.
 We use \texttt{LD\_{}PRELOAD} to link with the various memory allocators.
 We measure execution times for each benchmark (hybrid and purecap variants) with
 each allocator on CheriBSD and report geometric mean slowdown across the benchmarks
 relative to the platform default allocator which is a CHERI-extended version of \emph{jemalloc}.
-Figure FIXME presents results for this experiment, showing that \jeremy{the majority of allocators are significantly slower than jemalloc (presumably because they are less optimized)}.
+%Figure FIXME presents results for this experiment, showing that 
+%\jeremy{the majority of allocators are significantly slower than jemalloc (presumably because they are less optimized)}. 
+Benchmarks compiled with snmalloc saw a geometric mean speed-up of 1.258 times compared to the system default jemalloc
+when compiled in \emph{hybrid} and 1.24 times when compiled in \emph{purecap}.
+\dejice{We could not get complete figures for all the other allocators across all benchmarks 
+as the tests were aborted.}
+
 
 \begin{figure*}
   \begin{center}
