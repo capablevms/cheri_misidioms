@@ -387,15 +387,11 @@ complete, we have not included them in this paper.
 As we saw from \autoref{lst:bump_alloc1}, simple allocators don't need to be
 adapted for CHERI at all, though they then derive only minor security gains. In
 practise, we expect most allocators to at least reflect the capability bound
-changes of \autoref{lst:bump_alloc2}. \laurie{this is speculative: andrei,
-jeremy, is this correct?}\andrei{If this is what's up until this point, I think yes. If it's about after this point, I think `dlmalloc-pkg64c` is good evidence if that} More sophisticated allocators will also tend to tend
-to crash without at least some modifications; a concrete example of this is the
-allocators provided by \texttt{pkg64c} -- we have found no evidence that any
-CHERI-specific code has been added to their sources, but they still compile on
-CheriBSD. However, they cannot execute a simple validation test without
-crashing. Furthermore, existing allocator metadata must be updated to include
-capability data at least to some degree, in order to be able to derive
-capabilities with appropriate bounds.
+changes of \autoref{lst:bump_alloc2}. Indeed, more sophisticated allocators will also tend
+to crash without at least some modifications. Most of the allocators available
+via CHERI allocators (e.g.~\laurie{list a couple}) have had no source-level
+changes for CHERI, so while they compile correctly, we found they crashed
+almost immediately upon use.
 
 Understanding all of the CHERI modifications to all of the allocators under
 consideration would lead to us not being able to see the forest for the trees.
@@ -422,9 +418,9 @@ least) three CHERI APIs in common use. We define these APIs as follows:
 \begin{itemize}
   \item
 The \emph{builtin} API consists of C functions provided as LLVM / Clang
-extensions (e.g.~\texttt{\_\_builtin\_cheri\_base\_get}). There are 39 generic
-CHERI functions, with Morello defining four more. As these builtins are
-provided by the compiler, we note that they are available by default.
+extensions (e.g.~\texttt{\_\_builtin\_cheri\_base\_get}) and available
+to all C code. There are 39 generic
+CHERI functions, with Morello defining four more.
 
 \item
 The \emph{cheric.h} API is deprecated, but still frequently used,
