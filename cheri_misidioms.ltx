@@ -838,6 +838,15 @@ specified allocator. We discuss each of these failures in turn:
         such, due to tightening the bounds before widening them, we trigger a
         \texttt{SIGPROT} during the widening process, essentially having CHERI
         capture this implementation bug.
+    \item[\escunauthentic] In all failure cases, the test crashes upon
+        attempting to modify an untagged \andrei{check consistent wording}
+        capability. While CHERI is correct to identify the attempted
+        modification of an untagged capability, we don't ever attempt to
+        dereference this capability, so there is a question of whether an
+        outright crash is more suitable than graceful termination. It might
+        depend on \fnc{realloc} implementation, as the \fnc{memcpy} within our
+        \memalloc{bump\_alloc} implementation does require a derefernce, thus
+        triggering a \texttt{SIGPROT}.
 \end{description}
 
 \subsection{Capability overflow}
