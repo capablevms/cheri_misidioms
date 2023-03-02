@@ -533,7 +533,7 @@ void *realloc(void *ptr, size_t size) {
 }
 \end{lstlisting}
 
-\noindent The crucial detail is in lines 4--7, which need to deal with the
+\noindent Lines 4--7 need to deal with the
 case where the block is to be increased in size but will still fit
 in its current bucket. We
 first use \fnc{cheri\_address\_set} to derive a new capability from
