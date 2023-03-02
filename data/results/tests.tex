@@ -2,16 +2,16 @@
 \begin{center}
 \begin{tabular}{lcccccc}
 \toprule
-Allocator & \tblescperms & \tblnarrowwiden & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
+Allocator & \tblescperms & \tblescunauthentic & \tblnarrowwiden & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
 \midrule
-bump-alloc-cheri & $\times$ & $\checkmark$ & $\oslash$ & $\oslash$ & $\checkmark$\\
-bump-alloc-nocheri & $\oslash$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
-dlmalloc-cheribuild & $\times$ & $\times$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
-jemalloc & $\times$ & $\times$ & $\checkmark$ & $\checkmark$ & $\times$\\
-libmalloc-simple & $\checkmark$ & $\times$ & $\checkmark$ & $\checkmark$ & $\times$\\
-snmalloc-cheribuild & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
-snmalloc-repo & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
-\bottomrule
+bump-alloc-cheri & $\times$ & $\oslash$ & $\checkmark$ & $\oslash$ & $\checkmark$ & $\checkmark$\\
+bump-alloc-nocheri & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\times$ & $\checkmark$\\
+dlmalloc-cheribuild & $\times$ & $\oslash$ & $\times$ & $\times$ & $\checkmark$ & $\checkmark$\\
+jemalloc & $\times$ & $\oslash$ & $\times$ & $\times$ & $\checkmark$ & $\times$\\
+libmalloc-simple & $\checkmark$ & $\checkmark$ & $\times$ & $\times$ & $\checkmark$ & $\times$\\
+snmalloc-cheribuild & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
+snmalloc-repo & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$
+\\ \bottomrule
 \end{tabular}
 \caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}
 \label{tab:atks}
