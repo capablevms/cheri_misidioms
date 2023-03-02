@@ -750,48 +750,33 @@ as bounds and randomly allocates multiple blocks to see if any of the
 resulting capabilities overlap.
 
 
-\subsection{Failed attacks}
+\subsection{Failed Attacks}
 
-In~\autoref{tab:atks}, there are a number of entries indicated by $\oslash$.
-These entries indicate attacks that have failed due to various reasons on the
-specified allocator. We discuss each of these failures in turn:
-\begin{description}
-    \item[\overlap over both bump allocators] This particular test allocates
-        much more memory than our naive allocator implementations have been
-        designed to handle, leading to a quick out-of-memory issue.
-    \item[\narrowwiden cap over CHERI-aware bump allocator] \andrei{investigating}
-    \item[\overlap over \memalloc{snmalloc-cheribuild}] The attack triggers a
-        \texttt{SIGPROT} during an allocation. As this particular allocator is
-        an older version of \memalloc{snmalloc-repo}, in which the issue is not
-        present, we attribute the failure due to a bug, which was later fixed.
-    \item[\escperms over non-CHERI-aware bump allocator] Our naive
-        \fnc{realloc} implementation performs a \fnc{memcpy} of \texttt{size}
-        bytes from the old memory block to the new one, where \texttt{size} is
-        the \fnc{realloc} amount. This is done to preserve the original data,
-        as we do not store metadata regarding the original allocation size. As
-        such, due to tightening the bounds before widening them, we trigger a
-        \texttt{SIGPROT} during the widening process, essentially having CHERI
-        capture this implementation bug.
-    \item[\escinauthentic] In all failure cases, the test crashes upon
-        attempting to modify an untagged \andrei{check consistent wording}
-        capability. While CHERI is correct to identify the attempted
-        modification of an untagged capability, we don't ever attempt to
-        dereference this capability, so there is a question of whether an
-        outright crash is more suitable than graceful termination. It might
-        depend on \fnc{realloc} implementation, as the \fnc{memcpy} within our
-        \memalloc{bump\_alloc} implementation does require a derefernce, thus
-        triggering a \texttt{SIGPROT}.
-\end{description}
+Several attacks in~\autoref{tab:atks} failed ($\oslash$) in a manner that means
+we cannot state whether the allocator is vulnerable or invulnerable. In
+this subsection we explain each such failure.
 
-\subsection{Capability overflow}
+\escperms fails on \memalloc{bump-alloc-nocheri} because its \fnc{realloc}
+causes a \lstinline{SIGPROT} when trying to increase a block in size. By
+design, \memalloc{bump-alloc-cheri} contains a version of \fnc{realloc} which
+fixes this issue. See Section~\autoref{sec:adapting_to_cheri} for more details.
 
-\laurie{is this possible?}
-\jacob{Not when used in the obvious way (e.g. dereferencing), but extreme
-(65-bit) bounds behave in non-portable ways when queried explicitly, e.g.
-saturating on Morello, and this isn't obvious in the CHERI API\@. This makes
-manually testing the bounds difficult.}
-\laurie{interesting! can we make a simple code example which shows this?}
-\jacob{Yes, if there's time!}
+\narrowwiden cap over CHERI-aware bump allocator \andrei{investigating}
+
+\overlap fails on \memalloc{snmalloc-cheribuild} due to what appears to be
+an internal snmalloc bug. Because of this, we included a newer version
+of snmalloc as \memalloc{snmalloc-repo} which is invulnerable to \overlap.
+
+\laurie{what about snmalloc-repo and undef?}
+
+In the case of \escinauthentic, several allocators fall into something of a
+grey zone: the allocators cause a \lstinline{SIGPROT} when they try to perform
+an operation on the inauthentic capability. In none of theses cases does the
+allocator check the capability's authenticity, and it is an open question as to
+whether anyone involved in porting the allocator to CHERI explicitly realised
+that they would \lstinline{SIGPROT} with an inauthentic capability. However, we
+prefer to give the allocators the benefit of doubt, and have classified them as
+invulnerable to this attack.
 
 
 \section{Performance}
