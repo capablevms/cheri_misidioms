@@ -464,11 +464,17 @@ temporal and 1 spatial) and then run those attacks on the allocators from
 Only snmalloc is immune to all the attacks; even the default CheriBSD allocator
 jemalloc is vulnerable to several of the attacks.
 
-In the rest of this section we explain each attack, C code using the CHERI API
-when possible, and also explaining possible mitigations. The code we show in
-the paper is sometimes a simplified version of that we run: the latter must be
-considered the definitive source of truth for \autoref{sec:cheriallocators}.
-All our code is available on GitHub.
+In the rest of this section we explain each attack, giving C code using the
+CHERI API. Our code examples assume that we start with a `non-attacker' who
+allocates memory and hands it over to another part of the system which has been
+taken over by an `attacker'. We model this via a series of \lstinline{assert}s:
+if all the \lstinline{assert}s pass, the attack is successful. The code we show
+in the paper is elided relative to the version we run, which contains changes
+that makes it possible for us to automate the running of the attacks over
+multiple allocators. For each (allocator, attack) pair, we state whether it is
+vulnerable, invulnerable, or whether the attack fails for other reasons. The
+full code (available on GitHub) must be considered the definitive source of
+truth for \autoref{sec:cheriallocators}.
 
 In the rest of this section we make use of the following CHERI functions:
 
