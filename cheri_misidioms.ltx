@@ -508,9 +508,10 @@ The latter optimisation is dangerous for a CHERI allocator.
 Consider the case where \texttt{realloc} wants to increase a
 block in size, and there is sufficient room to do so without moving the block.
 \texttt{realloc} needs to return a capability whose bounds encompass the new
-(larger) size --- but such a capability cannot be derived from the input
-capability, since doing so would require increasing a capabilities abilities
-(see \pageref{abilities}). Thus the allocator needs access to a `super'
+(larger) size. However, such a capability cannot be derived from the input
+capability, since doing so would lead to in inauthentic capability, since
+we would violate the property that a capability's abilities must monotonically
+decrease. Thus the allocator needs access to a `super'
 capability which it can use to derive a capability representing the new bounds.
 Let us call the `super' capability \texttt{SC} and introduce a function
 \texttt{size\_of\_bucket} which tells us the maximum space available for
@@ -533,9 +534,10 @@ void *realloc(void *ptr, size_t size) {
 \end{lstlisting}
 
 \noindent The crucial detail is in lines 4--7, which needs to deal with the
-case where the block is increasing in size but does not need to be moved. We
+case where the block is to be increased in size but will still fit
+in its current bucket. We
 first use \texttt{cheri\_address\_set} to derive a new capability from
-\texttt{SC} whose address is the same as \texttt{ptr} but whose will be
+\texttt{SC} whose address is the same as \texttt{ptr} but whose bounds will be
 those of \texttt{SC} (lines 5 and 6) before narrowing those bounds to
 \texttt{size} (lines 6 and 7).
 
@@ -556,10 +558,11 @@ This attack first \fnc{malloc}s a block of memory, receiving a capability with
 a bounds of 256 bytes (line 1). We fill the block of memory up with data so
 that we can later test the success of the attack (lines 2 and 3). We then
 \fnc{realloc} the block down to a single byte, receiving back a capability
-whose bounds are (though this is somewhat allocator dependent) 1 byte (line 5).
-At this point, we expect to have permanently lost access to bytes 2-255 (inc.)
-that were written in lines 2 and 3 such that \fnc{realloc}ing the block back to
-its original size should not allow us access to the values written to bytes
+whose bounds are 1 byte\footnote{Some allocators return bigger bounds, but
+we ignore that possibility for now.} (line 5).
+At this point, we expect to have permanently lost access to the values written to bytes 2-255 (inc.)
+in lines 2 and 3. If we then \fnc{realloc} the block back to
+its original size we should not have access to the values written to bytes
 2-255 (inc.). However, allocators using the optimisation above will often
 return a capability that covers the same portion of memory as the original
 block, without zeroing it, allowing us to read the original bytes out
@@ -568,7 +571,9 @@ unchanged.
 It might seem merely undesirable for \fnc{realloc} to allow us access to the
 original data, but in a capability system this attack is particularly
 egregious, as it may allow us to read capabilities that a programmer thought
-they were hiding from us.
+they were hiding from us. In other words, allocators subject to this attack
+can give an attacker access to capabilities that gives them new abilities,
+undermining the security of the entire software.
 
 Mitigating this attack is relatively simple. When \fnc{realloc} shrinks a
 block, any excess storage should be zeroed. Note that we consider this safer
