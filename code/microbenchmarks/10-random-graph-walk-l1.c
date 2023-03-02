@@ -12,6 +12,9 @@
 // performing similar operations within them. We hope that this would allow
 // examination of pointer-chasing performance without having to worry too much
 // about cache misses.
+//
+// Morello has a 64KB L1 data cache for each core:
+//    https://developer.arm.com/documentation/102278/latest
 
 #include <assert.h>
 #include <inttypes.h>
@@ -24,7 +27,7 @@
 
 int main(int argc, char const * argv[]) {
     struct Args args = process_args(argc, argv);
-    struct Node * entry = generate_with_max_size(64 * 1024); // TODO: Is this correct?
+    struct Node * entry = generate_with_max_size(64 * 1024);
     before_test(&args);
     size_t visits = args.fast ? 42 : 420000000;
     uint64_t result = walk(entry, visits);
