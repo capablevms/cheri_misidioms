@@ -1036,17 +1036,25 @@ indicating that there is significantly increased pressure on the memory system d
 
 
 Finally we considered the dynamic instruction counts for
-these executions, categorizing instructions based on their
-opcode types (following the classification from the Arm index-by-opcode in the Morello architecture reference manual - cite).
+these benchmark executions, categorizing instructions based on their
+opcode types---following the top-level classification from the index-by-opcode section of the Morello architecture reference manual \cite{arm22arm}).
 We generated instruction counts using the Morello QEMU emulator with a custom plugin, and validated a subset of these results by cross-checking them against the Arm FVP emulator for Morello.
 Instructions captured are user mode instructions (i.e.\ excluding kernel activity) during benchmark execution
 (i.e.\ excluding any OS boot activity).
-Figure FIXME shows the results, with purecap benchmark results presented relative to hybrid dynamic instruction counts.
+Figure \ref{fig:instrmix} shows the results, with purecap benchmark results presented relative to hybrid dynamic instruction counts.
 For the majority of benchmarks, we see that the pointer arithmetic (which in hybrid mode is captured as data processing) is now morello arithmetic, involving capabilities. Similarly, some load and store operations are now morello operations, loading and storing capabilities.
 We notice that sometimes there is an overall increase in loads and stores for purecap, possibly caused by immature compiler code generation for Morello.
 The `morello misc' overhead involves capability bounds checks, tag checks, etc --- which are intrinsic features of
 CHERI. This is inescapable overhead, additional instructions that must run to support capability-aware execution. In general, this overhead is within \jeremy{XXX 10?? } \% of the total instruction count. 
 
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=1.2\columnwidth]{fig/instruction_mix/stacked_bar_chart.pdf}
+  \end{center}
+  \caption{\label{fig:instrmix}Dynamic instruction mix for purecap (left-hand bar) and hybrid (right-hand bar) benchmark runs}
+\end{figure}
+
+%%%
 
 \section{Conclusions}
 
