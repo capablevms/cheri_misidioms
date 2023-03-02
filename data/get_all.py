@@ -368,8 +368,8 @@ def do_table_tests(results):
         entry = [result['name']]
         entry.extend(do_table_tests_entries(result, test_names))
         entries.append(' & '.join(entry))
-    epilogue = [r'\input{./data/results/tests_extra.tex}']
-    epilogue += [r'\\ \bottomrule', r'\end{tabular}']
+    # epilogue = [r'\input{./data/results/tests_extra.tex}']
+    epilogue = [r'\\ \bottomrule', r'\end{tabular}']
     epilogue += [r'\caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}']
     epilogue += [r'\label{tab:atks}', r'\end{center}', r'\end{table}']
     table = '\n'.join(['\n'.join(preamble), '\\\\\n'.join(entries), '\n'.join(epilogue)])
