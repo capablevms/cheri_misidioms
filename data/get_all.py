@@ -355,12 +355,13 @@ def do_table_tests_entries(result, test_names):
     return new_entry
 
 def do_table_tests(results):
-    latexify = lambda x : r'\tbl' + x.replace('_', '').replace('2', "two").replace('3', "three")
+    # latexify = lambda x : r'\tbl' + x.replace('_', '').replace('2', "two").replace('3', "three")
     test_names = [os.path.splitext(x)[0] for x in map(os.path.basename, sorted(tests)) if not os.path.splitext(x)[0] in (config["table_tests_to_ignore"] + config["tests_to_ignore"])]
-    header_fields = len(test_names) * 'c'
-    preamble = [r'\begin{table}[t]', r'\begin{center}', r'\begin{tabular}{l' + header_fields + r'}']
-    preamble += [r'\toprule', r'Allocator & ' + ' & '.join(map(latexify, test_names)) + r'\\']
-    preamble += [r'\midrule']
+    # header_fields = len(test_names) * 'c'
+    preamble = []
+    # preamble += [r'\begin{table}[t]', r'\begin{center}', r'\begin{tabular}{l' + header_fields + r'}']
+    # preamble += [r'\toprule', r'Allocator & ' + ' & '.join(map(latexify, test_names)) + r'\\']
+    # preamble += [r'\midrule']
     entries = []
     for result in results:
         if not result['results'] or not result['validated']:
@@ -368,18 +369,20 @@ def do_table_tests(results):
         entry = [result['name']]
         entry.extend(do_table_tests_entries(result, test_names))
         entries.append(' & '.join(entry))
-    epilogue = [r'\input{./data/results/tests_extra.tex}']
-    epilogue += [r'\\ \bottomrule', r'\end{tabular}']
-    epilogue += [r'\caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}']
-    epilogue += [r'\label{tab:atks}', r'\end{center}', r'\end{table}']
+    epilogue = []
+    # epilogue = [r'\input{./data/results/tests_extra.tex}']
+    # epilogue += [r'\\ \bottomrule', r'\end{tabular}']
+    # epilogue += [r'\caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}']
+    # epilogue += [r'\label{tab:atks}', r'\end{center}', r'\end{table}']
     table = '\n'.join(['\n'.join(preamble), '\\\\\n'.join(entries), '\n'.join(epilogue)])
     return table
 
 def do_table_slocs(results):
-    preamble = [r'\begin{table}[tb]', r'\begin{center}', r'\begin{tabular}{lcrrr}']
-    preamble += [r'\toprule', ' & '.join(['Allocator', 'Version', 'SLoC', r'\multicolumn{2}{c}{Changed}']) + r'\\']
-    preamble += [r'\cmidrule(lr){4-5}', ' & '.join([' ', ' ', ' ', 'LoC', r'\multicolumn{1}{c}{\%}']) + r'\\']
-    preamble += [r'\midrule']
+    preamble = []
+    # preamble += [r'\begin{table}[tb]', r'\begin{center}', r'\begin{tabular}{lcrrr}']
+    # preamble += [r'\toprule', ' & '.join(['Allocator', 'Version', 'SLoC', r'\multicolumn{2}{c}{Changed}']) + r'\\']
+    # preamble += [r'\cmidrule(lr){4-5}', ' & '.join([' ', ' ', ' ', 'LoC', r'\multicolumn{1}{c}{\%}']) + r'\\']
+    # preamble += [r'\midrule']
     entries = []
     for result in results:
         entry = [result['name']]
@@ -391,9 +394,10 @@ def do_table_slocs(results):
         else:
             entry.extend(['-', '-', '-'])
         entries.append(' & '.join(map(str, entry)))
-    epilogue = [r'\\ \bottomrule', r'\end{tabular}', r'\end{center}']
-    epilogue += [r'\caption{The allocators we examined, their size in Source Lines of Code (SLoC), and the number of lines changed to adapt them for pure capability CheriBSD.}']
-    epilogue += [r'\label{tab:allocator_summary}', r'\end{table}']
+    epilogue = []
+    # epilogue += [r'\\ \bottomrule', r'\end{tabular}', r'\end{center}']
+    # epilogue += [r'\caption{The allocators we examined, their size in Source Lines of Code (SLoC), and the number of lines changed to adapt them for pure capability CheriBSD.}']
+    # epilogue += [r'\label{tab:allocator_summary}', r'\end{table}']
     table = '\n'.join(['\n'.join(preamble), '\\\\\n'.join(entries), '\n'.join(epilogue)])
     return table
 
