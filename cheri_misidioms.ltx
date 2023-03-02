@@ -989,11 +989,11 @@ workloads \cite{boehm14artificial,richards99bench} that are frequently used for 
       cfrac & mimalloc & alloc, int compute \\
       espresso & mimalloc & alloc, int compute \\
       glibc-simple & mimalloc & alloc \\
-      glibc-thread & mimalloc & alloc, multi-thread \\
+      %glibc-thread & mimalloc & alloc, multi-thread \\
       mstress & mimalloc & alloc \\
       richards & richards & pointer chasing \\
-      rptest & mimalloc & \dejice{alloc, multi-thread} \\
-      xmalloc & mimalloc & alloc, multi-thread \\ \hline
+      %rptest & mimalloc & \dejice{alloc, multi-thread} \\
+      %xmalloc & mimalloc & alloc, multi-thread \\ \hline
     \end{tabular}
   \end{center}
   \caption{\label{tab:benchmarks}Benchmarks used for CHERI allocator performance evaluation}
@@ -1001,7 +1001,8 @@ workloads \cite{boehm14artificial,richards99bench} that are frequently used for 
 
 For each benchmark, we compile \emph{hybrid} (i.e.\ with no capability support) and
 \emph{purecap} (i.e.\ using capabilities) binaries at O3 optimization level with the Morello LLVM toolchain.
-We use \texttt{LD\_{}PRELOAD} to link with the various memory allocators. We measure execution times for each benchmark (hybrid and purecap variants) with
+We use \texttt{LD\_{}PRELOAD} to link with the various memory allocators.
+We measure execution times for each benchmark (hybrid and purecap variants) with
 each allocator on CheriBSD and report geometric mean slowdown across the benchmarks
 relative to the platform default allocator which is a CHERI-extended version of \emph{jemalloc}.
 Figure FIXME presents results for this experiment, showing that \jeremy{the majority of allocators are significantly slower than jemalloc (presumably because they are less optimized)}.
@@ -1014,9 +1015,12 @@ Figure FIXME presents results for this experiment, showing that \jeremy{the majo
 \end{figure*}
 
 For the remainder of this performance analysis, we focus exclusively on jemalloc since it is the default allocator for CheriBSD. We attempt to quantify the overhead of deploying capabilities with jemalloc in our memory-intensive benchmark workloads.
+As above, each benchmark is compiled as \emph{hybrid} and \emph{purecap} binaries with \texttt{-O3} optimization levels
+and the geometric mean of 30 execution runs are used for evaluation. 
 When looking at individual benchmark performance, it is clear that the slowdown is highly dependent on the nature of each workload.
-Figure FIXME shows the relative slowdown of the purecap binaries for each benchmark with jemalloc, relative to the hybrid binaries.
-Notice which benchmarks have highest relative slowdowns - binary tree cfrac, espresso, mstress - highly allocation intensive. Also richards - which is \emph{not} allocation intensive but performs many pointer-chasing operations.
+Figure \ref{fig:eval jemalloc}  shows the relative slowdown of the purecap
+binaries for each benchmark with jemalloc, relative to the hybrid binaries.
+Notice which benchmarks have highest relative slowdowns - binary trees, cfrac, espresso, mstress - highly allocation intensive. Also richards - which is \emph{not} allocation intensive but performs many pointer-chasing operations.
 
 Next we considered the hardware performance counter metrics for these executions, using the \texttt{pmcstat} tool on CheriBSD. Again, we report purecap results relative to the corresponding hybrid results. We note large overheads in memory access \jeremy{what else?}
 indicating that there is significantly increased pressure on the memory system due to capability values being twice the size of raw pointers.
