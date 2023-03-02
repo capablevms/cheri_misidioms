@@ -462,17 +462,22 @@ are the API calls doing?}
 In this section we introduce a number of `attacks' on CHERI allocators (3
 temporal and 1 spatial) and then run those attacks on the allocators from
 \autoref{sec:cheriallocators}, with the results shown in \autoref{tab:atks}.
-As this shows, many allocators, including the default CheriBSD allocator
-jemalloc, are vulnerable to some or all of these attacks.
+At least one allocator is vulnerable to each of these attacks; only
+snmalloc is immune to all the attacks; and the default CheriBSD allocator
+jemalloc is vulnerable to several of the attacks.
 
-In the rest of this section we explain each attack in detail, giving
-C code using the CHERI API when possible. We make use of the following
-CHERI functions:
+In the rest of this section we explain each attack, C code using the CHERI API
+when possible, and also explaining possible mitigations. The code we show in
+the paper is sometimes a simplified version of that we run: the latter must be
+considered the definitive source of truth for \autoref{sec:cheriallocators}.
+All our code is available on GitHub.
+
+In the rest of this section we make use of the following CHERI functions:
 
 \setlength{\leftskip}{6pt}
 
 \vspace{6pt}
-\noindent\texttt{void *cheri\_address\_set(void *c, \\vaddr\_t a)}\\
+\noindent\texttt{void *cheri\_address\_set(void *c, \\vaddr\_t a)}~~~~
 Takes a capability \texttt{c} as input and produces a new capability
 that is a copy of \texttt{c} except with the address \texttt{a}.
 \texttt{vaddr\_t} is a CHERI C integer type that is guaranteed to be big enough
@@ -480,22 +485,32 @@ to represent addresses but, unlike \texttt{intptr\_t} is not big enough to
 represent capabilities.
 
 \vspace{6pt}
-\noindent\texttt{void *cheri\_bounds\_set(void *c, \\size\_t s)}\\
+\noindent\texttt{void *cheri\_bounds\_set(void *c, \\size\_t s)}
 Takes a capability \texttt{c} as input and produces a new capability
 that is a copy of \texttt{c} except with bounds of size \texttt{s}.
 
 \vspace{6pt}
-\noindent\texttt{size\_t cheri\_length\_get(void *c)}\\
+\noindent\texttt{size\_t cheri\_length\_get(void *c)}
 Returns the bounds of a capability \texttt{c}.
 
 \vspace{6pt}
-\noindent\texttt{\_Bool cheri\_tag\_get(void *c)}\\
+\noindent\texttt{\_Bool cheri\_tag\_get(void *c)}
 Returns true if the capability \texttt{c} is authentic or false otherwise.
+
+\vspace{6pt}
+\noindent\texttt{void* cheri\_perms\_and(void *c,\\ size\_t perms)}
+Return the capability \texttt{c} with its permissions bitwise-ANDed
+with \texttt{perms}.
+
+\vspace{6pt}
+\noindent\texttt{size\_t cheri\_perms\_get(void *c)}
+Return the permissions of capability \texttt{c}.
 
 \setlength{\leftskip}{0pt}
 
 
-\subsection{\narrowwiden: Narrowing then Widening}
+\subsection{\narrowwiden: Narrowing then Widening Can Allow Access to Hidden Data}
+\label{narrowwiden}
 
 In the simple bump allocator of \autoref{lst:bump_alloc1}, \texttt{realloc} always
 allocates a new block of memory. While this is always correct, it is inefficient,
@@ -582,30 +597,51 @@ than the seemingly similar alternative of zeroing excess storage when
 might allow other attacks to read data unexpectedly.
 
 
-\laurie{the rest after this still needs editing}
+\subsection{\escperms: Escalate Permissions}
+
+In situations where an allocator uses a `super' capability (as seen in
+e.g.~\autoref{narrowwiden}), there is also the potential to upgrade a
+capabilities permissions as shown in the following simple attack:
+
+\begin{lstlisting}[language=C]
+uint8_t *arr = malloc(16);
+assert(cheri_perms_get(arr)
+  & CHERI_PERM_STORE));
+arr = cheri_perms_and(arr, 0);
+assert((cheri_perms_get(arr)
+  & CHERI_PERM_STORE) == 0);
+arr = realloc(arr, 16);
+assert(cheri_perms_get(arr)
+  & CHERI_PERM_STORE);
+\end{lstlisting}
+
+We first allocate a block (line 1) and then check that the capability returned
+allows us to store data (\texttt{CHERI\_PERM\-\_STORE}) to that block (lines 2
+and 3). We then deliberately remove the store permission (line 4), checking
+that this permission really has been removed (lines 5 and 6). We then call
+\fnc{realloc} without changing the blocks size and check whether we have
+regained the ability to store data via the capability.
+
 
 \subsubsection{Mitigations}
 
-Privilege escalation occurs when a function fails to fully validate a possibly
-lower-privileged capability correctly before using a higher-privileged
-capability. Exactly what validation should occur is highly situation dependent,
-which is why it is easy to get wrong.
+There are two ways of mitigating such an attack. The simplest one is to AND
+the output capability's permissions with the input capability's permissions:
+doing so guarantees that the output capability has no more permissions
+than the input capability.
 
-In most, perhaps all, reasonable cases, the input CHERI capability should be
-authentic and the capability's address in-bounds. However, as our
-\fnc{realloc} attack shows, these two conditions are necessary but not
-sufficient.  For example, one solution to the \fnc{realloc} attack is to
-check that \fnc{cap}'s address refers to the start of a memory block and
-that the capability's permissions are equal to the permissions returned by the
-most recent \fnc{malloc} or \fnc{realloc} for that memory block. This
-implies that the memory allocator must either store, or be able to derive by
-other means, the capability returned by the most recent \fnc{malloc} or
-\fnc{realloc} call.
+However, in some cases, one should consider validating the input capability to
+decide whether any action should be possible. For example, if handed a
+capability whose address is genuinely an allocated block, but where the
+capability has the read and write permissions unset, should \fnc{realloc}
+refuse to reallocate the block? Perhaps \fnc{realloc} should check that
+the capability handed to it has exactly the same permissions as the
+capability handed out by the most recent \fnc{malloc} or \fnc{realloc}?
+There are probably no universal answers to all possibilities, but some may be
+easier to rule upon than others.
 
-However, it may be too restrictive to restrict \fnc{realloc} to precisely
-equal capabilities: one may wish to allow \emph{compatible} capabilities. The
-definition of compatibility is then crucial, particularly as different CHERI
-architectures have different bounds representations and permissions.
+
+\laurie{the rest after this still needs editing}
 
 \subsection{\narrowwiden: Narrowing then widening}
 
