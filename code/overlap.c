@@ -38,7 +38,7 @@ int main() {
 
     size_t *unrepresentables = calloc(NUM_UNREPRESENTABLES, sizeof(size_t));
     size_t num_unrepresentables = 0;
-    size_t i = data_limits.rlim_cur * 20;
+    size_t i = 0;
     while (num_unrepresentables < NUM_UNREPRESENTABLES) {
         size_t rl = cheri_representable_length(i);
         if (rl > i) {
