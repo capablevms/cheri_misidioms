@@ -3,7 +3,7 @@
 
 char *heap = NULL;
 char *heap_start = NULL;
-size_t HEAP_SIZE = 0x1000000;
+size_t HEAP_SIZE = 0x1000000000;
 
 void *malloc_init() {
   heap = heap_start = mmap(NULL, HEAP_SIZE,
