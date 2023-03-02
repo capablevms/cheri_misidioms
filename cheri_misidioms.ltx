@@ -509,14 +509,14 @@ Consider the case where \texttt{realloc} wants to increase a
 block in size, and there is sufficient room to do so without moving the block.
 \texttt{realloc} needs to return a capability whose bounds encompass the new
 (larger) size. However, such a capability cannot be derived from the input
-capability, since doing so would lead to in inauthentic capability, since
+capability, as doing so would lead to an inauthentic capability, and
 we would violate the property that a capability's abilities must monotonically
-decrease. Thus the allocator needs access to a `super'
+decrease. Thus, the allocator needs access to a `super'
 capability which it can use to derive a capability representing the new bounds.
 Let us call the `super' capability \texttt{SC} and introduce a function
 \texttt{size\_of\_bucket} which tells us the maximum space available for
 the block starting at \texttt{ptr}. Eliding extraneous details (e.g.~about
-alignment), \texttt{realloc} will then look as follows:
+alignment), \fnc{realloc} will then look as follows:
 
 \begin{lstlisting}[language=C]
 void *realloc(void *ptr, size_t size) {
@@ -533,10 +533,10 @@ void *realloc(void *ptr, size_t size) {
 }
 \end{lstlisting}
 
-\noindent The crucial detail is in lines 4--7, which needs to deal with the
+\noindent The crucial detail is in lines 4--7, which need to deal with the
 case where the block is to be increased in size but will still fit
 in its current bucket. We
-first use \texttt{cheri\_address\_set} to derive a new capability from
+first use \fnc{cheri\_address\_set} to derive a new capability from
 \texttt{SC} whose address is the same as \texttt{ptr} but whose bounds will be
 those of \texttt{SC} (lines 5 and 6) before narrowing those bounds to
 \texttt{size} (lines 6 and 7).
@@ -572,7 +572,7 @@ It might seem merely undesirable for \fnc{realloc} to allow us access to the
 original data, but in a capability system this attack is particularly
 egregious, as it may allow us to read capabilities that a programmer thought
 they were hiding from us. In other words, allocators subject to this attack
-can give an attacker access to capabilities that gives them new abilities,
+can give an attacker access to capabilities, which in turn may give them new abilities,
 undermining the security of the entire software.
 
 Mitigating this attack is relatively simple. When \fnc{realloc} shrinks a
