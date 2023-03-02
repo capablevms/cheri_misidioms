@@ -45,7 +45,7 @@ main()
     const size_t vars_count = 10;
     int* vars = malloc(vars_count * sizeof(int));
     assert(vars != NULL);
-    printf("Allocated new array of size %lu at pointer %p.\n", vars_count, vars);
+    assert(__builtin_is_aligned(vars, sizeof(void * __capability)));
     for (size_t i = 0; i < vars_count; ++i)
     {
         vars[i] = i * i;
@@ -54,12 +54,16 @@ main()
     int* ptr_var = malloc(sizeof(int));
     assert(ptr_var != NULL);
     assert(ptr_var != vars);
-    printf("Allocated new pointer %p.\n", ptr_var);
+    assert(__builtin_is_aligned(ptr_var, sizeof(void * __capability)));
     assert(malloc(0x1000000UL) == NULL);
 
     char *m = malloc(16);
+    assert(__builtin_is_aligned(m, sizeof(void * __capability)));
+
     m = realloc(m, 32);
     assert(m != NULL);
+    assert(__builtin_is_aligned(m, sizeof(void * __capability)));
+
     return 0;
 }
 

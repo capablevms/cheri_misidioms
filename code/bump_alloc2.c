@@ -4,17 +4,19 @@ void *malloc(size_t size) {
 
   char *new_ptr = __builtin_align_up(
     heap,
-    ~cheri_representable_alignment_mask(size)
-    + 1);
-  size_t rounded =
+    -cheri_representable_alignment_mask(size));
+  size_t alloc_size =
     cheri_representable_length(size);
-  if (new_ptr + rounded <
-      heap_start + HEAP_SIZE) {
-    heap = new_ptr + rounded;
-    new_ptr = cheri_bounds_set_exact(
-      new_ptr, rounded);
-  } else new_ptr = NULL;
-  return new_ptr;
+  size_t size_on_heap =
+    __builtin_align_up(
+      size, _Alignof(max_align_t));
+
+  if (new_ptr + size_on_heap >
+      heap_start + HEAP_SIZE)
+    return NULL;
+  heap = new_ptr + size_on_heap;
+  return cheri_bounds_set_exact(
+    new_ptr, alloc_size);
 }
 
 void *realloc(void *ptr, size_t size) {

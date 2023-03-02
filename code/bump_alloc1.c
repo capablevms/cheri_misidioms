@@ -16,7 +16,7 @@ void *malloc(size_t size) {
   if (heap == NULL && !malloc_init())
     return NULL;
   size = __builtin_align_up(size,
-    sizeof(void *));
+    _Alignof(max_align_t));
   if (heap + size >
       heap_start + HEAP_SIZE)
     return NULL;
