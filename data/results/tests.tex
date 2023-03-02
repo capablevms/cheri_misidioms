@@ -1,19 +1,17 @@
 \begin{table}[t]
 \begin{center}
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccccc}
 \toprule
-Allocator & \tblnarrowwiden & \tbloverlap & \tblprivesc & \tblprivesctwo & \tblundef\\
+Allocator & \tblescbounds & \tblescperms & \tblnarrowwiden & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
 \midrule
-bump-alloc-cheri & $\oslash$ & $\oslash$ & $\oslash$ & $\oslash$ & $\checkmark$\\
-bump-alloc-nocheri & $\oslash$ & $\oslash$ & $\oslash$ & $\oslash$ & $\checkmark$\\
-dlmalloc-cheribuild & $\times$ & $\checkmark$ & $\times$ & $\times$ & $\checkmark$\\
-dmalloc & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
-jemalloc & $\times$ & $\checkmark$ & $\times$ & $\times$ & $\times$\\
-libmalloc-simple & $\times$ & $\oslash$ & $\times$ & $\checkmark$ & $\times$\\
-libxalloc & $\times$ & $\checkmark$ & $\times$ & $\times$ & $\times$\\
-snmalloc-cheribuild & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
-snmalloc-repo & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\oslash$
-% \input{./data/results/tests_extra.tex}
+bump-alloc-cheri & $\times$ & $\times$ & $\checkmark$ & $\oslash$ & $\oslash$ & $\checkmark$\\
+bump-alloc-nocheri & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
+dlmalloc-cheribuild & $\times$ & $\times$ & $\times$ & $\oslash$ & $\checkmark$ & $\checkmark$\\
+jemalloc & $\times$ & $\times$ & $\times$ & $\oslash$ & $\checkmark$ & $\times$\\
+libmalloc-simple & $\times$ & $\checkmark$ & $\times$ & $\oslash$ & $\oslash$ & $\times$\\
+snmalloc-cheribuild & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
+snmalloc-repo & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\oslash$
+%\input{./data/results/tests_extra.tex}
 \\ \bottomrule
 \end{tabular}
 \caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}
