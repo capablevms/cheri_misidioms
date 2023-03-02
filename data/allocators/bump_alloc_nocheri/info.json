@@ -3,7 +3,7 @@
     {
         "mode": "repo",
         "repo": "https://github.com/capablevms/cheri_misidioms",
-        "commit": "c7abbd266aaccc991eca9bffabdb26bacc245790",
+        "commit": "ebf9e602d04b5897da541077d529444c54129e37",
         "lib_file": "./code/libbumpalloc_nocheri.so",
         "build_file": "build.sh"
     },
