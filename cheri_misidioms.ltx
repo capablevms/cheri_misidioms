@@ -147,7 +147,8 @@ single-width addresses-as-pointers to exist alongside each other at any time,
 conventionally, a program which uses both traditional addresses and
 capabilities is said to be operating in \emph{hybrid} mode while a program
 which uses only capabilities is in \emph{pure capability} mode. In this paper
-we concentrate exclusively on programs which operate in pure capability mode.
+we concentrate exclusively on programs which operate in pure capability mode
+unless otherwise stated.
 
 CHERI does not presuppose a particular Operating System (OS). While there is a
 CHERI Linux port, at the time of writing the most mature OS for CHERI hardware
@@ -779,8 +780,25 @@ prefer to give the allocators the benefit of doubt, and have classified them as
 invulnerable to this attack.
 
 
-\section{Performance}
+\section{The Difficulties of Measuring Pure Capability Allocator Performance}
 \label{performance}
+
+We wanted to understand the performance impact of porting allocators to CHERI.
+Our intention was to run allocators on both hybrid and pure capability Morello
+hardware and compare the results. However, while we expected to see differences
+in performance, we were shocked to observe differences of as much as
+\laurie{XYZ} in wall-clock time. As far as we know, we are the first to write
+publicly about such a comparison, and thus there is no obvious precedent to
+draw upon. Although we do not have complete explanations for these differences,
+we have found several possible causes.
+
+However, not all is lost. While performance comparisons across hybrid and
+pure capability CHERI are hard to believe, performance comparisons within
+hybrid or pure capability CHERI do appear to be meaningful.
+
+This section is thus an unusual blend: it contains both a traditional
+performance evaluation as well as a dissection of why other parts of
+performance cannot sensibly be evaluated.
 
 Our measurements on Morello hardware show a performance penalty on most
 `purecap' benchmarks (compared with a `hybrid' baseline).
