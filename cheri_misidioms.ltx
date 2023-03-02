@@ -460,8 +460,7 @@ cheri-representable-length is --builtin-cheri-round-representable-length}
 In this section we introduce a number of `attacks' on CHERI allocators (3
 temporal and 1 spatial) and then run those attacks on the allocators from
 \autoref{sec:cheriallocators}, with the results shown in \autoref{tab:atks}.
-At least one allocator is vulnerable to each of these attacks; only
-snmalloc is immune to all the attacks; and the default CheriBSD allocator
+Only snmalloc is immune to all the attacks; even the default CheriBSD allocator
 jemalloc is vulnerable to several of the attacks.
 
 In the rest of this section we explain each attack, C code using the CHERI API
