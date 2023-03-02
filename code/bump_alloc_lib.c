@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <cheriintrin.h>
+#include <stddef.h>
 
 char *heap = NULL;
 char *heap_start = NULL;
