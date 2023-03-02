@@ -6,13 +6,12 @@ Allocator & \tblescperms & \tblnarrowwiden & \tblnarrowwidencapleak & \tbloverla
 \midrule
 bump-alloc-cheri & $\times$ & $\checkmark$ & $\oslash$ & $\oslash$ & $\checkmark$\\
 bump-alloc-nocheri & $\oslash$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
-dlmalloc-cheribuild & $\times$ & $\times$ & $\oslash$ & $\checkmark$ & $\checkmark$\\
-jemalloc & $\times$ & $\times$ & $\oslash$ & $\checkmark$ & $\times$\\
-libmalloc-simple & $\checkmark$ & $\times$ & $\oslash$ & $\oslash$ & $\times$\\
+dlmalloc-cheribuild & $\times$ & $\times$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
+jemalloc & $\times$ & $\times$ & $\checkmark$ & $\checkmark$ & $\times$\\
+libmalloc-simple & $\checkmark$ & $\times$ & $\checkmark$ & $\checkmark$ & $\times$\\
 snmalloc-cheribuild & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
-snmalloc-repo & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$\\
-%\input{./data/results/tests_extra.tex}
-\\ \bottomrule
+snmalloc-repo & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
+\bottomrule
 \end{tabular}
 \caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}
 \label{tab:atks}

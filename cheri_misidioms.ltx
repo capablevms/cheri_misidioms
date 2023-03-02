@@ -818,6 +818,29 @@ with a helper that tests whether or not a hypothetical access would be
 permitted, so we can write assertions in our \texttt{realloc} implementation, etc.}
 \laurie{what would such a helper function look like?}
 
+\subsection{Failed attacks}
+
+In~\autoref{tab:atks}, there are a number of entries indicated by $\oslash$.
+These entries indicate attacks that have failed due to various reasons on the
+specified allocator. We discuss each of these failures in turn:
+\begin{description}
+    \item[\overlap over both bump allocators] This particular test allocates
+        much more memory than our naive allocator implementations have been
+        designed to handle, leading to a quick out-of-memory issue.
+    \item[\narrowwiden cap over CHERI-aware bump allocator] \andrei{investigating}
+    \item[\overlap over \memalloc{snmalloc-cheribuild}] The attack triggers a
+        \texttt{SIGPROT} during an allocation. As this particular allocator is
+        an older version of \memalloc{snmalloc-repo}, in which the issue is not
+        present, we attribute the failure due to a bug, which was later fixed.
+    \item[\escperms over non-CHERI-aware bump allocator] Our naive
+        \fnc{realloc} implementation performs a \fnc{memcpy} of \texttt{size}
+        bytes from the old memory block to the new one, where \texttt{size} is
+        the \fnc{realloc} amount. This is done to preserve the original data,
+        as we do not store metadata regarding the original allocation size. As
+        such, due to tightening the bounds before widening them, we trigger a
+        \texttt{SIGPROT} during the widening process, essentially having CHERI
+        capture this implementation bug.
+\end{description}
 
 \subsection{Capability overflow}
 
