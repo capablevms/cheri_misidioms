@@ -128,8 +128,8 @@ address range, is in-bounds for a given capability.
 Hardware that operates on a capability requires one or more of: an authenticity
 check, a permissions check, or a bounds check. If a capability passes the
 relevant checks, then the operation \emph{exercises} the capability. If a
-capability fails the relevant checks then either: the hardware produces an
-exception; or produces an inauthentic capability as a result (where this is not
+capability fails the relevant checks then either: the hardware produces a
+\lstinline{SIGPROT} exception; or produces an inauthentic capability as a result (where this is not
 in violation of the CHERI rules). For example, a failed attempt to exercise a capability for a
 sealing operation on Morello produces an inauthentic result, rather than an
 exception.
@@ -452,6 +452,7 @@ the builtins?!}\andrei{I would assume to provde a cleaner interface to use
 (e.g., cheri-ddc-get is --builtin-cheri-global-data-get, and
 cheri-representable-length is --builtin-cheri-round-representable-length}
 
+
 \section{The Attacks}
 \label{sec:atks}
 
@@ -638,85 +639,60 @@ There are probably no universal answers to all possibilities, but some may be
 easier to rule upon than others.
 
 
-\laurie{the rest after this still needs editing}
+\subsection{\escinauthentic: Escalate Inauthentic Capabilities}
 
-\subsection{\narrowwiden: Narrowing then widening}
+An important variant on \escperms is to see whether an allocator will
+reallocate a block pointed to by an inauthentic capability and return
+an authentic capability:
 
-When working with allocated memory, we are free to \fnc{realloc} a previously
-\fnc{malloc}ed chunk of memory to whatever arbitrary size we required. However,
-in the world of capabilities, this becomes a slightly tricky issue.
-Capabilities themselves are intrinsically monotonically decreasing. As such,
-``widening'' a capability needs to be handled differently than increasing the
-bounds of that capability, as that is impossible.  Nevertheless, current memory
-allocator do support increasing the bounds of a fnc{malloc}ed capability, as
-expected. However, this might inadvertently reclaim secrets that were thought
-to be hidden via clever use of capability bounds.
+\begin{lstlisting}[language=C]
+uint8_t *arr = malloc(16);
+assert(cheri_tag_get(arr));
+arr = cheri_tag_clear(arr);
+assert(!cheri_tag_get(arr));
+arr = realloc(arr, 16);
+assert(cheri_tag_get(arr));
+\end{lstlisting}
 
-CheriBSD's default \fnc{realloc} is subject to this problem. The following
-code executes successfully, with the capability returned by \fnc{realloc}
-giving access to the same range of memory as the original \fnc{malloc}. Note
-that \fnc{realloc} does not move, or scrub, memory in such a case. Thus, if
-the user expected the setting of bounds to protect a secret, this code will not
-give the protection expected.
+Interestingly, none of the allocators we examined was vulnerable to this
+attack.
+
+
+\subsection{\myundef: Authentic capabilities from Undefined Behaviour}
+
+It is easy to assume that authentic capabilities can only be derived if one
+follows CHERI-C's rules correctly. However, it is possible for an attacker to use undefined
+behaviour to trick an allocator into returning authentic capabilities
+that it should not possess as shown in this attack:
 
 \begin{lstlisting}[language=C]
 uint8_t *arr = malloc(256);
 for (uint8_t i = 0; i < 255; i++)
   arr[i] = i;
 arr = realloc(arr, 1);
-assert(cheri_tag_get(arr) &&
-  cheri_length_get(arr) >= 1);
-arr = realloc(arr, 256);
+free(arr);
+arr = malloc(256);
 for (uint8_t i = 0; i < 255; i++)
   assert(arr[i] == i);
 \end{lstlisting}
 
+This follows a similar pattern to \narrowwiden. We first allocate a block
+and fill it with data (lines 1--3). Although not strictly necessary to demonstrate
+the attack, we then reallocate the block down to a single byte, modelling the
+case where we pass a capability with few abilities to an attacker (line 4). The
+attacker then frees that block (line 5) and immediately allocates a block of the same
+size (line 6) hoping that the new block is allocated in the same place as the old
+block. If that is the case, they will obtain a capability spanning the same memory as the old block,
+which allows them access to secret data (lines 7 and 8).
 
-\subsubsection{Mitigations}
-
-In the specific example above, \fnc{realloc} should scrub memory when the
-size of a memory block is being narrowed. However, this may not be appropriate
-in all cases, particularly where capability bounds narrowing is being used to
-hide a secret from another compartment. In such cases, code which can widen a
-capability's bounds must be carefully audited.
-
-
-\subsection{\escperms: Allocator Optimisations can Cause
-Permissions Escalation}
-
-
-\subsection{\myundef: Authentic capabilities from undefined behaviour}
-
-It is easy to assume that authentic capabilities can only be derived if one
-follows CHERI-C's
-\andrei{This is the first and only reference to this ``CHERI-C''}
-rules correctly. However, it is possible for an attacker to use undefined
-behaviour to derive authentic capabilities. Consider the following code:
-
-\begin{lstlisting}[language=C]
-uint8_t *c1 = malloc(16);
-ptraddr_t c1_addr = cheri_address_get(c1);
-uint8_t *c2 = cheri_bounds_set(c1, 8);
-
-free(c2);
-uint8_t *c3 = malloc(16);
-assert(cheri_tag_get(c3) && cheri_length_get(c3) == 16);
-assert(cheri_address_get(c3) == c1_addr);
-\end{lstlisting}
-
-In this example, we first derive a capability \emph{C1} with bounds of 16 bytes
-(line 1) before deriving a narrower capability \emph{C2} from it (line 3). It
-is then possible that after \fnc{free}ing the block of memory addressed by \emph{C1}\andrei{example frees C2, actual code sets C1 to NULL and frees C2},
-a subsequent \fnc{malloc} of 16 bytes returns a
-capability \emph{C3} that is identical to \emph{C1}. This attack relies
-on the underlying memory allocator reusing memory blocks, which many do in a
-predictable fashion: this example runs successfully on CheriBSD\andrei{jemalloc?} (as of
-2021-08-19).
-
-Interestingly, C's pointer provenance rules mean that, after the code above has
-executed, using \emph{C1} is no longer defined behaviour. Although this will not
-trouble an attacker, who will find that most programs still execute as expected
-and who now has a capability \emph{C3} giving the same access as \emph{C1}.
+Interestingly, this attack places both the `non-attack' and `attack' portions
+into undefined behaviour. Most obviously, the attack portion of the code reads
+data via a capability/pointer that it cannot ensure has been initialised. Less
+obviously, both attacker and non-attacker have an equivalent capability (with
+the same address and bounds) but, due to capability/pointer provenance rules,
+the non-attackers version of the capability has, technically speaking, no
+longer valid by those rules. This outcome is unlikely to trouble an attacker!
+nd who now has a capability \emph{C3} giving the same access as \emph{C1}.
 
 
 \subsubsection{Mitigations}
@@ -730,11 +706,11 @@ observed and tampered with by the attacker.
 A more complete mitigation for the concrete example is for \fnc{free} to
 revoke all references to the capability. In other words, CHERI allows one to
 scan memory looking for all capabilities with bounds encompassing an address
-$p$ and render them inauthentic~\cite{xia29cherivoke}. In this case, this
-means that the original code will then fail with a \texttt{SIGPROT} when it
-tries to dereference \emph{C1}, downgrading the security leak into a
-denial-of-service. However, scanning the stack and heap in order to perform
-revocation is not likely to be a quick operation.
+$p$ and render them inauthentic~\cite{xia29cherivoke}. In our case, this
+would cause the non-attack code to fail with a \texttt{SIGPROT} exception when it
+tried to dereference \emph{C1}, downgrading the security leak into a
+denial-of-service. However, it is not currently possible to perform capability
+revocation at speeds that most allocators would find acceptable.
 
 
 \subsection{\overlap: Returning capabilities whose bounds overlap with another block's}
@@ -837,7 +813,7 @@ specified allocator. We discuss each of these failures in turn:
         such, due to tightening the bounds before widening them, we trigger a
         \texttt{SIGPROT} during the widening process, essentially having CHERI
         capture this implementation bug.
-    \item[\escunauthentic] In all failure cases, the test crashes upon
+    \item[\escinauthentic] In all failure cases, the test crashes upon
         attempting to modify an untagged \andrei{check consistent wording}
         capability. While CHERI is correct to identify the attempted
         modification of an untagged capability, we don't ever attempt to

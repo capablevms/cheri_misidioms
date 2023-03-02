@@ -16,25 +16,22 @@
 
 int main() {
     // malloc returns a capability C1 to a block 0..n bytes long
-    uint8_t *c1 = malloc(16);
-    // Separate out the pointer from the capability so that we can check it
-    // later.
-    ptraddr_t c1_addr = cheri_address_get(c1);
+    uint8_t *arr = malloc(256);
+    for (uint8_t i = 0; i < 255; i++)
+        arr[i] = i;
 
-    // Derive a capability C2 with bounds 0..m where m < n
-    uint8_t *c2 = cheri_bounds_set(c1, 8);
-    c1 = NULL; // Be clear that we've lost access to C1.
-    assert(cheri_tag_get(c2) && cheri_length_get(c2) == 8);
+    arr = realloc(arr, 1);
+    assert(arr);
+    free(arr);
+    arr = malloc(256);
 
-    // We first free C2...
-    free(c2);
-    // ...and then immediately allocate a block the same size as C1.
-    uint8_t *c3 = malloc(16);
-    // malloc returns a capability C3 that is identical to C1.
-    if (cheri_tag_get(c3) && cheri_length_get(c3) == 16 && cheri_address_get(c3) == c1_addr) {
-	printf("Attack successful\n");
-    } else {
-        printf("Attack unsuccessful\n");
+    for (uint8_t i = 1; i < 255; i++) {
+        if (arr[i] != i) {
+            printf("Attack unsuccessful\n");
+            return 0;
+        }
     }
+
+    printf("Attack successful\n");
     return 0;
 }
