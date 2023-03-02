@@ -10,6 +10,7 @@ TARGETS = \
 	narrow_widen_cap_leak \
 	narrow_widen \
 	escperms \
+	escunauthentic \
 	undef \
 	overlap \
     validate
