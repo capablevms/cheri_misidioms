@@ -340,6 +340,8 @@ def do_table_tests_parse_result(result, test):
             return r'$\checkmark$'
         elif "Attack successful" in result_stdout:
             return r'$\times$'
+        else:
+            return 'P'
     else:
         return r'$\oslash$'
 
