@@ -876,6 +876,7 @@ them:
 \jacob{Include and describe PMU results.}
 
 \subsection{Purecap ABI difficulties}
+\label{ssec:purecap ABI difficulties}
 
 We have observed some toolchain behaviours that differ between hybrid and
 purecap. For example, this is a store (of zero) to a global variable in Morello
@@ -970,9 +971,25 @@ and the geometric mean of 30 execution runs are used for evaluation.
 When looking at individual benchmark performance, it is clear that the slowdown is highly dependent on the nature of each workload.
 Figure \ref{fig:eval jemalloc}  shows the relative slowdown of the purecap
 binaries for each benchmark with jemalloc, relative to the hybrid binaries.
-Notice which benchmarks have highest relative slowdowns - binary trees, cfrac, espresso, mstress - highly allocation intensive. Also richards - which is \emph{not} allocation intensive but performs many pointer-chasing operations.
+Across all the benchmarks, the geometric mean of \emph{purecap} versions is 1.7 times.
+The \emph{purecap} versions of the all the benchmarks apart from barnes are
+over 1.5 times slower than their \emph{hybrid} versions. 
+The mstress benchmark is a multi-threaded benchmark and is executed with
+four threads distributed across four cores.
+%Notice which benchmarks have highest relative slowdowns - binary trees, cfrac, espresso, mstress - highly allocation intensive. Also richards - which is \emph{not} allocation intensive but performs many pointer-chasing operations.
 
-Next we considered the hardware performance counter metrics for these executions, using the \texttt{pmcstat} tool on CheriBSD. Again, we report purecap results relative to the corresponding hybrid results. We note large overheads in memory access \jeremy{what else?}
+
+Next we considered the hardware performance counter metrics for these executions, using
+the \texttt{pmcstat} tool on CheriBSD.  Again, we report purecap results relative to the
+corresponding hybrid results. Binary-trees has the greatest increase in overall
+memory footprint as indicated by the resident-set-size (RSS) increment in Figure \ref{fig:eval jemalloc}.
+The binary trees benchmark has high pointer density and requires
+larger allocations to accommodate 128-bit capabilities.
+The richards benchmark does not stress the allocator as much as the other benchmarks.
+However, richards' \emph{purecap} version has the greatest slowdown
+relative to its \emph{hybrid} version (2.33 times). 
+\dejice{Can we link this to \S \ref{ssec:purecap ABI difficulties} wrt global access?} 
+We note large overheads in memory access \jeremy{what else?}
 indicating that there is significantly increased pressure on the memory system due to capability values being twice the size of raw pointers.
 \jeremy{also look at RSS sizes}
 
