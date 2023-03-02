@@ -990,8 +990,10 @@ However, richards' \emph{purecap} version has the greatest slowdown
 relative to its \emph{hybrid} version (2.33 times). 
 \dejice{Can we link this to \S \ref{ssec:purecap ABI difficulties} wrt global access?} 
 We note large overheads in memory access \jeremy{what else?}
-indicating that there is significantly increased pressure on the memory system due to capability values being twice the size of raw pointers.
-\jeremy{also look at RSS sizes}
+indicating that there is significantly increased pressure on the memory system due to capability values being twice the size of raw pointers.  \jeremy{also look at RSS sizes}
+Overall the \emph{purecap} benchmarks retire 1.377 times the number of instructions compared 
+to the \emph{hybrid} benchmarks. 
+
 
 
 \jeremy{should we report our correlation stats, showing which performance counters correlate with execution time?}
