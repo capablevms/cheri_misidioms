@@ -187,6 +187,7 @@ simplistic, but correct even when the block is increased in size.
 
 
 \subsection{Adapting the Allocator to CHERI}
+\label{sec:adapting_to_cheri}
 
 Perhaps surprisingly, our simple bump allocator compiles, and \fnc{malloc} runs
 correctly, on CHERI systems too. As this suggests, CHERI C is largely source
@@ -719,83 +720,35 @@ denial-of-service. However, it is not currently possible to perform capability
 revocation at speeds that most allocators would find acceptable.
 
 
-\subsection{\overlap: Returning capabilities whose bounds overlap with another block's}
+\subsection{\overlap: Capabilities Whose Bounds Memory Overlap with Another's}
 \label{sec:overlap}
 
-Capabilities have high and low bounds, which are a strong enforcement mechanism
-for restricting the region of memory that the capability can access for
-reading and writing. However, while small bounds can be precisely represented,
-large bounds are over-approximated, raising the possibility of the capability
-for one memory block having bounds which overlap with that of another nearby
-memory block. For example, we expect that the following code never succeeds\andrei{Meaning the assert never triggers?}:
+A capability's bounds span a portion of memory from a low to a high address. If
+an allocator returns two distinct capabilities whose bounds overlap
+(e.g.~because of the bounds imprecision we saw in
+\autoref{sec:adapting_to_cheri} as a result of
+\cite{woodruff19chericoncentrate}), an attacker might be able to read or write
+memory they should not have access to.
+
+An example attack in this mould is:
 
 \begin{lstlisting}[language=C]
-void *b1 = malloc(size);
-void *b2 = malloc(size);
+void *b1 = malloc(16);
+void *b2 = malloc(16);
 assert(
-  cheri_base_get(b1) >= cheri_base_get(b2) &&
-  cheri_base_get(b1) <
+  cheri_base_get(b1) >= cheri_base_get(b2)
+  && cheri_base_get(b1) <
     cheri_base_get(b2) + cheri_length_get(f2)
 );
 \end{lstlisting}
 
-The underlying issue is that capabilities have to be able to cover the full
-span of virtual memory without having enough bits to do so precisely. For
-example, Morello's capabilities have 31 bits to express the bounds for a 64-bit
-address space. Modern CHERI systems use `CHERI
-Concentrate'~\cite{woodruff19chericoncentrate} to encode bounds. A good analogy
-is that CHERI Concentrate is similar to IEEE 754 floating point numbers: the wider
-the bound, the less accurately it will be represented. When a desired length
-cannot be precisely represented, the next largest precisely representable
-length is used in the bound. On Morello, 16,385 bytes is the smallest bound
-which can not be precisely represented in a capability, and which is thus
-rounded up to the next representable bound (in this case 16,392\footnote{For
-CHERI RISC-V the first unrepresentable length is 4,097 bytes, which is rounded
-up to 4,104.}).
+In practise, such a simple attack is unlikely to succeed on all but the
+most basic allocators, as the most likely attack vector is when an allocator
+fails to take into account bounds imprecision. The `full' \overlap
+attack first finds the first 512 lengths that are not precisely representable
+as bounds and randomly allocates multiple blocks to see if any of the
+resulting capabilities overlap.
 
-
-\subsubsection{Mitigations}
-
-There are three approaches that can ensure that narrowing bounds does not cause
-secrets to be leaked.
-
-First, one can check whether the narrowed bounds do/would capture only the
-desired region of memory and if they don't/wouldn't, move the secret data to a
-(probably new) non-overlapping region of memory. One can check whether bounds
-will be adequately narrowed in advance using
-\fnc{cheri\_representable\_length} or retrospectively by querying the
-narrowed capability with \fnc{cheri\_length\_get}.
-
-Second, one can lay out memory in advance such that, no matter what imprecise
-bounds are used, secrets will not leak. In essence, this requires adding
-padding to each object to take account of imprecise bounds. One could rewrite
-\fnc{array\_with\_hidden\_secret}\andrei{Don't see another reference to this function} using this technique, provided that the
-number of secret items at the end of the array does not vary after array
-creation time.
-
-These two approaches have different costs. The first approach requires users
-only to pay for the cost of wasted memory if it is needed. However, at best
-this introduces unexpected pauses as memory is allocated and copied. At worst,
-this approach is infeasible --- one cannot, for example, easily move the
-\emph{n}th element of a contiguous array because it is too big to be
-represented with precise bounds. The second approach, in contrast, has fixed
-up-front costs, but requires wasting memory for every object, even if no
-future capability will ever have bounds covering it.
-
-Third, one can abort execution if bounds cannot be precisely represented. The
-\fnc{cheri\_bounds\_set\_exact} is a `safe' variant of
-\fnc{cheri\_bounds\_set} which raises an error if bounds cannot be precisely
-represented. We would prefer to see this be the standard bounds-setting
-function, with a \fnc{cheri\_bounds\_set\_unsafe} variant allowing the
-programmer to bypass bounds precision checks (because they are confident that
-either: their bounds request can be precisely represented; or their code works
-correctly with any resulting imprecision).
-
-\jacob{Notably, occurrences of this pattern in real code will (as we've seen) be
-much less obvious, and very hard to spot in code reviews. We could really do
-with a helper that tests whether or not a hypothetical access would be
-permitted, so we can write assertions in our \texttt{realloc} implementation, etc.}
-\laurie{what would such a helper function look like?}
 
 \subsection{Failed attacks}
 
