@@ -1,5 +1,6 @@
 narrow
 narrow_realloc
+narrow_realloc_cap_leak
 narrow_widen
 overlap
 overlap2

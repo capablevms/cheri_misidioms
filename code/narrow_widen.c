@@ -24,8 +24,8 @@ int main() {
     // should fail
     arr = realloc(arr, 256);
     if (arr == NULL) {
-        printf("Attack unsuccessful\n");
-        return 0;
+        // Out of memory: we can't attempt the attack.
+        return 1;
     }
     for (uint8_t i = 1; i < 255; i++) {
         if (arr[i] != i) {

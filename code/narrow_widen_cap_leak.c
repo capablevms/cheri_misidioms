@@ -26,8 +26,8 @@ int main() {
     // should fail
     arr = realloc(arr, 256 * sizeof(arr[0]));
     if (arr == NULL) {
-        printf("Attack unsuccessful\n");
-        return 0;
+        // Out of memory: we can't attempt the attack.
+        return 1;
     }
     printf("Original capability should remain unchanged:\n");
     printf("  arr[0] = %#lp\n", arr[0]);
@@ -35,7 +35,10 @@ int main() {
     printf("No other capabilities should be exposed by the realloc:\n");
     for (int i = 1; i < 256; i++) {
         printf("  arr[%u] = %#lp\n", i, arr[i]);
-        assert(!cheri_tag_get(arr[i]));
+        if (cheri_tag_get(arr[i])) {
+            printf("Attack successful\n");
+            return 0;
+        }
     }
 
     printf("Attack unsuccessful\n");
