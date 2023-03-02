@@ -976,11 +976,14 @@ seen.
 
 This section analyses the runtime performance of various
 CHERI memory allocator implementations when linked against a
-set of compute- and memory-intensive benchmarks written in C.
-The selected benchmarks are listed in~\autoref{tab:benchmarks},
-drawn from the \emph{mimalloc-bench} test suite \cite{leijen19mimalloc}
-chosen for their minimal library dependences, along with other common pointer-intensive
-workloads \cite{boehm14artificial,richards99bench} that are frequently used for allocator performance evaluation.
+set of compute- and memory-intensive benchmarks.
+The seven selected benchmarks are listed in~\autoref{tab:benchmarks},
+five are drawn from the \emph{mimalloc-bench} test suite \cite{leijen19mimalloc};
+we systematically chose these benchmarks because they are written in C,
+have minimal library dependences and execute fixed workloads (i.e.\ not
+varying workloads in a fixed timespan).
+The other two benchmarks are common pointer-intensive
+programs \cite{boehm14artificial,richards99bench} frequently used for allocator performance evaluation.
 
 \begin{table}
   \begin{center}
