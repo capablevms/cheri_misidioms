@@ -28,7 +28,8 @@ __asm__("   .type fact_impl, @function\n"
         "   mul     x1, x1, x2\n"
         "   sub     x2, x2, #1\n"
         "   br      " REG_PTR(0) "\n"
-        // .size is required for purecap to properly set capability bounds.
+        // .size is required for purecap to properly set capability bounds, for
+        // the FVP tracing tools to identify the symbol.
         "fact_impl_end:\n"
         "   .size fact_impl, fact_impl_end - fact_impl\n");
 

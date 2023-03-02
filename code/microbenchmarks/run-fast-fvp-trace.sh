@@ -27,12 +27,14 @@ scp -r bin/ "$SSHHOST":"$dst/"
 
 mkdir -p trace
 
-for bin in bin/*; do
-    tracefile="trace/${bin#bin/}"
-    echo "Tracing $bin -> $tracefile..."
+for bin in bin/*-{hybrid,purecap}; do
+    name="$(basename $bin)"
+    trace="trace/$name.tarmac"
+    vmmap="trace/$name.stdout"
+    echo "Tracing $name -> $trace..."
     before=$(stat -c '%s' "$FVPTRACE")
-    ssh -t "$SSHHOST" "$dst/$bin" --fast --dump-map --fvp-mti-toggle
+    ssh -t "$SSHHOST" "cd $dst/bin; ./$name --fast --dump-map --fvp-mti-toggle" 2>&1 | tee "$vmmap"
     after=$(stat -c '%s' "$FVPTRACE")
     echo "  Reading $(( after - before )) bytes from $FVPTRACE [$before,$after)..."
-    dd bs=1 if="$FVPTRACE" skip="$before" of="$tracefile" status=none
+    dd bs=1 if="$FVPTRACE" skip="$before" of="$trace" status=none
 done

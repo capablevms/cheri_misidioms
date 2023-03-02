@@ -21,7 +21,10 @@ __asm__("   .type fact_impl, @function\n"
         "1:\n"
         "   mul     x0, x0, x1\n"
         "   sub     x1, x1, #1\n"
-        "   b       fact_impl\n");
+        "   b       fact_impl\n"
+        // .size is required for the FVP tracing tools to identify the symbol.
+        "fact_impl_end:\n"
+        "   .size fact_impl, fact_impl_end - fact_impl\n");
 
 uint64_t fact(uint64_t n) {
     return fact_impl(1, n);
