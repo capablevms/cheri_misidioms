@@ -388,12 +388,14 @@ As we saw from \autoref{lst:bump_alloc1}, simple allocators don't need to be
 adapted for CHERI at all, though they then derive only minor security gains. In
 practise, we expect most allocators to at least reflect the capability bound
 changes of \autoref{lst:bump_alloc2}. \laurie{this is speculative: andrei,
-jeremy, is this correct?} More sophisticated allocators will also tend to tend
-to crash without at least some modifications. For example, as memory is freed
-and reused, different sized blocks will sometimes be handed out by
-\texttt{malloc}: if, as in \autoref{lst:bump_alloc2}, an allocator wants to
-hand out correctly bounded capabilities, it will need to derive a new child
-capability from a parent capability that has sufficiently wide bounds.
+jeremy, is this correct?}\andrei{If this is what's up until this point, I think yes. If it's about after this point, I think `dlmalloc-pkg64c` is good evidence if that} More sophisticated allocators will also tend to tend
+to crash without at least some modifications; a concrete example of this is the
+allocators provided by \texttt{pkg64c} -- we have found no evidence that any
+CHERI-specific code has been added to their sources, but they still compile on
+CheriBSD. However, they cannot execute a simple validation test without
+crashing. Furthermore, existing allocator metadata must be updated to include
+capability data at least to some degree, in order to be able to derive
+capabilities with appropriate bounds.
 
 Understanding all of the CHERI modifications to all of the allocators under
 consideration would lead to us not being able to see the forest for the trees.
@@ -421,7 +423,8 @@ least) three CHERI APIs in common use. We define these APIs as follows:
   \item
 The \emph{builtin} API consists of C functions provided as LLVM / Clang
 extensions (e.g.~\texttt{\_\_builtin\_cheri\_base\_get}). There are 39 generic
-CHERI functions, with Morello defining four more.
+CHERI functions, with Morello defining four more. As these builtins are
+provided by the compiler, we note that they are available by default.
 
 \item
 The \emph{cheric.h} API is deprecated, but still frequently used,
@@ -430,29 +433,28 @@ in essence, simple wrappers around the \emph{builtin} API).
 
 \item
 The \emph{cheriintrin.h} API is similar to, but supersedes, the \emph{cheric.h}
-API. \laurie{can we explain why it supersedes \laurie{cheric.h}?} It provides
-34 functions and macros, 30 of which map directly to the \emph{builtin} API.
+API. \laurie{can we explain why it supersedes cheric?}\andrei{does intrin
+fully cover cheric?} It provides 34 functions and macros, 30 of which map
+directly to the \emph{builtin} API.
 \end{itemize}
 
+The former two header files are provided for a more accessible interface to
+CHERI functions, and to provide some level of portability. For example, certain
+hardware properties are defined with negative numbers in RISC-V, and with
+positive numbers on
+Morello\footnoteurl{https://github.com/CTSRD-CHERI/llvm-project/blob/master/clang/lib/Headers/cheriintrin.h##L73-L74}{2nd of March 2023}.
+
+Another distinction to be made is that we can assume allocators making use of
+\emph{cheric.h} to be more dated than ones using \emph{cheriintrin.h}. Of
+course, any software that needs access to CHERI functions can choose to use the
+readily-available \emph{builtin} API. \andrei{I wonder if there's some
+documentation about what it offers, or do you need to look at source code? I
+would assume there is some document for the other two}
+
 \laurie{obvious question: why does cheriintrin.h exist if it's just wrapping
-the builtins?!}
-
-\laurie{table 2 doesn't always make sense to me: we say that e.g.~bump-alloc uses 10
-API calls when Listing 2 suggests it uses more like 4. And we also say it uses
-10 builtins, but we've just defined that as a separate API? And we say that
-dlmalloc-cheribuild uses the builtin API which uses 10 API calls and 10
-builtins?}\andrei{This table needs fixing}
-For each of the allocators, we explain which of these three APIs it uses,
-and the number of distinct API calls it makes.
-Note that if the same function is called in multiple
-source code locations, we only count it once.  This gives us a static measure
-of API coverage, for each allocator. \autoref{tab:rq1} shows the results,
-indicating that some allocators have a broader spread of API
-calls.\andrei{Presumably left TODO>} \emph{What does this imply?} \emph{What
-are the API calls doing?}
-
-\input{./data/results/cheri_api.tex}
-
+the builtins?!}\andrei{I would assume to provde a cleaner interface to use
+(e.g., cheri-ddc-get is --builtin-cheri-global-data-get, and
+cheri-representable-length is --builtin-cheri-round-representable-length}
 
 \section{The Attacks}
 \label{sec:atks}
