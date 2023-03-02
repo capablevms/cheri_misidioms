@@ -169,9 +169,9 @@ non-CHERI aware allocator to become CHERI aware.
     \fnc{realloc} always allocates a new chunk, copying
     over the old block.
     \fnc{\_\_builtin\_align\_up(v, a)} is an LLVM / clang primitive which rounds
-    \texttt{v} up to the next smallest multiple of \texttt{a}: in this example,
-    every memory block returned by \fnc{malloc} is sufficiently aligned to
-    store a pointer.
+    \texttt{v} up to the next smallest multiple of \texttt{a};
+    \texttt{\_Alignof(max\_align\_t))} returns an alignment sufficiently large
+    for any scalar type (i.e.~integers and pointers).
   },
 label=lst:bump_alloc1]{code/bump_alloc1.c}
 \end{figure}
