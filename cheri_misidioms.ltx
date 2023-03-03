@@ -581,10 +581,11 @@ that we can later test the success of the attack (lines 2 and 3). We then
 \fnc{realloc} the block down to a single byte, receiving back a capability
 whose bounds are 1 byte\footnote{Some allocators return bigger bounds, but
 we ignore that possibility for now.} (line 5).
-At this point, we expect to have permanently lost access to the values written to bytes 2-255 (inc.)
+At this point, we expect to have permanently lost access to the values written to bytes 2-256 (inc.)
+\andrei{if we start at byte 2, we imply we have access to only byte 1, and byte 0 doesn't exist. So this could either be 1-255 or 2-256, not 2-255 I don't think}
 in lines 2 and 3. If we then \fnc{realloc} the block back to
 its original size we should not have access to the values written to bytes
-2-255 (inc.). However, allocators using the optimisation above will often
+2-256 (inc.). However, allocators using the optimisation above will often
 return a capability that covers the same portion of memory as the original
 block, without zeroing it, allowing us to read the original bytes out
 unchanged.
