@@ -374,7 +374,21 @@ for them for the rest of this paper, are as follows:
     in~\autoref{lst:bump_alloc2}.
 \end{itemize}
 
+\begin{table}[tb]
+\begin{center}
+\begin{tabular}{lcrrr}
+\toprule
+Allocator & Version & SLoC & \multicolumn{2}{c}{Changed}\\
+\cmidrule(lr){4-5}
+  &   &   & LoC & \multicolumn{1}{c}{\%}\\
+\midrule
 \input{./data/results/slocs.tex}
+\\ \bottomrule
+\end{tabular}
+\end{center}
+\caption{The allocators we examined, their size in Source Lines of Code (SLoC), and the number of lines changed to adapt them for pure capability CheriBSD.}
+\label{tab:allocator_summary}
+\end{table}
 
 \autoref{tab:allocator_summary} shows the version of each allocator we used.
 We are aware of at least two other major memory allocators that have been
@@ -452,7 +466,19 @@ would assume there is some document for the other two}
 \section{The Attacks}
 \label{sec:atks}
 
+\begin{table*}[t]
+\begin{center}
+\begin{tabular}{lcccccc}
+\toprule
+Allocator & \tblescunauthentic & \tblescperms & \tblnarrowwiden & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
+\midrule
 \input{./data/results/tests.tex}
+\\ \bottomrule
+\end{tabular}
+\caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}
+\label{tab:atks}
+\end{center}
+\end{table*}
 
 In this section we introduce a number of `attacks' on CHERI allocators (3
 temporal and 1 spatial) and then run those attacks on the allocators from

@@ -1,19 +1,8 @@
-\begin{table*}[t]
-\begin{center}
-\begin{tabular}{lcccccc}
-\toprule
-Allocator & \tblescperms & \tblescunauthentic & \tblnarrowwiden & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
-\midrule
-bump-alloc-cheri & $\times$ & $\oslash$ & $\checkmark$ & $\oslash$ & $\checkmark$ & $\checkmark$\\
+
+bump-alloc-cheri & $\oslash$ & $\times$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$\\
 bump-alloc-nocheri & $\oslash$ & $\oslash$ & $\checkmark$ & $\checkmark$ & $\times$ & $\checkmark$\\
-dlmalloc-cheribuild & $\times$ & $\oslash$ & $\times$ & $\times$ & $\checkmark$ & $\checkmark$\\
-jemalloc & $\times$ & $\oslash$ & $\times$ & $\times$ & $\checkmark$ & $\times$\\
+dlmalloc-cheribuild & $\oslash$ & $\times$ & $\times$ & $\times$ & $\checkmark$ & $\checkmark$\\
+jemalloc & $\oslash$ & $\times$ & $\times$ & $\times$ & $\checkmark$ & $\times$\\
 libmalloc-simple & $\checkmark$ & $\checkmark$ & $\times$ & $\times$ & $\checkmark$ & $\times$\\
 snmalloc-cheribuild & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$ & $\checkmark$\\
-snmalloc-repo & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\oslash$
-\\ \bottomrule
-\end{tabular}
-\caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}
-\label{tab:atks}
-\end{center}
-\end{table*}
+snmalloc-repo & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$

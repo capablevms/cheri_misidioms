@@ -1,13 +1,6 @@
-\begin{table}[tb]
-\begin{center}
-\begin{tabular}{lcrrr}
-\toprule
-Allocator & Version & SLoC & \multicolumn{2}{c}{Changed}\\
-\cmidrule(lr){4-5}
-  &   &   & LoC & \multicolumn{1}{c}{\%}\\
-\midrule
-bump-alloc-cheri & c7abbd266a & \numprint{2649} & \numprint{3} & 0.11\%\\
-bump-alloc-nocheri & c7abbd266a & \numprint{2649} & \numprint{3} & 0.11\%\\
+
+bump-alloc-cheri & 21cb5f38da & \numprint{2747} & \numprint{3} & 0.11\%\\
+bump-alloc-nocheri & 21cb5f38da & \numprint{2747} & \numprint{3} & 0.11\%\\
 dlmalloc-cheribuild & 9cfbb1697b & \numprint{3475} & \numprint{231} & 6.65\%\\
 dlmalloc-pkg64c & 2.8.6 & - & - & -\\
 jemalloc & cc4e4c0553 & \numprint{28755} & \numprint{116} & 0.40\%\\
@@ -18,9 +11,3 @@ newlib & 67fd37136e & \numprint{1379006} & \numprint{649} & 0.05\%\\
 ptmalloc & 3.0\_2 & - & - & -\\
 snmalloc-cheribuild & 888d182bac & \numprint{14669} & \numprint{180} & 1.23\%\\
 snmalloc-repo & 0a5eb403ad & \numprint{21342} & \numprint{212} & 0.99\%
-\\ \bottomrule
-\end{tabular}
-\end{center}
-\caption{The allocators we examined, their size in Source Lines of Code (SLoC), and the number of lines changed to adapt them for pure capability CheriBSD.}
-\label{tab:allocator_summary}
-\end{table}
