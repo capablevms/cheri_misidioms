@@ -454,6 +454,10 @@ would assume there is some document for the other two}
 the builtins?!}\andrei{I would assume to provde a cleaner interface to use
 (e.g., cheri-ddc-get is --builtin-cheri-global-data-get, and
 cheri-representable-length is --builtin-cheri-round-representable-length}
+\jacob{Again, assumptions, but builtins are not portable (in several respects),
+whilst cheriintrin.h can be, at least in principle. They're also the only
+documentation I've seen; I discovered several new-to-me builtins when I wrote
+code/parse-llvm-defs.pl}
 
 
 \section{The Attacks}
