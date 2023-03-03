@@ -852,7 +852,7 @@ when compiled in \emph{hybrid} and 1.24 times when compiled in \emph{purecap}.
 as the tests were aborted.}
 
 
-\subsection{The Weird Stuff}
+\subsection{The Disparity Between Hybrid and Purecap Performance}
 
 \begin{figure*}
   \begin{center}
@@ -873,7 +873,10 @@ execution time, but the degree to which it is slower surprised us. For example,
 the total running time of barnes is \laurie{XYZ}x slower in hybrid. That
 richards, a benchmark which performs little allocation, is over 2x slower
 strongly suggests that such slowdowns are not related to allocators.
+In the rest of this section we attempt to understand why there is such a
+disparity in performance.
 
+\laurie{how upto date is this paragraph?}
 For the remainder of this performance analysis, we focus exclusively on jemalloc since it is the default allocator for CheriBSD. We attempt to quantify the overhead of deploying capabilities with jemalloc in our memory-intensive benchmark workloads.
 As above, each benchmark is compiled as \emph{hybrid} and \emph{purecap} binaries with \texttt{-O3} optimization levels
 and the geometric mean of 30 execution runs are used for evaluation. 
@@ -888,42 +891,33 @@ four threads distributed across four cores.
 %Notice which benchmarks have highest relative slowdowns - binary trees, cfrac, espresso, mstress - highly allocation intensive. Also richards - which is \emph{not} allocation intensive but performs many pointer-chasing operations.
 
 
-Our measurements on Morello hardware show a performance penalty on most
-`purecap' benchmarks (compared with a `hybrid' baseline).
-\jacob{We should quantify this with one of our graphs.}
-Although the relative performance of purecap code is of great interest, there
-are significant differences between contemporary hybrid and purecap workloads
-that make a fair comparison difficult. Recall that the principle difference
-between the purecap and hybrid ABI is that C pointers are capabilities in
-purecap, but addresses (by default) in hybrid workloads. This also extends to
-the stack pointer, and other ABI details not usually visible to the C language.
+\subsection{Known Differences Between Hybrid and Purecap}
 
-Many factors affect the overall performance of purecap allocators:
+Hybrid and purecap CHERI imply a number differences which we would expect to
+account for at least some of the performance differences we see.
 
-\begin{itemize}
-  \item Hardware pointer operations (including arithmetic, loads and stores)
-    have different semantics for capabilities, and may show performance
-    difference.
-  \item Capabilities are larger than addresses, and will exert greater pressure
-    on caches and related system resources.
-  \item Hybrid C compilers are likely to inherit many optimisations from the
-    mature, capability-unaware compilers on which they are based. However, we
-    expect purecap toolchains to be much less mature, and therefore more likely
-    to miss possible optimisations.
-  \item Security-related behaviours of purecap code (such as setting bounds on
-    allocations) requires extra work.
-  \item The purecap ABI design may make some common optimisations difficult.
-    Many (or all) of these might be important for maintaining the desired
-    security properties.
-\end{itemize}
+At the hardware level, pointer operations (including arithmetic, loads, and
+stores) have different semantics for capabilities, which is likely to lead to
+different performance characteristics relative to operations on normal
+pointers. Similarly, since capabilities are double word width, we would expect
+them to put greater pressure on caches and other system resources relative to
+single word width addresses.
 
-To an extent, some of the above affect capability-aware hybrid allocators too,
-for example in comparison with a capability-unaware baseline. For example, a
-hybrid \fnc{memcpy} has to preserve capabilities, and so requires a slightly
-different implementation than the true baseline. However, we were not able to
-measure any performance difference in preliminary tests, and so we focussed our
-analysis on purecap and hybrid.
-\jacob{Do we have data to back this up?}
+At the ABI level, the purecap CheriBSD ABI is different than the hybrid ABI
+(where the latter is largely the same as a non-CHERI ABI): the effects of this
+at the software level, or its impact on compiler optimisations are unclear.
+
+At the compiler level, both hybrid and purecap modes require altered versions
+of LLVM. Neither is as mature as ``mainstream'' LLVM, and thus are unlikely to
+optimise code as fully as expected. This may have many subtle effects. Although
+the purecap LLVM has received more attention than the hybrid LLVM, it is also
+more different from ``mainstream'' LLVM, so it is possible that the purecap
+LLVM will produce less optimal code than the hybrid LLVM.
+
+At the user level, code that wants to take advantage of CHERI will tend to use
+different execution paths when compiled for purecap, as we saw in the bump
+allocator of~\autoref{lst:bump_alloc1}.
+
 
 \subsection{Analysis Techniques}
 
