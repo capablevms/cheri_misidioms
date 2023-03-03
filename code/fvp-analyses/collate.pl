@@ -43,18 +43,30 @@ exit(1) unless GetOptions("help" => sub { ExitWithUsage(0) },
 
 my @available_colour_sets = (
   [qw/a74b32 c48652 ddc083 f8f9c3/], # Red-browns
-  [qw/244649 488178 81c09e d1ffbc/], # Blue-greens
+  [qw/488178 81c09e d1ffbc/],        # Blue-greens
   [qw/6c3cad a07dd0/],               # Purples
 );
 
 # Used for benchmark ELFs.
-my @neutrals = qw/353d3e 586c6e 7e9fa3 a6d5db/;
+my @neutrals = qw/474747 777777 aaaaaa e1e1e1/;
 
 my %colour_sets;
 my %colours;
 
-print("Benchmark,ABI,ELF,Symbol,Instruction Count,Colour\n");
+# We want to process hybrid traces first, because we use them to normalise.
+my @hybrid;
+my @purecap;
 for my $file (@ARGV) {
+  if ($file =~ /-hybrid-/) {
+    push(@hybrid, $file);
+  } else {
+    push(@purecap, $file);
+  }
+}
+my %hybrid_totals;
+
+print("Benchmark,ABI,ELF,Symbol,Instruction Count,Normalised Instruction Count,Colour\n");
+for my $file (@hybrid, @purecap) {
   $file =~ /^\d\d\d\d-\d\d-\d\d-(hybrid|purecap)-(.+).analysis$/ or die("Bad analysis file name: $file");
   my ($abi, $benchmark) = ($1, $2);
   my %symbols;
@@ -85,6 +97,12 @@ for my $file (@ARGV) {
     }
   }
   close($fh);
+
+  if ($file =~ /-hybrid-/) {
+    $hybrid_totals{$benchmark} = 0;
+    $hybrid_totals{$benchmark} += $_ for (values %symbols);
+  }
+
   my $other = 0;
   my $i = 0;
   my @sorted = sort { $symbols{$b} <=> $symbols{$a} } keys(%symbols);
@@ -103,13 +121,15 @@ for my $file (@ARGV) {
     }
     my $colour = $colours{$elf_sym};
     my $count = $symbols{$elf_sym};
-    print("$benchmark,$abi,$elf_sym,$count,#$colour\n");
+    my $norm = $count / $hybrid_totals{$benchmark};
+    print("$benchmark,$abi,$elf_sym,$count,$norm,#$colour\n");
   }
   for my $elf_sym (@sorted) {
     $other += $symbols{$elf_sym};
   }
   if ($other != 0) {
-    print("$benchmark,$abi,mixed,other,$other,#ffffff\n");
+    my $norm = $other / $hybrid_totals{$benchmark};
+    print("$benchmark,$abi,[mixed],[other],$other,$norm,#ffffff\n");
   }
   # TODO: Normalise to something.
 }
