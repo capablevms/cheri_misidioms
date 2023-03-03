@@ -851,8 +851,8 @@ such differences.
 \end{figure*}
 
 Our experiments are conducted on Arm's prototype Morello hardware:
-a quad-core, modified Armv8-A 2.5GHz processor; with a 64KiB L1 data cache and
-64KiB L1 instruction cache; a 1MiB L2 unified cache; two 1MiB L3 unified
+a quad-core, modified Armv8-A 2.5GHz processor; with a 64KiB L1 data cache,
+a 64KiB L1 instruction cache and a 1MiB L2 unified cache per core; two 1MiB L3 unified
 caches, each shared between a pair of cores; and 16GiB DDR4 RAM. We ran
 CheriBSD 22.12 as the OS, with both purecap (in \texttt{/usr/lib/}) and
 hybrid (in \texttt{/usr/lib64/}) userlands installed.
