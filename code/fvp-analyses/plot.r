@@ -19,8 +19,12 @@ ggplot(data,
                      limits=c(0,1.59)) +   # TODO: Calculate this automatically.
   ylab("Instruction count (normalised to hybrid)") +
   theme(panel.spacing = unit(0, "lines"),
+        axis.text.x = element_text(angle=90, vjust=0.5),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        strip.text = element_text(size=7),
         strip.background = element_rect(fill="white", colour=NA),
         panel.background = element_rect(fill="white", colour=NA),
         panel.border = element_rect(fill=NA, colour="grey50"),
         panel.grid = element_blank())
-ggsave("../../fig/fvp-stats.pdf")
+ggsave("../../fig/fvp-stats.pdf",width=5.5)

@@ -1010,9 +1010,22 @@ We used the Morello Platform FVP, which can emit "tarmac"
     because the exception level is included in the trace, but includes
     (negligible) noise from other processes running on the system. The major
     disadvantage of this technique is that it requires a lot of storage, and is
-    very slow, so we have applied it only to select workloads. We also used
-    this technique to verify a sample of QEMU measurements.
+    very slow, so we have applied it only to select workloads
+    (\autoref{fig:fvpstats}). We also used this technique to verify a sample of
+    QEMU measurements.
 
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=1.1\columnwidth]{fig/fvp-stats.pdf}
+    \vspace{-30pt}
+  \end{center}
+  \caption{\label{fig:fvpstats}}
+  Instruction counts per symbol, based on FVP traces for three benchmarks using
+  the CheriBSD system allocator (jemalloc). "mstress" and "richards" were
+  parameterised to perform fewer iterations than the default. Note that whilst
+  binary\_tree is extremely sensitive to \fnc{malloc} and \fnc{free}, the others
+  are dominated by their own code.
+\end{figure}
 
 \subsection{\fhardware: Hardware pointer operation (microbenchmarks)}
 
@@ -1072,7 +1085,7 @@ help us better understand larger benchmarks.
 
 \begin{figure}
   \begin{center}
-    \includegraphics[width=1.2\columnwidth]{fig/microbenchmarks.pdf}
+    \includegraphics[width=1.1\columnwidth]{fig/microbenchmarks.pdf}
     \vspace{-30pt}
   \end{center}
   \caption{\label{fig:mbench}

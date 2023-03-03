@@ -67,7 +67,7 @@ my %hybrid_totals;
 
 print("Benchmark,ABI,ELF,Symbol,Instruction Count,Normalised Instruction Count,Colour\n");
 for my $file (@hybrid, @purecap) {
-  $file =~ /^\d\d\d\d-\d\d-\d\d-(hybrid|purecap)-(.+).analysis$/ or die("Bad analysis file name: $file");
+  $file =~ /^\d\d\d\d-\d\d-\d\d-(hybrid|purecap)-(.+)\.analysis$/ or die("Bad analysis file name: $file");
   my ($abi, $benchmark) = ($1, $2);
   my %symbols;
   my $elf = undef;
@@ -86,7 +86,10 @@ for my $file (@hybrid, @purecap) {
       next; # Ignore.
     } elsif ($line =~ /^(\S[^:]+): \d+$/) {
       $elf = $1;
-      $elf =~ s@.*/@@ unless ($full_elf);
+      if (!$full_elf) {
+        $elf =~ s@.*/@@;
+        $elf =~ s@\.so\.\d+@.so@;
+      }
       die("Unimplemented: ELF name contains a comma: $elf\n") if ($elf =~ /,/);;
     } elsif ($line =~ /^  (\S[^:]+): (\d+)$/) {
       my ($symbol, $count) = ($1, $2);
@@ -129,7 +132,7 @@ for my $file (@hybrid, @purecap) {
   }
   if ($other != 0) {
     my $norm = $other / $hybrid_totals{$benchmark};
-    print("$benchmark,$abi,[mixed],[other],$other,$norm,#ffffff\n");
+    print("\"$benchmark\",$abi,[mixed],[other],$other,$norm,#ffffff\n");
   }
   # TODO: Normalise to something.
 }
