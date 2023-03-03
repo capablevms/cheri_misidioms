@@ -797,39 +797,47 @@ performance cannot sensibly be evaluated.
 
 \subsection{Methodology}
 
-The seven selected benchmarks are listed in~\autoref{tab:benchmarks},
-five are drawn from the \emph{mimalloc-bench} test suite \cite{leijen19mimalloc};
-we systematically chose these benchmarks because they are written in C,
-have minimal library dependences and execute fixed workloads (i.e.\ not
-varying workloads in a fixed timespan).
-The other two benchmarks are common pointer-intensive
-programs \cite{boehm14artificial,richards99bench} frequently used for allocator performance evaluation.
-
-\begin{table}
+\begin{table}[t]
   \begin{center}
-    \begin{tabular}{l|l|l}
-      \emph{name} & \emph{source} & \emph{character} \\ \hline
-      barnes & mimalloc & floating-point compute \\
-      binary-tree & boehm & alloc, pointer chasing \\
-      cfrac & mimalloc & alloc, int compute \\
-      espresso & mimalloc & alloc, int compute \\
-      glibc-simple & mimalloc & alloc \\
+    \begin{tabular}{lll}
+      \toprule
+      Benchmark & Source & Characterisation \\
+      \midrule
+      barnes & mimalloc & Floating-point compute \\
+      binary-tree & boehm & Alloc \& pointer indirection \\
+      cfrac & mimalloc & Alloc \& int compute \\
+      espresso & mimalloc & Alloc \& int compute \\
+      glibc-simple & mimalloc & Alloc \\
       %glibc-thread & mimalloc & alloc, multi-thread \\
-      mstress & mimalloc & alloc \\
-      richards & richards & pointer chasing \\
+      mstress & mimalloc & Alloc \\
+      richards & richards & Pointer indirection \\
       %rptest & mimalloc & \dejice{alloc, multi-thread} \\
       %xmalloc & mimalloc & alloc, multi-thread \\ \hline
+      \bottomrule
     \end{tabular}
   \end{center}
-  \caption{\label{tab:benchmarks}Benchmarks used for CHERI allocator performance evaluation}
+  \caption{Our benchmark suite. We list the benchmark name, the source
+  of the benchmark, and a brief characterisation of it as a workload.
+  \emph{Alloc} is short-hand for `allocator intensive' (i.e.~frequent
+  allocation and deallocation).}
+\label{tab:benchmarks}
 \end{table}
 
-For each benchmark, we compile \emph{hybrid} (i.e.\ with no capability support) and
-\emph{purecap} (i.e.\ using capabilities) binaries at \texttt{O3} optimization level with the Morello LLVM toolchain.
-We use \texttt{LD\_{}PRELOAD} to link with the various memory allocators.
-We measure execution times for each benchmark (hybrid and purecap variants) with
-each allocator on CheriBSD and report geometric mean slowdown across the benchmarks
-relative to the platform default allocator which is a CHERI-extended version of \emph{jemalloc}.
+We wanted a benchmark suite that contains benchmarks written in C, that have
+minimal library dependencies (so that we best understand what is being run),
+and that execute fixed workloads (rather than those that execute for fixed
+time). We selected 5 benchmarks from \emph{mimalloc-bench}
+suite~\cite{leijen19mimalloc} that meet this criteria, as well as the `classic'
+binarytrees~\cite{boehm14artificial} and richards~\cite{richards99bench}
+benchmarks. \autoref{tab:benchmarks} shows our complete benchmark suite.
+Our benchmark suite deliberately contains a mix of allocation-heavy benchmarks
+and non-allocation-heavy benchmarks, where the latter can serve as a
+partial `control' to help us understand the effects of allocators on
+performance against other factors.
+
+We compile each benchmark with clang's \texttt{-O3} optimisation level. We
+use \texttt{LD\_PRELOAD} at runtime to dynamically switch between allocators.
+We measure wall-clock time on an otherwise unloaded Morello machine.
 
 
 \subsection{Results}
