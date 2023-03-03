@@ -53,12 +53,12 @@ pure capability CHERI; and that it is currently difficult to reason about the
 overall performance of software on CHERI systems.
 
 This paper is structured as follows: First, we introduce the necessary
-background: a brief overview of CHERI for those unfamiliar with it (\autoref{sec:cheri});
-our running example, a simple bump allocator (\autoref{sec:bumppointerallocator}; and
+background: a brief overview of capabilities and the CHERI project (\autoref{sec:cheri});
+our running example, a trivial bump allocator (\autoref{sec:bumppointerallocator}); and
 a simple example of how allocators can be vulnerable, or invulnerable, to attack on CHERI
-(\autoref{sec:atk}). Second, we introduce our experiments: the allocators
+(\autoref{sec:atk}). Then, we introduce our experiments: the allocators
 under consideration (\autoref{sec:cheriallocators}); our attacks (\autoref{sec:atks});
-a partial performance evaluation (\autoref{performance}) and a dissection
+a partial performance evaluation (\autoref{performance}) and an analysis
 of some of the discrepancies we uncovered (\autoref{dissection}).
 
 
