@@ -86,6 +86,7 @@ void after_test(struct Args const * args) {
         pid_t pid = getpid();
         int count;
         struct kinfo_vmentry * vm = kinfo_getvmmap(pid, &count);
+        printf("---- BEGIN VM MAP ----\n");
         printf("Start,End,Permissions,Type,Offset,Path\n");
         for (int i = 0; i < count; i++) {
             char const * type = "UNKNOWN";
@@ -113,6 +114,7 @@ void after_test(struct Args const * args) {
                    vm[i].kve_offset,
                    vm[i].kve_path);
         }
+        printf("---- END VM MAP ----\n");
         free(vm);
     }
 }
