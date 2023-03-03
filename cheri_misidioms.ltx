@@ -54,7 +54,8 @@ our running example, a simple bump allocator (\autoref{sec:bumppointerallocator}
 a simple example of how allocators can be vulnerable, or invulnerable, to attack on CHERI
 (\autoref{sec:atk}). Second, we introduce our experiments: the allocators
 under consideration (\autoref{sec:cheriallocators}); our attacks (\autoref{sec:atks});
-and our (attempted) performance evaluation (\autoref{performance}).
+a partial performance evaluation (\autoref{performance}) and a dissection
+of some of the discrepancies we uncovered (\autoref{dissection}).
 
 
 \section{CHERI Overview}
@@ -796,8 +797,8 @@ that they would \lstinline{SIGPROT} with an inauthentic capability. However, we
 prefer to give the allocators the benefit of doubt, and have classified them as
 invulnerable to this attack.
 
-\section{The Difficulties of Measuring Pure Capability Allocator Performance}
-\label{performance}
+
+\section{Performance Evaluation}
 
 We wanted to understand the performance impact of porting allocators to CHERI.
 Our intention was to run allocators on both hybrid and pure capability Morello
@@ -812,9 +813,9 @@ However, not all is lost. While performance comparisons across hybrid and
 pure capability CHERI are hard to believe, performance comparisons within
 hybrid or pure capability CHERI do appear to be meaningful.
 
-This section is thus an unusual blend: it contains both a traditional
-performance evaluation as well as a dissection of why other parts of
-performance cannot sensibly be evaluated.
+In this section we thus detail a fairly traditional performance evaluation.
+In~\autoref{sec:dissection} we dissect why there are such disparities
+between hybrid and purecap performance.
 
 
 \subsection{Methodology}
@@ -874,7 +875,7 @@ when compiled in \emph{hybrid} and 1.24 times when compiled in \emph{purecap}.
 as the tests were aborted.}
 
 
-\subsection{The Disparity Between Hybrid and Purecap Performance}
+\subsection{Surprising Differences Between Hybrid and Purecap Performance}
 
 \begin{figure*}
   \begin{center}
@@ -913,11 +914,20 @@ four threads distributed across four cores.
 %Notice which benchmarks have highest relative slowdowns - binary trees, cfrac, espresso, mstress - highly allocation intensive. Also richards - which is \emph{not} allocation intensive but performs many pointer-chasing operations.
 
 
-\subsection{Known Differences Between Hybrid and Purecap}
+\section{Analysing The Disparity Between Hybrid and Purecap Performance}
+\label{sec:dissection}
 
 Hybrid and purecap CHERI imply a number differences which we would expect to
-account for at least some of the performance differences we see.
+account for at least some of the performance differences we see. In this
+section we analyse several factors in detail. Those factors, and the names
+we give them are as follows:
 
+\newcommand\fhardware{F$_{\textrm{Hardware}}$}
+\newcommand\fabi{F$_{\textrm{ABI}}$}
+\newcommand\fcompiler{F$_{\textrm{Toolchain}}$}
+\newcommand\fuser{F$_{\textrm{User}}$}
+
+\vspace{6pt}\noindent\textbf{\fhardware}
 At the hardware level, pointer operations (including arithmetic, loads, and
 stores) have different semantics for capabilities, which is likely to lead to
 different performance characteristics relative to operations on normal
@@ -925,10 +935,12 @@ pointers. Similarly, since capabilities are double word width, we would expect
 them to put greater pressure on caches and other system resources relative to
 single word width addresses.
 
+\vspace{6pt}\noindent\textbf{\fabi}
 At the ABI level, the purecap CheriBSD ABI is different than the hybrid ABI
 (where the latter is largely the same as a non-CHERI ABI): the effects of this
 at the software level, or its impact on compiler optimisations are unclear.
 
+\vspace{6pt}\noindent\textbf{\fcompiler}
 At the compiler level, both hybrid and purecap modes require altered versions
 of LLVM. Neither is as mature as ``mainstream'' LLVM, and thus are unlikely to
 optimise code as fully as expected. This may have many subtle effects. Although
@@ -936,6 +948,7 @@ the purecap LLVM has received more attention than the hybrid LLVM, it is also
 more different from ``mainstream'' LLVM, so it is possible that the purecap
 LLVM will produce less optimal code than the hybrid LLVM.
 
+\vspace{6pt}\noindent\textbf{\fuser}
 At the user level, code that wants to take advantage of CHERI will tend to use
 different execution paths when compiled for purecap, as we saw in the bump
 allocator of~\autoref{lst:bump_alloc1}.
@@ -976,7 +989,7 @@ count and execution is a poor proxy for performance on a modern processor.
 However, the combination can enable more detailed analysis than performance
 figures alone.
 
-\subsection{Hardware pointer operation (microbenchmarks)}
+\subsection{\fhardware: Hardware pointer operation (microbenchmarks)}
 
 To attempt to rule out (or account for) low-level hardware performance
 variation, we wrote a series of very simple microbenchmarks, each designed to
@@ -1019,7 +1032,7 @@ them:
 
 \jacob{Include and describe PMU results.}
 
-\subsection{Purecap ABI difficulties}
+\subsection{\fabi: Purecap ABI difficulties}
 \label{ssec:purecap ABI difficulties}
 
 We have observed some toolchain behaviours that differ between hybrid and
@@ -1051,7 +1064,7 @@ purecap compilations of hot functions in the richards benchmark. However, in
 the absence of profiling tools, it is unclear how much of the performance
 discrepancy they are responsible for.
 
-\subsection{Toolchain maturity}
+\subsection{\fcompiler Toolchain maturity}
 
 Similarly, we have observed examples of potentially suboptimal compilation.
 Some appear to be missed opportunities, such as the following code, which
@@ -1100,7 +1113,7 @@ the hybrid implementation is much simpler, not even loading the field size
     ldrb    w0, [x2, x1]
 \end{lstlisting}
 
-\subsection{Security behaviours}
+\subsection{\fuser: Security behaviours}
 
 \jacob{TODO: All the scbnds instructions. These are important for security.}
 
