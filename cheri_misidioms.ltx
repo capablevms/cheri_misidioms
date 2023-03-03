@@ -908,14 +908,9 @@ four threads distributed across four cores.
 
 
 
-This section analyses the runtime performance of various
-CHERI memory allocator implementations when linked against a
-set of compute- and memory-intensive benchmarks.
 
 
-
-
-
+\subsection{Hardware Performance Counter Metrics}
 
 Next we considered the hardware performance counter metrics for these executions, using
 the \texttt{pmcstat} tool on CheriBSD.  Again, we report purecap results relative to the
@@ -936,6 +931,7 @@ to the \emph{hybrid} benchmarks.
 
 \jeremy{should we report our correlation stats, showing which performance counters correlate with execution time?}
 
+\subsection{Dynamic Instruction Mix}
 
 Finally we considered the dynamic instruction counts for
 these benchmark executions, categorizing instructions based on their
