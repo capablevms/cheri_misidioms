@@ -8,10 +8,15 @@
 \noindent
 Various open-source memory allocators have been ported to CHERI, a hardware capability
 platform. In this paper we examine the security and performance of these
-allocators in CheriBSD, running on the experimental Arm Morello instantiation of the CHERI concept. We demonstrate that some allocators are subject to simple security vulnerabilities,
-which we categorise and explain. Further, we study the execution of
-a set of C allocator benchmarks to quantify their performance characteristics.
-We observe 11\% mean overhead for supporting hardware bounds checking, in terms of additional instructions executed. We attribute other performance overhead to (1) reduced cache residency because of CHERI's larger pointer size and (2) non-optimized code generation for the Morello LLVM backend; although we recognize that both these problems could be addressed through ongoing engineering effort.
+allocators when run under CheriBSD on Arm's experimental Morello platform.
+We introduce a number of security attacks and show that all but one allocator,
+including the default CheriBSD allocator, are vulnerable to some of the attacks.
+We then show that while it is possible to compare the performance of two
+CHERI allocators, comparing the performance of CHERI and non-CHERI allocators
+leads to hard to justify results. Although we do not fully understand the
+reasons for this, it seems to be at least as much due to factors such as
+immature compiler toolchains as it is due to the effects of capabilities on
+hardware.
 \end{abstract}
 
 \maketitle
@@ -27,7 +32,7 @@ It is easy for mistakes to creep in during either step, undermining
 the security guarantees programmers believe their code possesses.
 
 In this paper we examine one of the most fundamental software components:
-memory allocators. %(henceforth just ``allocators'').
+memory allocators (henceforth just ``allocators'').
 Apart from some embedded
 systems (which preallocate fixed quantities of memory), allocators are
 ubiquitous, because they allow us to write programs that are generic over a
@@ -39,12 +44,12 @@ widespread consequences.
 
 Our work studies allocators and CHERI from both security and performance
 angles. We show that all CHERI allocators are subject to at least some simple attacks
-that are likely to surprise reasonable programmers. With respect to performance,
-we argue that it is difficult to draw meaningful conclusions on prototypical hardware
-with experimental compiler toolchains.
-Nevertheless, we quantify the overhead of CHERI on allocator benchmark code
-and attribute this overhead to various sources including hardware caching and
-compiler code generation.
+that are likely to surprise reasonable programmers. While we are able
+to compare the performance of CHERI allocators to one another, we
+show that it is difficult to draw meaningful conclusions about CHERI
+and non-CHERI allocators. We analyse some of the likely factors for this,
+showing that it appears to be as much about the maturity of factors
+such as the compiler toolchain as it is about the effects of capabilities on hardware.
 We do not claim our
 work is definitive, though it does suggest two things: that some allocators
 undermine the security properties one might expect from software running on
