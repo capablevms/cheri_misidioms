@@ -476,11 +476,11 @@ would assume there is some document for the other two}
 \section{The Attacks}
 \label{sec:atks}
 
-\begin{table*}[t]
+\begin{table}[t]
 \begin{center}
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccccc}
 \toprule
-Allocator & \tblescunauthentic & \tblescperms & \tblnarrowwiden & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
+Allocator & \tblescunauthentic & \tblescperms & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
 \midrule
 \input{./data/results/tests.tex}
 \\ \bottomrule
@@ -488,7 +488,7 @@ Allocator & \tblescunauthentic & \tblescperms & \tblnarrowwiden & \tblnarrowwide
 \caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}
 \label{tab:atks}
 \end{center}
-\end{table*}
+\end{table}
 
 In this section we introduce a number of `attacks' on CHERI allocators (3
 temporal and 1 spatial) and then run those attacks on the allocators from
