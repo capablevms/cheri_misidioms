@@ -850,6 +850,10 @@ between hybrid and purecap performance.
 \label{tab:benchmarks}
 \end{table}
 
+Our experiments are conducted on the prototypical Morello system, which is
+a quad-core, modified Armv8-A processor. Each core is clocked at 2.5GHz and has a 64KiB L1 data cache, a 64KiB L1 instruction cache and a 1MiB L2 unified cache. There are two 1MiB L3 unified caches, each shared between a pair of cores.
+The platform has 16GB RAM and runs CheriBSD release 22.12.
+
 We wanted a benchmark suite that contains benchmarks written in C, that have
 minimal library dependencies (so that we best understand what is being run),
 and that execute fixed workloads (rather than those that execute for fixed
