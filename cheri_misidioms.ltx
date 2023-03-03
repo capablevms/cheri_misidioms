@@ -907,6 +907,61 @@ four threads distributed across four cores.
 %Notice which benchmarks have highest relative slowdowns - binary trees, cfrac, espresso, mstress - highly allocation intensive. Also richards - which is \emph{not} allocation intensive but performs many pointer-chasing operations.
 
 
+
+This section analyses the runtime performance of various
+CHERI memory allocator implementations when linked against a
+set of compute- and memory-intensive benchmarks.
+
+
+
+
+
+
+Next we considered the hardware performance counter metrics for these executions, using
+the \texttt{pmcstat} tool on CheriBSD.  Again, we report purecap results relative to the
+corresponding hybrid results. Binary-trees has the greatest increase in overall
+memory footprint as indicated by the resident-set-size (RSS) increment in Figure \ref{fig:eval jemalloc}.
+The binary trees benchmark has high pointer density and requires
+larger allocations to accommodate 128-bit capabilities.
+The richards benchmark does not stress the allocator as much as the other benchmarks.
+However, richards' \emph{purecap} version has the greatest slowdown
+relative to its \emph{hybrid} version (2.33 times). 
+\dejice{Can we link this to \S \ref{ssec:purecap ABI difficulties} wrt global access?} 
+We note large overheads in memory access \jeremy{what else?}
+indicating that there is significantly increased pressure on the memory system due to capability values being twice the size of raw pointers.  \jeremy{also look at RSS sizes}
+Overall the \emph{purecap} benchmarks retire 1.377 times the number of instructions compared 
+to the \emph{hybrid} benchmarks. 
+
+
+
+\jeremy{should we report our correlation stats, showing which performance counters correlate with execution time?}
+
+
+Finally we considered the dynamic instruction counts for
+these benchmark executions, categorizing instructions based on their
+opcode types---following the top-level classification from the index-by-opcode section of the Morello architecture reference manual \cite{arm22arm}).
+We generated instruction counts using the Morello QEMU emulator with a custom plugin, and validated a subset of these results by cross-checking them against the Arm FVP emulator for Morello.
+Instructions captured are user mode instructions (i.e.\ excluding kernel activity) during benchmark execution
+(i.e.\ excluding any OS boot activity).
+Figure \ref{fig:instrmix} shows the results, with purecap benchmark results presented relative to hybrid dynamic instruction counts.
+For the majority of benchmarks, we see that the pointer arithmetic (which in hybrid mode is captured as data processing) is now morello arithmetic, involving capabilities. Similarly, some load and store operations are now morello operations, loading and storing capabilities.
+We notice that sometimes there is an overall increase in loads and stores for purecap, possibly caused by immature compiler code generation for Morello.
+The `morello misc' overhead involves capability bounds checks, tag checks, etc --- which are intrinsic features of
+CHERI. This is inescapable overhead, additional instructions that must run to support capability-aware execution. In general, this overhead is within \jeremy{XXX 10?? } \% of the total instruction count. 
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=1.2\columnwidth]{fig/instruction_mix/stacked_bar_chart.pdf}
+  \end{center}
+  \caption{\label{fig:instrmix}Dynamic instruction mix for purecap (left-hand bar) and hybrid (right-hand bar) benchmark runs}
+\end{figure}
+
+%%%
+
+\jacob{Put FVP trace performance results somewhere in here.}
+
+
+
 \section{Analysing The Disparity Between Hybrid and Purecap Performance}
 \label{sec:dissection}
 
@@ -1117,60 +1172,6 @@ the hybrid implementation is much simpler, not even loading the field size
 
 \jacob{TODO: All the scbnds instructions. These are important for security.}
 
-\section{Allocator Performance Study}
-%% Glasgow contribution here
-
-This section analyses the runtime performance of various
-CHERI memory allocator implementations when linked against a
-set of compute- and memory-intensive benchmarks.
-
-
-
-
-
-
-Next we considered the hardware performance counter metrics for these executions, using
-the \texttt{pmcstat} tool on CheriBSD.  Again, we report purecap results relative to the
-corresponding hybrid results. Binary-trees has the greatest increase in overall
-memory footprint as indicated by the resident-set-size (RSS) increment in Figure \ref{fig:eval jemalloc}.
-The binary trees benchmark has high pointer density and requires
-larger allocations to accommodate 128-bit capabilities.
-The richards benchmark does not stress the allocator as much as the other benchmarks.
-However, richards' \emph{purecap} version has the greatest slowdown
-relative to its \emph{hybrid} version (2.33 times). 
-\dejice{Can we link this to \S \ref{ssec:purecap ABI difficulties} wrt global access?} 
-We note large overheads in memory access \jeremy{what else?}
-indicating that there is significantly increased pressure on the memory system due to capability values being twice the size of raw pointers.  \jeremy{also look at RSS sizes}
-Overall the \emph{purecap} benchmarks retire 1.377 times the number of instructions compared 
-to the \emph{hybrid} benchmarks. 
-
-
-
-\jeremy{should we report our correlation stats, showing which performance counters correlate with execution time?}
-
-
-Finally we considered the dynamic instruction counts for
-these benchmark executions, categorizing instructions based on their
-opcode types---following the top-level classification from the index-by-opcode section of the Morello architecture reference manual \cite{arm22arm}).
-We generated instruction counts using the Morello QEMU emulator with a custom plugin, and validated a subset of these results by cross-checking them against the Arm FVP emulator for Morello.
-Instructions captured are user mode instructions (i.e.\ excluding kernel activity) during benchmark execution
-(i.e.\ excluding any OS boot activity).
-Figure \ref{fig:instrmix} shows the results, with purecap benchmark results presented relative to hybrid dynamic instruction counts.
-For the majority of benchmarks, we see that the pointer arithmetic (which in hybrid mode is captured as data processing) is now morello arithmetic, involving capabilities. Similarly, some load and store operations are now morello operations, loading and storing capabilities.
-We notice that sometimes there is an overall increase in loads and stores for purecap, possibly caused by immature compiler code generation for Morello.
-The `morello misc' overhead involves capability bounds checks, tag checks, etc --- which are intrinsic features of
-CHERI. This is inescapable overhead, additional instructions that must run to support capability-aware execution. In general, this overhead is within \jeremy{XXX 10?? } \% of the total instruction count. 
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=1.2\columnwidth]{fig/instruction_mix/stacked_bar_chart.pdf}
-  \end{center}
-  \caption{\label{fig:instrmix}Dynamic instruction mix for purecap (left-hand bar) and hybrid (right-hand bar) benchmark runs}
-\end{figure}
-
-%%%
-
-\jacob{Put FVP trace performance results somewhere in here.}
 
 
 \section{Conclusions}
