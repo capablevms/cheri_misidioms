@@ -883,11 +883,16 @@ as the tests were aborted.}
   \end{center}
   \caption{\label{fig:eval jemalloc}
   \memalloc{jemalloc} running on purecap, normalised to \memalloc{jemalloc} running on hybrid
-  (i.e.~barnes's total execution time on purecap is \laurie{1.something?}x greater than
+  (i.e.~barnes's total execution time on purecap is 1.22x greater than
   on hybrid). As we expected, purecap is always slower than hybrid in total
   execution time, but the degree to which it is slower surprised us. We then
-  included various other measurements \laurie{dejice: please explain each key
-  briefly} to try and better understand what might have caused this.}
+  included various other measurements. The increase in resource utilisation by 
+  benchmarks compiled in \emph{purecap} relative to \emph{hybrid} is plotted alongside slowdowns.
+  \emph{normalised-rss-kb} is the relative increase in overall memory utilisation. 
+  \emph{normalised-INST\_RETIRED} is the relative increase in number of userspace instructions executed.
+  \emph{normalised-L1I\_CACHE}, \emph{normalised-L1D\_CACHE}, \emph{normalised-L2D\_CACHE} 
+  are the relative increase in L1-instruction, L1-data and L2-data cache accesses. 
+  }
 \end{figure*}
 
 \autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} in hybrid
