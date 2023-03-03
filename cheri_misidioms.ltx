@@ -1198,20 +1198,16 @@ the hybrid implementation is much simpler, not even loading the field size
 
 \section{Conclusions}
 
-It is beyond the
-scope of this paper to ascertain whether these vulnerabilities are because the
-allocators have not yet been fully adapted to CHERI or whether the necessary
-adaptations to the allocator are impractical.
+CHERI holds great promise for securing software in general: allocators are a
+key part of that story. In this paper we have shown that many CHERI allocators,
+including the current CheriBSD default allocator, suffer from simple security
+vulnerabilities. We also showed how difficult it currently it is to understand
+the performance impact of running software on CHERI.
 
-CHERI allocator ports don't take full advantage of the new secure features. Is it difficult to backport CHERI features onto legacy allocators? Which allocator does best and why?
-Do we actually need a custom allocator, created specifically for CHERI?
-
-Performance results are difficult to generalize, given we are working with an experimental architecture and a relatively immature software ecosystem / compiler toolchain. However we draw the following high-level conclusions from our performance analysis. CHERI does have a significant impact on memory access, particularly for pointer-intensive workloads. Careful micro-architectural and compiler optimizations are required here.
-The instruction execution overhead of CHERI is not unreasonable - quote geometric mean figures. It's a worthwhile price to pay for improved runtime security of
-legacy C workloads.
-
-Note - ongoing performance analysis and optimization from Arm / CHERI team.
-Also note other security and performance benefits of CHERI (compartmentalization) that we have not considered at all in this study.
+Despite all of this, one allocator has shone throughout this paper: snmalloc is
+not susceptible to any of our attacks, and is faster than the default CheriBSD
+allocator in our benchmarks. We suggest that snmalloc be considered to be the
+default CheriBSD allocator going forward.
 
 % \textbf{Acknowledgements:} We thank Ruben Ayrapetyan and David Chisnall for
 % comments. This work was funded by the Digital Security by Design (DSbD) Programme
