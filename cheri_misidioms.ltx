@@ -783,13 +783,9 @@ causes a \lstinline{SIGPROT} when trying to increase a block in size. By
 design, \memalloc{bump-alloc-cheri} contains a version of \fnc{realloc} which
 fixes this issue. See Section~\autoref{sec:adapting_to_cheri} for more details.
 
-\narrowwiden cap over CHERI-aware bump allocator \andrei{investigating}
-
 \overlap fails on \memalloc{snmalloc-cheribuild} due to what appears to be
 an internal snmalloc bug. Because of this, we included a newer version
 of snmalloc as \memalloc{snmalloc-repo} which is invulnerable to \overlap.
-
-\laurie{what about snmalloc-repo and undef?}
 
 In the case of \escinauthentic, several allocators fall into something of a
 grey zone: the allocators cause a \lstinline{SIGPROT} when they try to perform
@@ -799,7 +795,6 @@ whether anyone involved in porting the allocator to CHERI explicitly realised
 that they would \lstinline{SIGPROT} with an inauthentic capability. However, we
 prefer to give the allocators the benefit of doubt, and have classified them as
 invulnerable to this attack.
-
 
 \section{The Difficulties of Measuring Pure Capability Allocator Performance}
 \label{performance}
