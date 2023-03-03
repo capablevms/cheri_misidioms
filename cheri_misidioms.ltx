@@ -925,7 +925,42 @@ measure any performance difference in preliminary tests, and so we focussed our
 analysis on purecap and hybrid.
 \jacob{Do we have data to back this up?}
 
-\subsection{Hardware pointer operations}
+\subsection{Analysis Techniques}
+
+In addition to performance being affected by several factors, the available
+operating systems lack support for traditional profiling tools, making analysis
+somewhat difficult. To support our analysis, we used a combination of other
+techniques:
+
+\begin{itemize}
+  \item We have measured time-taken and selected hardware performance counters
+    when running our workloads on Morello hardware.\jacob{Do we need to say
+    more?}
+  \item We have used QEMU's instruction count to measure the number of
+    instructions executed by a benchmark. Our approach actually only allows
+    the total instruction count to measured (including the system boot
+    process); we corrected for this, but some noise will remain.
+  \item We used the Morello Platform FVP, which can emit "tarmac"
+    trace\cite[p.~23]{morellofvp}\cite[p.~5452]{fvpguide} describing instructions
+    executed. Tarmac trace includes virtual addresses, and combined with a
+    record of each process's memory map, we can map instructions to individual
+    functions (using ELF analysis). This technique excludes kernel activity
+    because the exeception level is included in the trace, but includes
+    (negligible) noise from other processes running on the system. The major
+    disadvantage of this technique is that it requires a lot of storage, and is
+    very slow, so we have applied it only to selected workloads. We also used
+    this technique to verify a sample of QEMU measurements.
+  \item Finally, we wrote some microbenchmarks to attempt to characterise
+    hardware and compiler behaviour independently from the allocation workloads.
+  \item \jacob{Did I miss something else?}
+\end{itemize}
+
+Only the first technique actually measures performance directly; instruction
+count and execution is a poor proxy for performance on a modern processor.
+However, the combination can enable more detailed analysis than performance
+figures alone.
+
+\subsection{Hardware pointer operation (microbenchmarks)}
 
 To attempt to rule out (or account for) low-level hardware performance
 variation, we wrote a series of very simple microbenchmarks, each designed to
