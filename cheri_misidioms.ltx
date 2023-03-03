@@ -177,8 +177,8 @@ non-CHERI aware allocator to become CHERI aware.
 label=lst:bump_alloc1]{code/bump_alloc1.c}
 \end{figure}
 
-We start with a simple, complete, example of a C bump allocator in
-~\autoref{lst:bump_alloc1}: \fnc{malloc} works as per normal; \fnc{free} is
+We start with a simple, complete, example of a C bump allocator in~\autoref{lst:bump_alloc1}:
+\fnc{malloc} works as per normal; \fnc{free} is
 a no-op; and \fnc{realloc} always allocates a new chunk of memory. The
 allocator reserves a large chunk of memory using a single \fnc{mmap} call then
 doles out chunks on each \fnc{malloc} / \fnc{realloc} calls. The bump pointer
