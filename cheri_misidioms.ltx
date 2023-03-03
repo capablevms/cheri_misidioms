@@ -343,13 +343,13 @@ On that basis, the allocators we consider in this paper, and the names we use
 for them for the rest of this paper, are as follows:
 \begin{itemize}
 \item \memalloc{jemalloc}, a modified version of the well-known
-    \emph{jemalloc}~\cite{evans06scalable} allocator, is the default allocator
+    \emph{jemalloc}~\cite{evans06scalable} allocator, which is the default allocator
     for CheriBSD.
 
 \item \memalloc{libmalloc-simple}\footnoteurl{https://github.com/CTSRD-CHERI/cheribsd/commit/e85ccde6d78d40f130ebf126a001589d75d60473}{23rd
-    February 2023} is a port of the allocator present in FreeBSD`s
+    February 2023} is a port of the allocator present in FreeBSD's
     \texttt{rtld-elf} utility\footnoteurl{https://github.com/freebsd/freebsd-src/blob/releng/4.3/libexec/rtld-elf/malloc.c}{
-    23rd of February 2023}.
+    23rd of February 2023}, based on Kingsley's malloc from 4.2BSD.
 
 \item \memalloc{snmalloc-cheribuild} is an old version of
     \emph{snmalloc}~\cite{lietar19snmalloc} that can be installed via
