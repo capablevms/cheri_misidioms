@@ -829,6 +829,25 @@ such differences.
 \label{tab:benchmarks}
 \end{table}
 
+\begin{figure*}[t]
+  \begin{center}
+    \includegraphics[width=\textwidth]{fig/sn_je_malloc_bm_overall.pdf}
+  \end{center}
+  \caption{\label{fig:eval jemalloc}
+  \memalloc{snmalloc} and \memalloc{jemalloc} running on purecap, normalised
+  to their respective hybrid allocators
+  (i.e.~barnes's total execution time on purecap is 1.22x greater than
+  on hybrid). As we expected, purecap is always slower than hybrid in total
+  execution time, but the degree to which it is slower surprised us. We then
+  included various other measurements. The increase in resource utilisation by 
+  benchmarks compiled in \emph{purecap} relative to \emph{hybrid} is plotted alongside slowdowns.
+  \emph{normalised-rss-kb} is the relative increase in overall memory utilisation. 
+  \emph{normalised-INST\_RETIRED} is the relative increase in number of userspace instructions executed.
+  \emph{normalised-L1I\_CACHE}, \emph{normalised-L1D\_CACHE}, \emph{normalised-L2D\_CACHE} 
+  are the relative increase in L1-instruction, L1-data and L2-data cache accesses. 
+  }
+\end{figure*}
+
 Our experiments are conducted on Arm's prototype Morello hardware:
 a quad-core, modified Armv8-A 2.5GHz processor; with a 64KiB L1 data cache and
 64KiB L1 instruction cache; a 1MiB L2 unified cache; two 1MiB L3 unified
@@ -866,25 +885,6 @@ as the tests were aborted.}
 
 
 \subsection{Results Across Hybrid and Purecap}
-
-\begin{figure*}
-  \begin{center}
-    \includegraphics[width=\textwidth]{fig/sn_je_malloc_bm_overall.pdf}
-  \end{center}
-  \caption{\label{fig:eval jemalloc}
-  \memalloc{snmalloc} and \memalloc{jemalloc} running on purecap, normalised
-  to their respective hybrid allocators
-  (i.e.~barnes's total execution time on purecap is 1.22x greater than
-  on hybrid). As we expected, purecap is always slower than hybrid in total
-  execution time, but the degree to which it is slower surprised us. We then
-  included various other measurements. The increase in resource utilisation by 
-  benchmarks compiled in \emph{purecap} relative to \emph{hybrid} is plotted alongside slowdowns.
-  \emph{normalised-rss-kb} is the relative increase in overall memory utilisation. 
-  \emph{normalised-INST\_RETIRED} is the relative increase in number of userspace instructions executed.
-  \emph{normalised-L1I\_CACHE}, \emph{normalised-L1D\_CACHE}, \emph{normalised-L2D\_CACHE} 
-  are the relative increase in L1-instruction, L1-data and L2-data cache accesses. 
-  }
-\end{figure*}
 
 \autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} in hybrid
 and purecap. As expected, purecap is always slower than hybrid in total
