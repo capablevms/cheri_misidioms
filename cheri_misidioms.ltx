@@ -411,66 +411,32 @@ complete, we have not included them in this paper.
 \label{sec:rqs}
 
 As we saw from \autoref{lst:bump_alloc1}, simple allocators don't need to be
-adapted for CHERI at all, though they then derive only minor security gains. In
-practise, we expect most allocators to at least reflect the capability bound
-changes of \autoref{lst:bump_alloc2}. Indeed, more sophisticated allocators will also tend
-to crash without at least some modifications. Most of the allocators available
-via CHERI allocators (e.g.~\laurie{list a couple}) have had no source-level
+adapted for CHERI, though they then derive only minor security gains. In
+practice, we expect most allocators to incorporate the capability bounds enforcement
+of \autoref{lst:bump_alloc2}. Indeed, more sophisticated allocators will tend
+to crash without at least some modifications, when ported to CHERI. Most of the allocators available
+via CheriBSD package installer (e.g.~dlmalloc) have had no source-level
 changes for CHERI, so while they compile correctly, we found they crashed
 almost immediately upon use.
 
-Understanding all of the CHERI modifications to all of the allocators under
-consideration would lead to us not being able to see the forest for the trees.
+Understanding the details of the CHERI modifications to all of the allocators under
+consideration is beyond the scope of this work.
 Instead, \autoref{tab:allocator_summary} shows what proportion of an
 allocator's LoC are `CHERI specific' by calculating the percentage of lines of code contained between
-\texttt{\#ifdef CHERI} blocks. This count is an under-approximation, as some
+\texttt{\#ifdef CHERI} blocks and similarly guarded code. This count is an under-approximation, as some
 code outside such \texttt{\#ifdef} blocks may also have been adapted, but it
-gives a rough idea of the extent of changes. \laurie{jeremy: what tool did you use for this?}
+gives a rough idea of the extent of changes. This analysis was performed by a simple preprocessor-style script.
 
-With the exception of the extremely small \texttt{libmalloc-simple}, the pure capability CheriBSD allocators
-have had around 0.3--0.9\% of their LoC adapted. Although this is a relatively small portion,
-it is an order of magnitude bigger than the
+With the exception of the extremely small \texttt{libmalloc-simple}
+and \texttt{bump-alloc}, the pure capability memory manager libraries in Table~\ref{tab:allocator_summary} have a mean
+1.7\% of their SLoC changed.
+Although this is a relatively small portion,
+it is two orders of magnitude larger than the
 0.026\% lines that were adapted when porting a desktop environment (including X11 and
 KDE)~\cite{watson21assessing}. It is a reasonable assumption that the
-lower-level, and more platform dependent, nature of allocators has
-caused more LoC to be adapted.
+lower-level, and more platform dependent, nature of allocators
+requires more LoC to be adapted.
 
-A different proxy for the complexity of CHERI adaption is the number of CHERI API
-calls a ported memory allocator makes use of: broadly speaking, the more of the
-CHERI API is used, the `deeper' we might consider the adaption to be.
-Comparing across the allocators is somewhat muddied because there are (at
-least) three CHERI APIs in common use. We define these APIs as follows:
-
-\begin{itemize}
-  \item
-The \emph{builtin} API consists of C functions provided as LLVM / Clang
-extensions (e.g.~\texttt{\_\_builtin\_cheri\_base\_get}) and available
-to all C code. There are 39 generic
-CHERI functions, with Morello defining four more.
-
-\item
-The \emph{cheric.h} API is deprecated, but still frequently used,
-providing 63 functions and macros (29 of \laurie{just the macros?} which are,
-in essence, simple wrappers around the \emph{builtin} API).
-
-\item
-The \emph{cheriintrin.h} API is similar to, but supersedes, the \emph{cheric.h}
-API. It provides 34 functions and macros, 30 of which map
-directly to the \emph{builtin} API.
-\end{itemize}
-
-The former two header files are provided for a more accessible interface to
-CHERI functions, and to provide some level of portability. For example, certain
-hardware properties are defined with negative numbers in RISC-V, and with
-positive numbers on
-Morello\footnoteurl{https://github.com/CTSRD-CHERI/llvm-project/blob/master/clang/lib/Headers/cheriintrin.h##L73-L74}{2nd of March 2023}.
-
-Another distinction to be made is that we can assume allocators making use of
-\emph{cheric.h} to be more dated than ones using \emph{cheriintrin.h}. Of
-course, any software that needs access to CHERI functions can choose to use the
-readily-available \emph{builtin} API. \andrei{I wonder if there's some
-documentation about what it offers, or do you need to look at source code? I
-would assume there is some document for the other two}
 
 
 \section{The Attacks}
