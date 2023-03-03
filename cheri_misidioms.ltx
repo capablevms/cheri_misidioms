@@ -18,17 +18,18 @@ We observe 11\% mean overhead for supporting hardware bounds checking, in terms 
 
 \section{Introduction}
 
-Capability Hardware Enhanced RISC Instructions
-(CHERI)~\cite{watson20cheriintroduction} provides and enforces hardware
+The Capability Hardware Enhanced RISC Instructions
+(CHERI)~\cite{watson20cheriintroduction} micro-architectural framework provides and enforces hardware
 capabilities that allow programmers to make strong security guarantees
 about the memory safety properties of their programs. However, capabilities are
 not magic. Programmers must first decide which memory safety properties they
-wish to enforce and then write their software in a way that enforces those properties.
+wish to enforce and then write their software in such a way to enforce those properties.
 It is easy for mistakes to creep in during either step, undermining
 the security guarantees programmers believe their code possesses.
 
 In this paper we examine one of the most fundamental software components:
-memory allocators (henceforth just ``allocators''). Apart from some embedded
+memory allocators. %(henceforth just ``allocators'').
+Apart from some embedded
 systems (which preallocate fixed quantities of memory), allocators are
 ubiquitous, because they allow us to write programs that are generic over a
 variety of memory usage patterns. Since allocators are used so frequently,
@@ -37,18 +38,21 @@ the security properties and performance of software in general. In other words,
 allocators with security flaws and/or performance problems have significant,
 widespread consequences.
 
-In this paper we examine allocators and CHERI from both security and performance
+Our work studies allocators and CHERI from both security and performance
 angles. We show that all CHERI allocators are subject to at least some simple attacks
-that are likely to surprise reasonable programmers. To our surprise, we also
-show that it is difficult to draw meaningful conclusions about performance:
-we show that compilers on CHERI platforms do not optimise code as fully as one
-would expect, leading to a muddled performance picture. We do not claim our
+that are likely to surprise reasonable programmers. With respect to performance,
+we argue that it is difficult to draw meaningful conclusions on prototypical hardware
+with experimental compiler toolchains.
+Nevertheless, we quantify the overhead of CHERI on allocator benchmark code
+and attribute this overhead to various sources including hardware caching and
+compiler code generation.
+We do not claim our
 work is definitive, though it does suggest two things: that some allocators
 undermine the security properties one might expect from software running on
 pure capability CHERI; and that it is currently difficult to reason about the
-performance of software on CHERI.
+overall performance of software on CHERI systems.
 
-In essence the paper is split in two. First, we introduce the necessary
+This paper is structured as follows: First, we introduce the necessary
 background: a brief overview of CHERI for those unfamiliar with it (\autoref{sec:cheri});
 our running example, a simple bump allocator (\autoref{sec:bumppointerallocator}; and
 a simple example of how allocators can be vulnerable, or invulnerable, to attack on CHERI
