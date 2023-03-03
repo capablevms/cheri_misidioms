@@ -11,9 +11,10 @@ platform. In this paper we examine the security and performance of these
 allocators when run under CheriBSD on Arm's experimental Morello platform.
 We introduce a number of security attacks and show that all but one allocator,
 including the default CheriBSD allocator, are vulnerable to some of the attacks.
-We then show that while it is possible to compare the performance of two
-CHERI allocators, comparing the performance of CHERI and non-CHERI allocators
-leads to hard to justify results. Although we do not fully understand the
+We then show that while it is meaningful to compare the performance of
+different pure capability (i.e.~`running in full CHERI mode') allocators, comparing
+the performance of hybrid and pure capability (i.e.~`running in non-CHERI vs.~running in CHERI modes')
+allocators does not appear to be meaningful. Although we do not fully understand the
 reasons for this, it seems to be at least as much due to factors such as
 immature compiler toolchains as it is due to the effects of capabilities on
 hardware.
@@ -44,17 +45,19 @@ widespread consequences.
 
 Our work studies allocators and CHERI from both security and performance
 angles. We show that all CHERI allocators are subject to at least some simple attacks
-that are likely to surprise reasonable programmers. While we are able
-to compare the performance of CHERI allocators to one another, we
-show that it is difficult to draw meaningful conclusions about CHERI
-and non-CHERI allocators. We analyse some of the likely factors for this,
+that are likely to surprise reasonable programmers.
+While we are to meaningfully compare the performance of
+different pure capability (i.e.~`running in full CHERI mode') allocators, comparing
+the performance of hybrid and pure capability (i.e.~`running in non-CHERI vs.~running in CHERI modes')
+allocators does not appear to be meaningful.
+We analyse some of the likely factors for this latter case,
 showing that it appears to be as much about the maturity of factors
 such as the compiler toolchain as it is about the effects of capabilities on hardware.
-We do not claim our
+We do not claim that our
 work is definitive, though it does suggest two things: that some allocators
 undermine the security properties one might expect from software running on
 pure capability CHERI; and that it is currently difficult to reason about the
-overall performance of software on CHERI systems.
+relative performance impact of CHERI on software.
 
 This paper is structured as follows: First, we introduce the necessary
 background: a brief overview of capabilities and the CHERI project (\autoref{sec:cheri});
@@ -443,11 +446,11 @@ requires more LoC to be adapted.
 \section{The Attacks}
 \label{sec:atks}
 
-\begin{table*}[t]
+\begin{table}[t]
 \begin{center}
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccccc}
 \toprule
-Allocator & \tblescunauthentic & \tblescperms & \tblnarrowwiden & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
+Allocator & \tblescunauthentic & \tblescperms & \tblnarrowwidencapleak & \tbloverlap & \tblundef\\
 \midrule
 \input{./data/results/tests.tex}
 \\ \bottomrule
@@ -455,7 +458,7 @@ Allocator & \tblescunauthentic & \tblescperms & \tblnarrowwiden & \tblnarrowwide
 \caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}
 \label{tab:atks}
 \end{center}
-\end{table*}
+\end{table}
 
 In this section we introduce a number of `attacks' on CHERI allocators (3
 temporal and 1 spatial) and then run those attacks on the allocators from
@@ -777,19 +780,21 @@ invulnerable to this attack.
 \label{sec:performance}
 
 We wanted to understand the performance impact of porting allocators to CHERI.
-Our intention was to run allocators on both hybrid and pure capability Morello
-hardware and compare the results. However, while we expected to see differences
-in performance, we were shocked to observe differences of as much as
-\laurie{XYZ} in wall-clock time. As far as we know, we are the first to write
+Our intention was to run both hybrid and purecap versions of each allocator
+and compare the results. However, while we expected to see differences
+in performance, we were shocked to observe differences of as much as 2x
+or more in wall-clock time. As far as we know, we are the first to write
 publicly about such a comparison, and thus there is no obvious precedent to
 draw upon. Although we do not have complete explanations for these differences,
 we have found several possible causes.
 
-However, not all is lost. While performance comparisons across hybrid and
-pure capability CHERI are hard to believe, performance comparisons within
+However, not all is lost. While performance comparisons \emph{across} hybrid and
+pure capability CHERI are hard to believe, performance comparisons \emph{within}
 hybrid or pure capability CHERI do appear to be meaningful.
 
-In this section we thus detail a fairly traditional performance evaluation.
+In this section we thus first detail a fairly traditional performance evaluation
+comparing performance amongst purecap CHERI allocators, before showing that
+performance across hybrid and purecap allocators is surprisingly slow.
 In~\autoref{sec:dissection} we dissect why there are such disparities
 between hybrid and purecap performance.
 
