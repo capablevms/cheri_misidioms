@@ -18,10 +18,9 @@ We observe 11\% mean overhead for supporting hardware bounds checking, in terms 
 
 \section{Introduction}
 
-The Capability Hardware Enhanced RISC Instructions
-(CHERI)~\cite{watson20cheriintroduction} micro-architectural framework provides and enforces hardware
+CHERI (Capability Hardware Enhanced RISC Instructions) provides and enforces hardware
 capabilities that allow programmers to make strong security guarantees
-about the memory safety properties of their programs. However, capabilities are
+about the memory safety properties of their programs~\cite{watson20cheriintroduction}. However, capabilities are
 not magic. Programmers must first decide which memory safety properties they
 wish to enforce and then write their software in such a way to enforce those properties.
 It is easy for mistakes to creep in during either step, undermining
