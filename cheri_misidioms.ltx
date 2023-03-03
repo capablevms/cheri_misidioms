@@ -963,8 +963,8 @@ guns.
 \section{Analysing The Disparity Between Hybrid and Purecap Performance}
 \label{sec:dissection}
 
-Hybrid and purecap CHERI imply a number differences which we would expect to
-account for at least some of the performance differences we see. In this
+Hybrid and purecap CHERI imply certain differences which we would expect to
+account for at least some of the performance changes we see. In this
 section we analyse several factors in detail. Those factors, and the names
 we give them are as follows:
 
@@ -1003,14 +1003,14 @@ allocator of~\autoref{lst:bump_alloc1}.
 \subsection{Analysis Techniques}
 
 We used the Morello Platform FVP, which can emit "tarmac"
-    trace\cite[p.~23]{morellofvp}\cite[p.~5452]{fvpguide} describing instructions
-    executed. Tarmac trace includes virtual addresses, and combined with a
-    record of each process's memory map, we can map instructions to individual
+    traces~\cite[p.~23]{morellofvp}\cite[p.~5452]{fvpguide} describing instructions
+    executed. Tarmac traces includes virtual addresses which, combined with a
+    record of each process's memory map, can map instructions to individual
     functions (using ELF analysis). This technique excludes kernel activity
-    because the exeception level is included in the trace, but includes
+    because the exception level is included in the trace, but includes
     (negligible) noise from other processes running on the system. The major
     disadvantage of this technique is that it requires a lot of storage, and is
-    very slow, so we have applied it only to selected workloads. We also used
+    very slow, so we have applied it only to select workloads. We also used
     this technique to verify a sample of QEMU measurements.
 
 
@@ -1043,9 +1043,9 @@ help us better understand larger benchmarks.
     suggests that there is no inherent overhead in reading from a capability.
 
 \vspace{6pt}\noindent
-\texttt{11-random-graph-walk-fixed} is similar, but uses a larger, constant,
+\texttt{11-random-graph-walk-fixed} is similar, but uses a larger, constant
     number of nodes. That set consumes 1MiB in hybrid and (due to capabilities
-    double word width) 2MiB in purecap. Despite this, there is little
+    being double word width) 2MiB in purecap. Despite this, there is little
     performance difference between hybrid and purecap.
 
 \vspace{6pt}\noindent
@@ -1086,6 +1086,7 @@ help us better understand larger benchmarks.
 
 
 \subsection{Cache pressure}
+\andrei{should this be a subsubsection or something, to preserve the F continuity?}
 
 \jacob{Include and describe PMU results.}
 
@@ -1101,7 +1102,7 @@ hybrid:
     str xzr, [x8, #2472]
 \end{lstlisting}
 
-In that case, the \texttt{adrp} combined with the \texttt{str} offset locate
+In this case, the \texttt{adrp} combined with the \texttt{str} offset locate
 the global, and the store can write to it directly. However, the purecap ABI
 requires another level of indirection in order to obtain a capability with
 tight bounds:
@@ -1151,7 +1152,7 @@ but serves as an example of how quickly minor code generation differences
 can make it difficult for humans to comprehend differences between
 hybrid and purecap code generation.
 
-Another example we found relevant to allocators is found in a hot path
+Another example we found relevant to allocators is in a hot path
 within jemallocs \fnc{malloc} function, where a byte-sized thread-local
 is loaded from memory. In hybrid this is compiled to:
 
