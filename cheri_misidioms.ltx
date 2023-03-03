@@ -1021,18 +1021,6 @@ We used the Morello Platform FVP, which can emit "tarmac"
 
 \subsection{\fhardware: Hardware pointer operation (microbenchmarks)}
 
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=1.2\columnwidth]{fig/microbenchmarks.pdf}
-    \vspace{-30pt}
-  \end{center}
-  \caption{\label{fig:mbench}
-  Microbenchmark performance results, with purecap normalised to median hybrid
-  performance (slower to the left, faster to the right). This shows that many
-  operations have similar performance on hybrid and purecap but some, such as
-  calling a function in a shared object, are significantly slower on purecap. }
-\end{figure}
-
 To understand the impact of low-level Morello hardware performance, we wrote a
 series of simple microbenchmarks that we can run under both hybrid and purecap
 CheriBSD. Most are written in C (with annotations to minimise compiler
@@ -1087,6 +1075,19 @@ help us better understand larger benchmarks.
 \texttt{99-busy-loop} is an empty C loop, to act as a control. The C
     loop uses no capabilities, and compiles to identical code for hybrid and
     purecap targets. Hybrid and purecap have the same performance.
+
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=1.2\columnwidth]{fig/microbenchmarks.pdf}
+    \vspace{-30pt}
+  \end{center}
+  \caption{\label{fig:mbench}
+  Microbenchmark performance results, with purecap normalised to median hybrid
+  performance (slower to the left, faster to the right). This shows that many
+  operations have similar performance on hybrid and purecap but some, such as
+  calling a function in a shared object, are significantly slower on purecap. }
+\end{figure}
 
 
 \subsection{Cache pressure}
