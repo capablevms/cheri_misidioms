@@ -794,6 +794,58 @@ This section is thus an unusual blend: it contains both a traditional
 performance evaluation as well as a dissection of why other parts of
 performance cannot sensibly be evaluated.
 
+
+\subsection{Methodology}
+
+The seven selected benchmarks are listed in~\autoref{tab:benchmarks},
+five are drawn from the \emph{mimalloc-bench} test suite \cite{leijen19mimalloc};
+we systematically chose these benchmarks because they are written in C,
+have minimal library dependences and execute fixed workloads (i.e.\ not
+varying workloads in a fixed timespan).
+The other two benchmarks are common pointer-intensive
+programs \cite{boehm14artificial,richards99bench} frequently used for allocator performance evaluation.
+
+\begin{table}
+  \begin{center}
+    \begin{tabular}{l|l|l}
+      \emph{name} & \emph{source} & \emph{character} \\ \hline
+      barnes & mimalloc & floating-point compute \\
+      binary-tree & boehm & alloc, pointer chasing \\
+      cfrac & mimalloc & alloc, int compute \\
+      espresso & mimalloc & alloc, int compute \\
+      glibc-simple & mimalloc & alloc \\
+      %glibc-thread & mimalloc & alloc, multi-thread \\
+      mstress & mimalloc & alloc \\
+      richards & richards & pointer chasing \\
+      %rptest & mimalloc & \dejice{alloc, multi-thread} \\
+      %xmalloc & mimalloc & alloc, multi-thread \\ \hline
+    \end{tabular}
+  \end{center}
+  \caption{\label{tab:benchmarks}Benchmarks used for CHERI allocator performance evaluation}
+\end{table}
+
+For each benchmark, we compile \emph{hybrid} (i.e.\ with no capability support) and
+\emph{purecap} (i.e.\ using capabilities) binaries at \texttt{O3} optimization level with the Morello LLVM toolchain.
+We use \texttt{LD\_{}PRELOAD} to link with the various memory allocators.
+We measure execution times for each benchmark (hybrid and purecap variants) with
+each allocator on CheriBSD and report geometric mean slowdown across the benchmarks
+relative to the platform default allocator which is a CHERI-extended version of \emph{jemalloc}.
+
+
+\subsection{Results}
+
+\laurie{the within-hybrid and/or within-purecap results should go here}
+
+%Figure FIXME presents results for this experiment, showing that 
+%\jeremy{the majority of allocators are significantly slower than jemalloc (presumably because they are less optimized)}. 
+Benchmarks compiled with snmalloc saw a geometric mean speed-up of 1.258 times compared to the system default jemalloc
+when compiled in \emph{hybrid} and 1.24 times when compiled in \emph{purecap}.
+\dejice{We could not get complete figures for all the other allocators across all benchmarks 
+as the tests were aborted.}
+
+
+\subsection{The Weird Stuff}
+
 Our measurements on Morello hardware show a performance penalty on most
 `purecap' benchmarks (compared with a `hybrid' baseline).
 \jacob{We should quantify this with one of our graphs.}
@@ -965,45 +1017,7 @@ the hybrid implementation is much simpler, not even loading the field size
 This section analyses the runtime performance of various
 CHERI memory allocator implementations when linked against a
 set of compute- and memory-intensive benchmarks.
-The seven selected benchmarks are listed in~\autoref{tab:benchmarks},
-five are drawn from the \emph{mimalloc-bench} test suite \cite{leijen19mimalloc};
-we systematically chose these benchmarks because they are written in C,
-have minimal library dependences and execute fixed workloads (i.e.\ not
-varying workloads in a fixed timespan).
-The other two benchmarks are common pointer-intensive
-programs \cite{boehm14artificial,richards99bench} frequently used for allocator performance evaluation.
 
-\begin{table}
-  \begin{center}
-    \begin{tabular}{l|l|l}
-      \emph{name} & \emph{source} & \emph{character} \\ \hline
-      barnes & mimalloc & floating-point compute \\
-      binary-tree & boehm & alloc, pointer chasing \\
-      cfrac & mimalloc & alloc, int compute \\
-      espresso & mimalloc & alloc, int compute \\
-      glibc-simple & mimalloc & alloc \\
-      %glibc-thread & mimalloc & alloc, multi-thread \\
-      mstress & mimalloc & alloc \\
-      richards & richards & pointer chasing \\
-      %rptest & mimalloc & \dejice{alloc, multi-thread} \\
-      %xmalloc & mimalloc & alloc, multi-thread \\ \hline
-    \end{tabular}
-  \end{center}
-  \caption{\label{tab:benchmarks}Benchmarks used for CHERI allocator performance evaluation}
-\end{table}
-
-For each benchmark, we compile \emph{hybrid} (i.e.\ with no capability support) and
-\emph{purecap} (i.e.\ using capabilities) binaries at \texttt{O3} optimization level with the Morello LLVM toolchain.
-We use \texttt{LD\_{}PRELOAD} to link with the various memory allocators.
-We measure execution times for each benchmark (hybrid and purecap variants) with
-each allocator on CheriBSD and report geometric mean slowdown across the benchmarks
-relative to the platform default allocator which is a CHERI-extended version of \emph{jemalloc}.
-%Figure FIXME presents results for this experiment, showing that 
-%\jeremy{the majority of allocators are significantly slower than jemalloc (presumably because they are less optimized)}. 
-Benchmarks compiled with snmalloc saw a geometric mean speed-up of 1.258 times compared to the system default jemalloc
-when compiled in \emph{hybrid} and 1.24 times when compiled in \emph{purecap}.
-\dejice{We could not get complete figures for all the other allocators across all benchmarks 
-as the tests were aborted.}
 
 
 \begin{figure*}
