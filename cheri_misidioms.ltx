@@ -854,6 +854,40 @@ as the tests were aborted.}
 
 \subsection{The Weird Stuff}
 
+\begin{figure*}
+  \begin{center}
+    \includegraphics[width=\textwidth]{fig/jemalloc_bm_overall.pdf}
+  \end{center}
+  \caption{\label{fig:eval jemalloc}
+  \memalloc{jemalloc} running on purecap, normalised to \memalloc{jemalloc} running on hybrid
+  (i.e.~barnes's total execution time on purecap is \laurie{1.something?}x greater than
+  on hybrid). As we expected, purecap is always slower than hybrid in total
+  execution time, but the degree to which it is slower surprised us. We then
+  included various other measurements \laurie{dejice: please explain each key
+  briefly} to try and better understand what might have caused this.}
+\end{figure*}
+
+\autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} in hybrid
+and purecap. As expected, purecap is always slower than hybrid in total
+execution time, but the degree to which it is slower surprised us. For example,
+the total running time of barnes is \laurie{XYZ}x slower in hybrid. That
+richards, a benchmark which performs little allocation, is over 2x slower
+strongly suggests that such slowdowns are not related to allocators.
+
+For the remainder of this performance analysis, we focus exclusively on jemalloc since it is the default allocator for CheriBSD. We attempt to quantify the overhead of deploying capabilities with jemalloc in our memory-intensive benchmark workloads.
+As above, each benchmark is compiled as \emph{hybrid} and \emph{purecap} binaries with \texttt{-O3} optimization levels
+and the geometric mean of 30 execution runs are used for evaluation. 
+When looking at individual benchmark performance, it is clear that the slowdown is highly dependent on the nature of each workload.
+Figure \ref{fig:eval jemalloc}  shows the relative slowdown of the purecap
+binaries for each benchmark with jemalloc, relative to the hybrid binaries.
+Across all the benchmarks, the geometric mean of \emph{purecap} versions is 1.7 times.
+The \emph{purecap} versions of the all the benchmarks apart from barnes are
+over 1.5 times slower than their \emph{hybrid} versions. 
+The mstress benchmark is a multi-threaded benchmark and is executed with
+four threads distributed across four cores.
+%Notice which benchmarks have highest relative slowdowns - binary trees, cfrac, espresso, mstress - highly allocation intensive. Also richards - which is \emph{not} allocation intensive but performs many pointer-chasing operations.
+
+
 Our measurements on Morello hardware show a performance penalty on most
 `purecap' benchmarks (compared with a `hybrid' baseline).
 \jacob{We should quantify this with one of our graphs.}
@@ -1028,25 +1062,7 @@ set of compute- and memory-intensive benchmarks.
 
 
 
-\begin{figure*}
-  \begin{center}
-    \includegraphics[width=\textwidth]{fig/jemalloc_bm_overall.pdf}
-  \end{center}
- \caption{\label{fig:eval jemalloc}Normalized performance characteristics of purecap \texttt{jemalloc}}
-\end{figure*}
 
-For the remainder of this performance analysis, we focus exclusively on jemalloc since it is the default allocator for CheriBSD. We attempt to quantify the overhead of deploying capabilities with jemalloc in our memory-intensive benchmark workloads.
-As above, each benchmark is compiled as \emph{hybrid} and \emph{purecap} binaries with \texttt{-O3} optimization levels
-and the geometric mean of 30 execution runs are used for evaluation. 
-When looking at individual benchmark performance, it is clear that the slowdown is highly dependent on the nature of each workload.
-Figure \ref{fig:eval jemalloc}  shows the relative slowdown of the purecap
-binaries for each benchmark with jemalloc, relative to the hybrid binaries.
-Across all the benchmarks, the geometric mean of \emph{purecap} versions is 1.7 times.
-The \emph{purecap} versions of the all the benchmarks apart from barnes are
-over 1.5 times slower than their \emph{hybrid} versions. 
-The mstress benchmark is a multi-threaded benchmark and is executed with
-four threads distributed across four cores.
-%Notice which benchmarks have highest relative slowdowns - binary trees, cfrac, espresso, mstress - highly allocation intensive. Also richards - which is \emph{not} allocation intensive but performs many pointer-chasing operations.
 
 
 Next we considered the hardware performance counter metrics for these executions, using
