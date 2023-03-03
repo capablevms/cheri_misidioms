@@ -873,11 +873,9 @@ We measure wall-clock time on an otherwise unloaded Morello machine.
 %\jeremy{the majority of allocators are significantly slower than jemalloc (presumably because they are less optimized)}. 
 Benchmarks compiled with snmalloc saw a geometric mean speed-up of 1.24 times compared to the system default jemalloc
 in both \emph{hybrid} and \emph{purecap}. This can be attributed to benchmarks linking against
-jemalloc on average executing 1.72x the number of instructions compared to snmalloc. 
+jemalloc on average executing 1.42x the number of instructions compared to snmalloc. 
 Benchmarks linked against the \emph{hybrid} versions of snmalloc and jemalloc exhibit 
-a similar trend with the exception of mstress which is executes 5.02x instructions. 
-\dejice{Without mstress, jemalloc retires 1.27x more instructions that snmalloc in hybrid}. 
-
+a similar trend with the mean instructions retired by jemalloc 1.15x times snmalloc. 
 
 \subsection{Results Across Hybrid and Purecap}
 
