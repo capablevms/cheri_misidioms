@@ -902,13 +902,62 @@ tight bounds:
 \end{lstlisting}
 
 Behaviours of this sort may be required (or at least be beneficial) under the
-purecap security model, and may therefore be difficult to optimise. However, we
-have completed neither security nor performance analysis for the examples we've
-seen.
+purecap security model, and may therefore be difficult to optimise. We have
+completed neither security nor performance analysis for most benchmarks.
+For example, FVP trace anaysis\jacob{TODO: Link to method} indicates that
+global variable accesses appear to be a major difference between hybrid and
+purecap compilations of hot functions in the richards benchmark. However, in
+the absence of profiling tools, it is unclear how much of the performance
+discrepancy they are responsible for.
 
 \subsection{Toolchain maturity}
 
-\jacob{TODO: Code examples.}
+Similarly, we have observed examples of potentially suboptimal compilation.
+Some appear to be missed opportunities, such as the following code, which
+zeroes two adjacent pointer-sized fields:
+
+\begin{lstlisting}
+    movi    v0.2d, #0000000000000000
+    stp     q0, q0, [c0]
+\end{lstlisting}
+
+The hybrid equivalent is simpler, storing \texttt{xzr} (the zero register) directly:
+
+\begin{lstlisting}
+    stp     xzr, xzr, [x0]
+\end{lstlisting}
+
+The purecap version could have done the same with \texttt{czr}. It's not clear
+how much performance could have been regained (if any) by doing so, but
+differences of this sort make it difficult to fairly compare the two targets.
+
+Another example is accesses to thread-local storage. Sequences of this sort
+are seen in jemalloc's \fnc{malloc}, a very hot function in many of our
+benchmarks.
+For example, this sequence loads a byte-sized thread-local value (from
+\texttt{CTPIDR\_EL0 + x2}), but it restricts the bounds (with \texttt{x3})
+before doing so:
+
+\begin{lstlisting}
+    ldp     x2, x3, [...]
+    mrs     c1, CTPIDR_EL0
+    add     c2, c1, x2
+    scbnds  c2, c2, x3
+    ldrb    w0, [c2]
+\end{lstlisting}
+
+The security benefit of restricting the bounds in this way is unclear, since
+the \texttt{c2} is never indexed by a variable, and a greater capability is
+already available in \texttt{c1}. We conclude that this sequence is a compiler
+maturity issue, rather than a deliberate security restriction. For reference,
+the hybrid implementation is much simpler, not even loading the field size
+(\texttt{x3}):
+
+\begin{lstlisting}
+    ldr     x2, [...]
+    mrs     x1, TPIDR_EL0
+    ldrb    w0, [x2, x1]
+\end{lstlisting}
 
 \subsection{Security behaviours}
 
@@ -1022,6 +1071,9 @@ CHERI. This is inescapable overhead, additional instructions that must run to su
 \end{figure}
 
 %%%
+
+\jacob{Put FVP trace performance results somewhere in here.}
+
 
 \section{Conclusions}
 
