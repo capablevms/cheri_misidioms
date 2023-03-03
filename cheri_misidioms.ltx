@@ -933,7 +933,7 @@ obtain the `benchmark only' instruction counts.
 To validate these results, we used the Morello Platform FVP, which can emit ``tarmac''
 traces~\cite[p.~5452]{fvpguide} which are complete records of execution. We
 altered the FVP so that when we executed an otherwise unused instruction, it
-toggled tracing on and off. We executed 1 iteration of the richards
+toggled tracing on and off. We executed a complete run of the binary\_tree
 benchmark, examined the traces, and counted the instructions contained therein,
 which were a close match for our QEMU instruction counts. This gives us confidence
 that our QEMU figures are representative.
