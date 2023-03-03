@@ -234,8 +234,8 @@ write from any portion of \fnc{malloc}ed memory.
 As this suggests, using CHERI without careful consideration may lead to
 no additional security benefits of using CHERI. This then raises the question:
 how should a secure `CHERI aware' allocator behave? There can be no single
-answer to this question, but we believe that most programmers would expect
-\texttt{malloc} to at least return a capability restricted to the block of memory
+answer to this question, but we believe that most programmers would at least expect
+\texttt{malloc} to return a capability restricted to the block of memory
 allocated. \autoref{lst:bump_alloc2}
 shows how to adapt \texttt{malloc} to do this.
 
