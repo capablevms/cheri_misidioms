@@ -584,7 +584,7 @@ we ignore that possibility for now.} (line 5).
 At this point, we expect to have permanently lost access to the values written to bytes 2-255 (inc.)
 in lines 2 and 3. If we then \fnc{realloc} the block back to
 its original size we should not have access to the values written to bytes
-2-255 (inc.). However, allocators using the optimisation above will often
+2-255 (inc.)\andrei{Shouldn't this be to 256? Or does malloc give one less byte of memory? Same for the less thans in the code}. However, allocators using the optimisation above will often
 return a capability that covers the same portion of memory as the original
 block, without zeroing it, allowing us to read the original bytes out
 unchanged.
@@ -698,7 +698,7 @@ into undefined behaviour. Most obviously, the attack portion of the code reads
 data via a capability/pointer that it cannot ensure has been initialised. Less
 obviously, both attacker and non-attacker have an equivalent capability (with
 the same address and bounds) but, due to capability/pointer provenance rules,
-the non-attackers version of the capability has, technically speaking, no
+the non-attackers version of the capability is, technically speaking, no
 longer valid by those rules. This outcome is unlikely to trouble an attacker
 who now has a capability \emph{C3} giving the same access as \emph{C1}.
 
@@ -712,7 +712,7 @@ since the attack has in effect `aliased' the capability, future writes can be
 observed and tampered with by the attacker.
 
 A more complete mitigation for the concrete example is for \fnc{free} to
-revoke all references to the capability. In other words, CHERI allows one to
+revoke all references to the capability. In other words, CHERI allows\andrei{could allow?} one to
 scan memory looking for all capabilities with bounds encompassing an address
 $p$ and render them inauthentic~\cite{xia29cherivoke}. In our case, this
 would cause the non-attack code to fail with a \texttt{SIGPROT} exception when it
@@ -739,7 +739,7 @@ void *b2 = malloc(16);
 assert(
   cheri_base_get(b1) >= cheri_base_get(b2)
   && cheri_base_get(b1) <
-    cheri_base_get(b2) + cheri_length_get(f2)
+    cheri_base_get(b2) + cheri_length_get(b2)
 );
 \end{lstlisting}
 
@@ -760,7 +760,7 @@ this subsection we explain each such failure.
 \escperms fails on \memalloc{bump-alloc-nocheri} because its \fnc{realloc}
 causes a \lstinline{SIGPROT} when trying to increase a block in size. By
 design, \memalloc{bump-alloc-cheri} contains a version of \fnc{realloc} which
-fixes this issue. See Section~\autoref{sec:adapting_to_cheri} for more details.
+fixes this issue. See~\autoref{sec:adapting_to_cheri} for more details.
 
 \overlap fails on \memalloc{snmalloc-cheribuild} due to what appears to be
 an internal snmalloc bug. Because of this, we included a newer version
