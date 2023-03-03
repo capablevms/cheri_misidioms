@@ -567,11 +567,11 @@ attack we call \narrowwiden:
 
 \begin{lstlisting}[language=C]
 uint8_t *arr = malloc(256);
-for (uint8_t i = 0; i < 255; i++)
+for (uint8_t i = 0; i < 256; i++)
   arr[i] = i;
 arr = realloc(arr, 1);
 arr = realloc(arr, 256);
-for (uint8_t i = 0; i < 255; i++)
+for (uint8_t i = 0; i < 256; i++)
   assert(arr[i] == i);
 \end{lstlisting}
 
@@ -584,7 +584,7 @@ we ignore that possibility for now.} (line 5).
 At this point, we expect to have permanently lost access to the values written to bytes 2-255 (inc.)
 in lines 2 and 3. If we then \fnc{realloc} the block back to
 its original size we should not have access to the values written to bytes
-2-255 (inc.)\andrei{Shouldn't this be to 256? Or does malloc give one less byte of memory? Same for the less thans in the code}. However, allocators using the optimisation above will often
+2-255 (inc.). However, allocators using the optimisation above will often
 return a capability that covers the same portion of memory as the original
 block, without zeroing it, allowing us to read the original bytes out
 unchanged.
@@ -675,12 +675,12 @@ that it should not possess as shown in this attack:
 
 \begin{lstlisting}[language=C]
 uint8_t *arr = malloc(256);
-for (uint8_t i = 0; i < 255; i++)
+for (uint8_t i = 0; i < 256; i++)
   arr[i] = i;
 arr = realloc(arr, 1);
 free(arr);
 arr = malloc(256);
-for (uint8_t i = 0; i < 255; i++)
+for (uint8_t i = 0; i < 256; i++)
   assert(arr[i] == i);
 \end{lstlisting}
 
