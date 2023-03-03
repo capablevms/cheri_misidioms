@@ -1178,12 +1178,44 @@ the \texttt{c2} register is not indexed by a variable, and a greater capability 
 already available in \texttt{c1}. It seems likely that this is a missed
 optimisation opportunity by the compiler rather than a deliberate security restriction.
 
-
 \subsection{\fuser: Security behaviours}
 
-\jacob{TODO: All the scbnds instructions. These are important for security.}
+Most purecap allocators aim to provide additional security by adding bounds to
+allocations, and in some cases restricting other permissions. This is the
+\emph{purpose} of using purecap rather than hybrid. However, these restrictions
+require additional instructions, and this carries unavoidable overhead. We
+classify such behaviours as part of the fundamental security-performance
+trade-off, rather than something that can be improved with future
+optimisations.
 
+For example, after allocating space internally, a purecap \fnc{malloc}
+implementation will need to derive a capability from some heap- or arena-wide
+super-capability:
 
+\begin{lstlisting}
+...     c0, ...  # Calculate address (unbounded).
+...     x1, ...  # Calculate length.
+scbndse c0, c0, x1
+mov     x8, #0xffffffffffff....
+movk    x8, #0x...., lsl #16
+clrperm c0, c0, x8
+\end{lstlisting}
+
+The \texttt{scbndse} sets the bounds, and the \texttt{clrperm} removes
+permissions that \fnc{malloc} results should not have, for example ensuring
+that it is not executable. An optimisation could perform some of these
+operations at an earlier stage (for example removing permissions from the
+super-capability), but consider that the locality of it (just before returning
+to the caller) might offer a useful level of confidence.
+
+Similar sequences are seen even in general code. For example, setting bounds on
+pointers to arrays provides spatial protection against buggy or malicious
+callees, and again, is the intended purpose of purecap.
+
+Ultimately, we would like to be able to calculate the performance cost of
+\fuser in isolation, since everything else can be reduced or removed with
+optimisation work. Unfortunately, difficulty in classification (and unavoidable
+overlaps between these categories) makes that infeasible today.
 
 \section{Conclusions}
 
