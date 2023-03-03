@@ -431,8 +431,9 @@ in essence, simple wrappers around the \emph{builtin} API).
 
 \item
 The \emph{cheriintrin.h} API is similar to, but supersedes, the \emph{cheric.h}
-API. \laurie{can we explain why it supersedes cheric?}\andrei{does intrin
-fully cover cheric?} It provides 34 functions and macros, 30 of which map
+API. \laurie{can we explain why it supersedes cheric?}\jacob{We never asked. See: https://github.com/CTSRD-CHERI/cheribsd/issues/786}
+\andrei{does intrin fully cover cheric?}\jacob{Very nearly. The gaps are easy to express with other intrinsics, but they use different builtins.}
+It provides 34 functions and macros, 30 of which map
 directly to the \emph{builtin} API.
 \end{itemize}
 
