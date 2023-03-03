@@ -867,10 +867,11 @@ as the tests were aborted.}
 
 \begin{figure*}
   \begin{center}
-    \includegraphics[width=\textwidth]{fig/jemalloc_bm_overall.pdf}
+    \includegraphics[width=\textwidth]{fig/sn_je_malloc_bm_overall.pdf}
   \end{center}
   \caption{\label{fig:eval jemalloc}
-  \memalloc{jemalloc} running on purecap, normalised to \memalloc{jemalloc} running on hybrid
+  \memalloc{snmalloc} and \memalloc{jemalloc} running on purecap, normalised
+  to their respective hybrid allocators
   (i.e.~barnes's total execution time on purecap is 1.22x greater than
   on hybrid). As we expected, purecap is always slower than hybrid in total
   execution time, but the degree to which it is slower surprised us. We then
