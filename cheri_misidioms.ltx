@@ -856,14 +856,16 @@ them:
 
 \begin{itemize}
   \item \texttt{10-random-graph-walk-l1} performs a (C) random walk through a
-    graph that fits in the L1 D cache, to attempt to measure any fundamental
-    overhead in reading from a capability. Note that the purecap workload has a
-    smaller number of graph nodes, since each node is larger.\jacob{TODO:
-    Confirm the L1 cache size.}
+    graph that fits in the 64KiB\cite[p.~35]{morellotrm} L1 data cache, to
+    attempt to measure any fundamental overhead in reading from a capability.
+    Note that the purecap workload has a smaller number of graph nodes, since
+    each node is larger.
   \item \texttt{11-random-graph-walk-fixed} is the same, but keeping the number
     of nodes constant. We picked 16384 nodes because this is the first
     power-of-two working set size at which the hybrid and purecap variants start
-    to perform differently.
+    to perform differently. The working set is 1MiB in hybrid, and 2MiB in
+    purecap, so the difference is most likely explained by the L2 cache
+    size (1MiB\cite[p.~35]{morellotrm}).
 \end{itemize}
 
 \jacob{TODO: Analysis}
