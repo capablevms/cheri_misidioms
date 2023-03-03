@@ -1,0 +1,143 @@
+[0x200000,0x201000)  /root/capablevms/cheri-bench/hybrid/binary_tree.elf  +0x0  (represented by /bulk/bdwgc-bench/2023-02-27/hybrid/binary_tree.elf)
+[0x210000,0x212000)  /root/capablevms/cheri-bench/hybrid/binary_tree.elf  +0x0  (represented by /bulk/bdwgc-bench/2023-02-27/hybrid/binary_tree.elf)
+[0x221000,0x222000)  /root/capablevms/cheri-bench/hybrid/binary_tree.elf  +0x1000  (represented by /bulk/bdwgc-bench/2023-02-27/hybrid/binary_tree.elf)
+[0x81d05000,0x81d1a000)  /usr/lib64/libm.so.5  +0x0  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libm.so.5)
+[0x81d29000,0x81d52000)  /usr/lib64/libm.so.5  +0x14000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libm.so.5)
+[0x81d61000,0x81d63000)  /usr/lib64/libm.so.5  +0x3c000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libm.so.5)
+[0x81d72000,0x81d73000)  /usr/lib64/libm.so.5  +0x3d000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libm.so.5)
+[0x82113000,0x8211b000)  /usr/lib64/libutil.so.9  +0x0  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libutil.so.9)
+[0x8212a000,0x82135000)  /usr/lib64/libutil.so.9  +0x7000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libutil.so.9)
+[0x82144000,0x82145000)  /usr/lib64/libutil.so.9  +0x11000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libutil.so.9)
+[0x82154000,0x82155000)  /usr/lib64/libutil.so.9  +0x11000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libutil.so.9)
+[0x823cd000,0x82448000)  /usr/lib64/libc.so.7  +0x0  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libc.so.7)
+[0x82457000,0x82591000)  /usr/lib64/libc.so.7  +0x7a000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libc.so.7)
+[0x825a0000,0x825aa000)  /usr/lib64/libc.so.7  +0x1b3000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libc.so.7)
+[0x825b9000,0x825c0000)  /usr/lib64/libc.so.7  +0x1bc000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/usr/lib64/libc.so.7)
+[0x6e8fd6a73000,0x6e8fd6a79000)  /libexec/ld-elf64.so.1  +0x0  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/libexec/ld-elf64.so.1)
+[0x6e8fd6a88000,0x6e8fd6a9d000)  /libexec/ld-elf64.so.1  +0x5000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/libexec/ld-elf64.so.1)
+[0x6e8fd6aac000,0x6e8fd6aae000)  /libexec/ld-elf64.so.1  +0x19000  (represented by /home/jacbra01/cheri/output/rootfs-morello-purecap/libexec/ld-elf64.so.1)
+----------------
+...
+----------------
+/usr/lib64/libc.so.7: 2637205767
+  free: 695030215
+  malloc: 626552856
+  unknown symbol: 594537428
+  __je_tcache_bin_flush_small: 443518039
+  __je_arena_tcache_fill_small: 174210432
+  __je_malloc_default: 27962169
+  memmove: 22733509
+  __je_arena_dalloc_bin_junked_locked: 20415108
+  __je_free_default: 15090382
+  __je_tcache_alloc_small_hard: 4985720
+  __je_tcache_event_hard: 3724350
+  __je_extent_heap_remove: 2358780
+  __je_extent_heap_first: 1362835
+  __je_bitmap_init: 729581
+  __je_extents_alloc: 576000
+  __je_extent_heap_insert: 574191
+  memset: 537600
+  __vdso_clock_gettime: 522474
+  __je_extent_heap_remove_first: 505496
+  __je_arena_decay: 295740
+  __je_base_extent_hooks_get: 258462
+  __je_extents_dalloc: 227370
+  __clock_gettime: 108438
+  __vdso_gettc: 98590
+  __je_extent_alloc_wrapper: 77525
+  __je_nstime_compare: 69006
+  __je_extent_alloc: 27493
+  __je_base_alloc_extent: 25457
+  __je_nstime_init: 19770
+  __je_extents_npages_get: 19770
+  __je_extent_hooks_get: 19718
+  __vfprintf: 10941
+  __sfvwrite: 5036
+  __je_extent_avail_first: 4074
+  memcpy: 3745
+  memchr: 2325
+  vfprintf_l: 676
+  printf: 450
+  __sflush: 443
+  __je_nstime_add: 405
+  vfprintf: 341
+  localeconv_l: 296
+  _swrite: 276
+  __je_nstime_copy: 243
+  fprintf: 159
+  __je_nstime_subtract: 135
+  strlen: 127
+  fwrite: 116
+  __je_arena_extent_alloc_large: 110
+  __je_nstime_imultiply: 108
+  __je_nstime_divide: 108
+  __je_large_palloc: 106
+  __swrite: 84
+  __je_extents_evict: 81
+  __je_extent_dalloc_wrapper: 80
+  __sfp: 77
+  __smakebuf: 65
+  ___pthread_cleanup_push_imp: 64
+  ___pthread_cleanup_pop_imp: 64
+  __fflush: 55
+  __je_nstime_ns: 54
+  fopen: 53
+  __je_extent_decommit_wrapper: 50
+  _write: 48
+  __error: 39
+  fclose: 37
+  __je_pages_map: 32
+  __je_extent_dalloc: 30
+  __sflags: 29
+  __swsetup: 24
+  __je_extent_alloc_mmap: 15
+  __je_pages_purge_lazy: 8
+  __je_extent_avail_remove: 8
+  __get_current_monetary_locale: 5
+  __get_current_numeric_locale: 5
+  __je_arena_extent_sn_next: 5
+  _fstat: 4
+  mmap: 4
+  _close: 4
+  _open: 4
+  madvise: 4
+  __je_large_malloc: 3
+  __sclose: 2
+  __je_pages_purge_forced: 2
+  __je_extents_state_get: 2
+  __je_pages_decommit: 2
+/root/capablevms/cheri-bench/hybrid/binary_tree.elf: 616684334
+  BottomUpTree: 202004878
+  DeleteTree: 170699491
+  ItemCheck: 123830292
+  unknown symbol: 119363068
+  main: 786546
+  bmlog: 50
+  after_test: 9
+unknown file: 141953
+  unknown symbol: 141953
+/libexec/ld-elf64.so.1: 17899
+  symlook_obj: 3410
+  symlook_list: 2688
+  find_symdef: 2286
+  strcmp: 2050
+  matched_symbol: 1584
+  _rtld_bind: 930
+  symlook_default: 886
+  symlook_global: 690
+  def_lock_acquire: 615
+  _rtld_bind_start: 480
+  def_lock_release: 405
+  rlock_acquire: 360
+  bzero: 315
+  lock_release: 285
+  reloc_jmpslot: 240
+  _setjmp: 225
+  memset: 195
+  def_thread_clr_flag: 90
+  def_thread_set_flag: 90
+  sigsetjmp: 45
+  def_rlock_acquire: 30
+/usr/lib64/libm.so.5: 458
+  exp2: 458
+Total: 3254050411
