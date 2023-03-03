@@ -1147,54 +1147,62 @@ purecap compilations of hot functions in the richards benchmark. However, in
 the absence of profiling tools, it is unclear how much of the performance
 discrepancy they are responsible for.
 
+
 \subsection{\fcompiler Toolchain maturity}
 
-Similarly, we have observed examples of potentially suboptimal compilation.
-Some appear to be missed opportunities, such as the following code, which
-zeroes two adjacent pointer-sized fields:
+We noticed that the same code compiled for hybrid and purecap by LLVM could
+sometimes lead to much longer/shorter machine code. The differences are
+far too extensive to admit a simple analysis, but we hypothesise that
+they might be due to capability code either: preventing LLVM from performing
+some of its normal optimisations when capability code is present; or LLVM
+simply not having been taught how to optimise capability code. Two small examples
+demonstrate the overall point.
+
+In hybrid code, zeroing memory is compiled to a single instruction:
 
 \begin{lstlisting}
-    movi    v0.2d, #0000000000000000
-    stp     q0, q0, [c0]
+stp     xzr, xzr, [x0]
 \end{lstlisting}
 
-The hybrid equivalent is simpler, storing \texttt{xzr} (the zero register) directly:
+\noindent whereas in purecap it is compiled to two instructions:
 
 \begin{lstlisting}
-    stp     xzr, xzr, [x0]
+movi    v0.2d, #0000000000000000
+stp     q0, q0, [c0]
 \end{lstlisting}
 
-The purecap version could have done the same with \texttt{czr}. It's not clear
-how much performance could have been regained (if any) by doing so, but
-differences of this sort make it difficult to fairly compare the two targets.
+\noindent The purecap version could have used a single instructions
+with the \texttt{czr} register. This may or may not improve performance,
+but serves as an example of how quickly minor code generation differences
+can make it difficult for humans to comprehend differences between
+hybrid and purecap code generation.
 
-Another example is accesses to thread-local storage. Sequences of this sort
-are seen in jemalloc's \fnc{malloc}, a very hot function in many of our
-benchmarks.
-For example, this sequence loads a byte-sized thread-local value (from
-\texttt{CTPIDR\_EL0 + x2}), but it restricts the bounds (with \texttt{x3})
-before doing so:
+Another example we found relevant to allocators is found in a hot path
+within jemallocs \fnc{malloc} function, where a byte-sized thread-local
+is loaded from memory. In hybrid this is compiled to:
 
 \begin{lstlisting}
-    ldp     x2, x3, [...]
-    mrs     c1, CTPIDR_EL0
-    add     c2, c1, x2
-    scbnds  c2, c2, x3
-    ldrb    w0, [c2]
+ldr     x2, [...]
+mrs     x1, TPIDR_EL0
+ldrb    w0, [x2, x1]
 \end{lstlisting}
 
-The security benefit of restricting the bounds in this way is unclear, since
-the \texttt{c2} is never indexed by a variable, and a greater capability is
-already available in \texttt{c1}. We conclude that this sequence is a compiler
-maturity issue, rather than a deliberate security restriction. For reference,
-the hybrid implementation is much simpler, not even loading the field size
-(\texttt{x3}):
+In purecap this is compiled to a load and a bounds restriction:
 
 \begin{lstlisting}
-    ldr     x2, [...]
-    mrs     x1, TPIDR_EL0
-    ldrb    w0, [x2, x1]
+ldp     x2, x3, [...]
+mrs     c1, CTPIDR_EL0
+add     c2, c1, x2
+scbnds  c2, c2, x3
+ldrb    w0, [c2]
 \end{lstlisting}
+
+These additional instructions will almost certainly have a measurable impact
+on performance, but do not appear to have any security benefit:
+the \texttt{c2} register is not indexed by a variable, and a greater capability is
+already available in \texttt{c1}. It seems likely that this is a missed
+optimisation opportunity by the compiler rather than a deliberate security restriction.
+
 
 \subsection{\fuser: Security behaviours}
 
