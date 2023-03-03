@@ -6,11 +6,12 @@
 
 \begin{abstract}
 \noindent
-Several memory allocators have been ported to CHERI, a hardware capability
+Various open-source memory allocators have been ported to CHERI, a hardware capability
 platform. In this paper we examine the security and performance of these
-allocators. We show that most allocators are subject to simple security vulnerabilities,
-which we categorise and explain. However, we show that current versions of LLVM
-inconsistently optimise CHERI code, leading to a muddled performance picture.
+allocators in CheriBSD, running on the experimental Arm Morello instantiation of the CHERI concept. We demonstrate that some allocators are subject to simple security vulnerabilities,
+which we categorise and explain. Further, we study the execution of
+a set of C allocator benchmarks to quantify their performance characteristics.
+We observe 11\% mean overhead for supporting hardware bounds checking, in terms of additional instructions executed. We attribute other performance overhead to (1) reduced cache residency because of CHERI's larger pointer size and (2) non-optimized code generation for the Morello LLVM backend; although we recognize that both these problems could be addressed through ongoing engineering effort.
 \end{abstract}
 
 \maketitle
