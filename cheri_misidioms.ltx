@@ -182,7 +182,7 @@ non-CHERI aware allocator to become CHERI aware.
     over the old block.
     \fnc{\_\_builtin\_align\_up(v, a)} is an LLVM / clang primitive which rounds
     \texttt{v} up to the next smallest multiple of \texttt{a};
-    \texttt{\_Alignof(max\_align\_t))} returns an alignment sufficiently large
+    \texttt{\_Alignof(max\_align\_t)} returns an alignment sufficiently large
     for any scalar type (i.e.~integers and pointers).
   },
 label=lst:bump_alloc1]{code/bump_alloc1.c}
@@ -207,7 +207,7 @@ compatible with normal C code, though pointer types are transparently `upgraded'
 \emph{capability types} (on Morello occupying exactly twice the space of a
 non-capability pointer). CHERI also implies changes in libraries: on CheriBSD,
 for example, \fnc{mmap} returns a capability whose bounds are at least those of
-the sized requested: from that capability our bump allocator derives new
+the size requested: from that capability our bump allocator derives new
 capabilities that differ in their address, but not their bounds. In other
 words, two calls to \fnc{malloc} will produce two capabilities that have the
 same bounds, allowing anyone who possesses one of the capabilities to read and
@@ -221,7 +221,7 @@ write from any portion of \fnc{malloc}ed memory.
     using the idioms suggested in~{\cite[p.~30]{watson20chericprogramming}}.
     This \fnc{malloc} returns a capability whose bounds are sufficient
     to cover \texttt{size} bytes starting at the capability's address
-    (calculated in lines 5--10),
+    (calculated in lines 5--9),
     such that two callers to \fnc{malloc} cannot read or write from
     another block. We also have to update \fnc{realloc} so that it never tries to copy
     more data from the old block than the \texttt{ptr} capability gives
@@ -235,7 +235,7 @@ As this suggests, using CHERI without careful consideration may lead to
 no additional security benefits of using CHERI. This then raises the question:
 how should a secure `CHERI aware' allocator behave? There can be no single
 answer to this question, but we believe that most programmers would expect
-\texttt{malloc} to return a capability restricted to the block of memory
+\texttt{malloc} to at least return a capability restricted to the block of memory
 allocated. \autoref{lst:bump_alloc2}
 shows how to adapt \texttt{malloc} to do this.
 
