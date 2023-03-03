@@ -11,10 +11,10 @@ platform. In this paper we examine the security and performance of these
 allocators when run under CheriBSD on Arm's experimental Morello platform.
 We introduce a number of security attacks and show that all but one allocator,
 including the default CheriBSD allocator, are vulnerable to some of the attacks.
-We then show that while it is meaningful to compare the performance of
-different pure capability (i.e.~`running in full CHERI mode') allocators, comparing
-the performance of hybrid and pure capability (i.e.~`running in non-CHERI vs.~running in CHERI modes')
-allocators does not appear to be meaningful. Although we do not fully understand the
+We then show that while some forms of allocator performance are meaningful,
+comparing the performance of hybrid and pure capability (i.e.~`running in
+non-CHERI vs.~running in CHERI modes') allocators does not appear to be meaningful.
+Although we do not fully understand the
 reasons for this, it seems to be at least as much due to factors such as
 immature compiler toolchains as it is due to the effects of capabilities on
 hardware.
@@ -58,14 +58,14 @@ undermine the security properties one might expect from software running on
 pure capability CHERI; and that it is currently difficult to reason about the
 relative performance impact of CHERI on software.
 
-This paper is structured as follows: First, we introduce the necessary
+This paper is structured as follows. First, we introduce the necessary
 background: a brief overview of capabilities and the CHERI project (\autoref{sec:cheri});
 our running example, a trivial bump allocator (\autoref{sec:bumppointerallocator}); and
 a simple example of how allocators can be vulnerable, or invulnerable, to attack on CHERI
 (\autoref{sec:atk}). Then, we introduce our experiments: the allocators
 under consideration (\autoref{sec:cheriallocators}); our attacks (\autoref{sec:atks});
 a partial performance evaluation (\autoref{sec:performance}) and an analysis
-of some of the discrepancies we uncovered (\autoref{sec:dissection}).
+of some of the performance discrepancies we uncovered (\autoref{sec:dissection}).
 
 
 \section{CHERI Overview}
