@@ -44,15 +44,15 @@ allocators with security flaws and/or performance problems have significant,
 widespread consequences.
 
 Our work studies allocators and CHERI from both security and performance
-angles. We show that all CHERI allocators are subject to at least some simple attacks
+angles. We show that most CHERI allocators are subject to at least some simple attacks
 that are likely to surprise reasonable programmers.
-While we are to meaningfully compare the performance of
-different pure capability (i.e.~`running in full CHERI mode') allocators, comparing
+For performance, while comparing
+different pure capability (i.e.~`running in full CHERI mode') allocators appears meaningful, comparing
 the performance of hybrid and pure capability (i.e.~`running in non-CHERI vs.~running in CHERI modes')
-allocators does not appear to be meaningful.
+allocators does not appear to be consequential.
 We analyse some of the likely factors for this latter case,
 showing that it appears to be as much about the maturity of factors
-such as the compiler toolchain as it is about the effects of capabilities on hardware.
+(such as the compiler toolchain) as it is about the effects of capabilities on hardware.
 We do not claim that our
 work is definitive, though it does suggest two things: that some allocators
 undermine the security properties one might expect from software running on
