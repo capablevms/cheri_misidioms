@@ -84,8 +84,8 @@ one can enforce security properties (e.g.~`this part of the software can
 only read from memory address range X to Y'). Capabilities have a long  history: \cite{levy84capability}
 provides a narrative overview of capability architectures, and
 may usefully be augmented by more recent work such as~\cite{miller06robust}.
-A good first intuition is that CHERI is a modern update of this longstanding
-idea, updated with fine-grained permissions, and adapted to work on modern
+A good first intuition is that CHERI is a modern version of this longstanding
+idea, updated with fine-grained permissions, and adapted to work on recent
 processor instruction sets.
 
 We use the term \emph{CHERI} to refer to the `abstract capability machine'
@@ -129,10 +129,9 @@ A capability's bounds
 are from a \emph{low} (inclusive) to a \emph{high} (exclusive) address: when
 we refer to a capability's bounds being of `$x$' bytes we mean that
 $\textit{high}-\textit{low}=x$. An address is
-\emph{in-bounds} for a given capability if it is wholly contained within the
+\emph{in-bounds} for a given capability if it is wholly\andrei{can an address be partly in bounds?} contained within the
 capability's bounds, or \emph{out-of-bounds} otherwise; a capability is
-in (or out) of bounds if its address is in (or out) of bounds
-\footnote{See~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
+in (or out) of bounds if its address is in (or out) of bounds\footnote{See~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
 capability might have an out-of-bounds address.}.
 A \emph{bounds check} is said to be successful if a given capability, address, or
 address range, is in-bounds for a given capability.
