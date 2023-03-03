@@ -390,7 +390,7 @@ def do_table_slocs(results):
         if 'sloc' in result:
             entry.append(r'\numprint{' + str(result['sloc']) + r'}')
             entry.append(r'\numprint{' + str(result['cheri_loc']) + r'}')
-            entry.append("{:.2f}\%".format(result['cheri_loc'] * 100 / result['sloc']))
+            entry.append("{:.2f}".format(result['cheri_loc'] * 100 / result['sloc']))
         else:
             entry.extend(['-', '-', '-'])
         entries.append(' & '.join(map(str, entry)))
