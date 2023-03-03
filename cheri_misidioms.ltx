@@ -290,7 +290,7 @@ bounds allow.
 Our definition of CHERI in~\autoref{sec:cheri} might suggest that software
 running on CHERI hardware is invulnerable to attack. Alas, while CHERI gives us the
 tools to make secure software, it is up to us to use them correctly --- and wisely.
-We must decide which attack model is relevant to our software, and then write,
+We must decide which attack model is relevant to our use-case, and then write,
 or adjust, the software, to withstand such attacks. Broadly speaking, allocators are
 subject to spatial (e.g.~buffer overrun) or temporal (e.g.~a sequence of
 function calls) attacks, and those attacks can be either on an allocators'
@@ -331,7 +331,7 @@ particular attack.
 \label{sec:cheriallocators}
 
 In this paper we consider a number of allocators that are available for
-CheriBSD. We first of all explain the set of allocators we use, before
+CheriBSD. We first explain the set of allocators we use, before
 exploring in more detail how the allocators have been adapted (if at all) for
 CHERI.
 
@@ -342,7 +342,7 @@ A number of allocators are available for CheriBSD, installable via three
 different routes: as part of the base distribution; via CheriBSD
 \emph{packages}; or via external sources.  We examined allocators
 available via all three routes. We excluded
-allocators aimed only for debugging purposes (e.g.~\memalloc{ElectricFence}).
+allocators aimed at debugging e.g.~\memalloc{ElectricFence}).
 We then ran a simple validation test, \fnc{malloc}ing a block of memory,
 copying data into the block, and then \fnc{free}ing the block: we
 excluded any allocator which failed this test. We
@@ -362,10 +362,10 @@ for them for the rest of this paper, are as follows:
 
 \item \memalloc{snmalloc-cheribuild} is an old version of
     \emph{snmalloc}~\cite{lietar19snmalloc} that can be installed via
-    \texttt{cheribuild}. We found that this version to have several problems
+    \texttt{cheribuild}. We found this version to have several problems
     which we rectified by manually building a version from \emph{snmalloc}'s
     GitHub repository, which includes the \texttt{cheribuild} version, but has
-    more recent updates. We term this latter version \texttt{snmalloc-repo}.
+    more recent updates. We term this more recent version \texttt{snmalloc-repo}.
 
 \item \memalloc{dlmalloc-cheribuild} is a version of the well-known
     \emph{dlmalloc} allocator~\cite{lea96memory} modified for CHERI,
@@ -376,7 +376,7 @@ for them for the rest of this paper, are as follows:
 \item \memalloc{ptmalloc}~\cite{gloger06ptmalloc} is an extension of
     \memalloc{dlmalloc}, with added support for multiple threads. A
     non-modified package of \memalloc{ptmalloc3} version 1.8 is available in
-    the package manager of CheriBSD
+    the package manager of CheriBSD.
 
 \item \memalloc{bump-alloc-nocheri} is the simple, non-CHERI-aware bump
     allocator from~\autoref{lst:bump_alloc1}. Conversely, the CHERI aware version is
