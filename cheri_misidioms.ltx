@@ -883,8 +883,8 @@ a similar trend with the mean instructions retired by jemalloc 1.15x times snmal
 
 \subsection{Results Across Hybrid and Purecap}
 
-\autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} in hybrid
-and purecap\andrei{doesn't this figure as a whole show both snmalloc and jemalloc?}. As expected, purecap is always slower than hybrid in total
+\autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} and \memalloc{snmalloc} in hybrid
+and purecap. As expected, purecap is always slower than hybrid in total
 execution time, and there is significant variance amongst benchmarks.
 However, using the geometric mean, both jemalloc and snmalloc \emph{purecap}
 are 1.59x slower than \emph{hybrid}, which is a much greater figure than we expected. That
@@ -948,18 +948,10 @@ tarmac traces that are often a TiB long for our workloads, our two approaches
 differ in performance by about 3 orders of magnitude. Running our full
 benchmark suite for its full duration would be infeasible in FVP, so the
 results we show in~\autoref{fig:instrmix} result from our QEMU approach.
-
-Unsurprisingly the purecap benchmarks execute many `Morello' (i.e.~CHERI)
-instructions while the hybrid benchmarks execute normal AArch64 code. The
-instruction mixes look largely as we expected. Branches are the same in
-hybrid and purecap. \andrei{The following repeats Figure 2 caption identically}Some pointer arithmetic (a subset of `data proc' in hybrid)
-moves from the `normal' AArch64 instruction set to the `CHERI' Morello instruction set (`morello arith'). Similarly, some loads
-and stores move from AArch64 to Morello. There is a small but noticeable increase
-in the overall quantity of loads and stores (AArch64 and Morello combined)
-which, as we shall see later, is probably the result of missed compiler
-optimisations in purecap code. Finally the `Morello misc' category captures
-instructions related to capability bounds, tag checks, and so on that we would
-only expect to see in any quantity in purecap. Overall, while there are one or
+As the figure shows, the instruction mixes look largely sensible: some
+aspects (e.g.~branches) are identical in hybrid and purecap; some
+vary where capabilities are sometimes used (e.g.~loads and stores);
+and purecap uses Morello instructions. Overall, while there are one or
 two minor oddities (e.g.~mstress uses Neon instructions -- classified as
 floating point -- on hybrid but not purecap), there are no obvious smoking
 guns.
