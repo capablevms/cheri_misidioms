@@ -13,6 +13,10 @@ BMPLOTTER="${BMPLOTTER:?BMPLOTTER is unset (or empty)}"
 # order to avoid similar adjacent colours.
 
 out="$(dirname "${BASH_SOURCE[0]}")"/../../fig/microbenchmarks.pdf
-"$BMPLOTTER" --width=0.5 --colours=759DA0,E1A765,8A67BA,E06A4A --out="$out" results.csv
+
+# Skip 21-global and 22-global-other-so; they don't measure anything new and the
+# names promise more than they actually offer.
+grep -v '\<2.-global' results.csv |
+    "$BMPLOTTER" --width=0.5 --colours=759DA0,E1A765,8A67BA,E06A4A --out="$out" --overplot=jitter
 
 # TODO: The chart is too wide!

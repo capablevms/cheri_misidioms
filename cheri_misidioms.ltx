@@ -1072,11 +1072,11 @@ benchmark traces.
     similar levels of indirection, the cost of accessing and operating on
     capabilities in these veneers appears significant. This inherently includes
     an indirect branch, as in \texttt{01-factorial-asm-indirect}.
-  \item \texttt{21-global} and \texttt{22-global-other-so} use a global
-    variable as the loop counter. In purecap, the compiler sets tight bounds,
-    but it hoists this operation out of the loop so this benchmark effectively
-    compares in-cache capability and plain address data accesses.
-    \jacob{TODO: Remove these from the plot; they show nothing new.}
+%  \item \texttt{21-global} and \texttt{22-global-other-so} use a global
+%    variable as the loop counter. In purecap, the compiler sets tight bounds,
+%    but it hoists this operation out of the loop so this benchmark effectively
+%    compares in-cache capability and plain address data accesses.
+%    \jacob{TODO: Remove these from the plot; they show nothing new.}
   \item \texttt{30-ptr-add-asm} measures addition, and is a very common pointer
     arithmetic operation. Capability addition has a dedicated instruction and
     is conceptually more complicated than integer addition, since it needs to
