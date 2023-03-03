@@ -749,8 +749,8 @@ assert(
 In practise, such a simple attack is unlikely to succeed on all but the
 most basic allocators, as the most likely attack vector is when an allocator
 fails to take into account bounds imprecision. The `full' \overlap
-attack first finds the first 512 lengths that are not precisely representable
-as bounds and randomly allocates multiple blocks to see if any of the
+attack initially finds the first 512 lengths that are not precisely representable
+as bounds and then randomly allocates multiple blocks to see if any of the
 resulting capabilities overlap.
 
 
