@@ -1037,40 +1037,59 @@ figures alone.
 
 To attempt to rule out (or account for) low-level hardware performance
 variation, we wrote a series of very simple microbenchmarks, each designed to
-reveal low-level differences:
+reveal low-level differences. Most are written in C (with annotations to
+minimise compiler variance), but many include or are primarily written in
+Morello assembly. Note that these are not indicators of real-world performance,
+which is much more complicated to analyse (and usually has much more
+substantial loop bodies), but provide intuition for interpreting other
+benchmark traces.
 
 \begin{itemize}
-  \item \texttt{00-factorial-asm-minimal} is a tail-recursive factorial
-    implementation, used as a control. This does not use capabilities (or the
-    stack), and should behave identically on hybrid and purecap.
-  \item \texttt{01-factorial-asm-minimal} is similar, but uses an indirect
-    tail call, to attempt to measure any fundamental overhead in executing a
+  \item \texttt{00-factorial-asm-minimal} is a tail-recursive integer factorial
+    implementation. It does not use capabilities (or the stack) in the loop,
+    and is similar to \texttt{99-busy-loop}, but with a longer loop body
+    (containing a multiplication). The purecap spread, and hybrid bimodality,
+    \jacob{refresh chart to include bimodal results}
+    do not occur elsewhere, and are not obviously explainable, so we consider
+    this to be a microarchitectural artefact.
+  \item \texttt{01-factorial-asm-indirect} is similar, but uses an indirect
+    tail call (using Morello's \texttt{br} instruction). The purecap target
+    tail-calls a capability whilst the hybrid target tail-calls a plain
+    address. The results demonstrate a consistent overhead in invoking a
     capability.
-  \item \texttt{99-busy-loop} is an empty C loop, to act as another control.
-    The C loop uses no capabilities, and compiles to identical code for both
-    hybrid and purecap.
-\end{itemize}
-\jacob{TODO: Test pointer arithmetic too.}
-
-In addition, we included some benchmarks that (for practical reasons) we wrote
-in C, and therefore are influenced by the ability of the C compiler to optimise
-them:
-
-\begin{itemize}
   \item \texttt{10-random-graph-walk-l1} performs a (C) random walk through a
-    graph that fits in the 64KiB\cite[p.~35]{morellotrm} L1 data cache, to
-    attempt to measure any fundamental overhead in reading from a capability.
-    Note that the purecap workload has a smaller number of graph nodes, since
-    each node is larger.
+    graph that fits in the 64KiB\cite[p.~35]{morellotrm} L1 data cache. This
+    suggests that there is no inherent overhead in reading from a capability.
   \item \texttt{11-random-graph-walk-fixed} is the same, but keeping the number
-    of nodes constant. We picked 16384 nodes because this is the first
-    power-of-two working set size at which the hybrid and purecap variants start
-    to perform differently. The working set is 1MiB in hybrid, and 2MiB in
-    purecap, so the difference is most likely explained by the L2 cache
-    size (1MiB\cite[p.~35]{morellotrm}).
+    of nodes constant. The working set is much larger, at 1MiB in
+    hybrid, and 2MiB in purecap, but note that each node spans \emph{two} L1
+    data cache lines in purecap, only one of which is accessed at each visit.
+    The 1MiB\cite[p.~35]{morellotrm} L2 cache is probably not stressed
+    significantly, hence explaining the similar results.
+  \item \texttt{20-so-call} is a simple C loop, calling an empty function in
+    another shared object. This is designed to measure the PLT overhead.
+    Although the two targets perform fundamentally similar operations, with
+    similar levels of indirection, the cost of accessing and operating on
+    capabilities in these veneers appears significant. This inherently includes
+    an indirect branch, as in \texttt{01-factorial-asm-indirect}.
+  \item \texttt{21-global} and \texttt{22-global-other-so} use a global
+    variable as the loop counter. In purecap, the compiler sets tight bounds,
+    but it hoists this operation out of the loop so this benchmark effectively
+    compares in-cache capability and plain address data accesses.
+    \jacob{TODO: Remove these from the plot; they show nothing new.}
+  \item \texttt{30-ptr-add-asm} measures addition, and is a very common pointer
+    arithmetic operation. Capability addition has a dedicated instruction and
+    is conceptually more complicated than integer addition, since it needs to
+    check bounds encodability. However, our results show that this has no
+    performance impact.
+  \item \texttt{31-ptr-add-align}, conversely, performs addition followed by an
+    align-down operation. Again, the capability operation is a dedicated
+    instruction, whilst the integer form is a trivial bitwise operation. This
+    operation is uncommon in user code, but important in allocators.
+  \item \texttt{99-busy-loop} is an empty C loop, to act as a control. The C
+    loop uses no capabilities, and compiles to identical code for hybrid and
+    purecap targets.
 \end{itemize}
-
-\jacob{TODO: Add missing descriptions, and explain the outliers.}
 
 \begin{figure}
   \begin{center}
