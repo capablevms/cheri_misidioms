@@ -66,8 +66,8 @@ of some of the discrepancies we uncovered (\autoref{dissection}).
 \label{sec:cheri}
 
 In this section, we provide a simple overview of CHERI, and its major concepts.
-Since CHERI has been developed over a number of years, and is explained over
-a variety of documentation and papers, some concepts have acquired more than one name,
+Since CHERI has been developed over a number of years, and is explained across
+a range of documentation and papers, some concepts have acquired more than one name,
 or names that subtly conflict with mainstream
 software development definitions. We use a single name for each concept, sometimes
 introducing new names where we believe that makes things clearer.
@@ -75,10 +75,10 @@ introducing new names where we believe that makes things clearer.
 A \emph{capability} is a token that gives those who bear it \emph{abilities} to
 perform certain actions. By restricting who has access to a given capability,
 one can enforce security properties (e.g.~`this part of the software can
-only read from memory address X to Y'). Capabilities have a long and storied history: \cite{levy84capability}
-provides an approachable historical overview of capability architectures, and
+only read from memory address range X to Y'). Capabilities have a long  history: \cite{levy84capability}
+provides a narrative overview of capability architectures, and
 may usefully be augmented by more recent work such as~\cite{miller06robust}.
-A good first intuition is that CHERI is a modern update of this venerable
+A good first intuition is that CHERI is a modern update of this longstanding
 idea, updated with fine-grained permissions, and adapted to work on modern
 processor instruction sets.
 
@@ -88,14 +88,14 @@ instruction set, an ABI (e.g.~\cite{brooks19cheriabi}), a user-facing library th
 capability-related functions, and a CHERI-aware language. (e.g.~CHERI C~\cite{watson20chericprogramming},
 an adaption, in the sense of both extending and occasionally altering, of C).
 We refer to specific hardware implementations by their name (e.g.~CHERI
-RISC-V). In this paper, we mostly use Arm's `Morello' implementation, which is an
+RISC-V). In this paper, we use Arm's `Morello' implementation, which is an
 experimental ARMv8 chip extended with CHERI instructions.
 
 \label{abilities}
 Conceptually, a CHERI system starts with a `super' capability that has
 the maximum set of abilities. Each
 new \emph{child} capability must be derived from one or more \emph{parent}
-capabilities. Child capabilities must have the same, or fewer, abilities than its
+capabilities. A child capability must have the same, or fewer, abilities than its
 parent: put another way, capabilities' abilities monotonically decrease.
 An \emph{authentic}\footnote{CHERI calls these
 `tagged' or `valid' (and their inauthentic counterparts `untagged' or `invalid').}
@@ -106,7 +106,7 @@ that capabilities cannot be forged. For example,
 there is no user-space mechanism to set a capability as `valid'; only a child capability
 derived, correctly, from valid parent capabilities can itself be valid.
 
-A capability consists of an
+A capability consists of a memory
 \emph{address}\footnote{This portion of a capability does not \emph{have} to store an
 address, though typically it does so, and the CHERI API calls it \texttt{address}.
 In the context of this paper, since it always stores an address, we stick with this name.},
@@ -115,7 +115,7 @@ which we consider in this paper);
 and \emph{bounds}, the memory range on which
 the capability can operate.
 
-Permissions include the ability to read / write from memory.
+Permissions include the ability to read / write from / to memory.
 A \emph{permissions check} is said to be successful if the permission required
 for a given operation is provided by a given capability.
 
@@ -131,7 +131,7 @@ capability might have an out-of-bounds address.}.
 A \emph{bounds check} is said to be successful if a given capability, address, or
 address range, is in-bounds for a given capability.
 
-Hardware that operates on a capability requires one or more of: an authenticity
+A processor instruction that operates on a capability requires one or more of: an authenticity
 check, a permissions check, or a bounds check. If a capability passes the
 relevant checks, then the operation \emph{exercises} the capability. If a
 capability fails the relevant checks then either: the hardware produces a
@@ -141,7 +141,7 @@ sealing operation on Morello produces an inauthentic result, rather than an
 exception.
 
 On Morello and CHERI RISC-V, capabilities behave as if they are 128 bits in
-size, but also carry an additional bit that records the authenticity of each
+size, but also carry an additional (129th) bit that records the authenticity of each
 capability: the authenticity bit can be read, and can be unset, but cannot
 be set (i.e.~authentic capabilities must be created via hardware following
 CHERI's rules).
