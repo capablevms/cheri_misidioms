@@ -906,7 +906,16 @@ the reader some sense of what they tell us?}
   \begin{center}
     \includegraphics[width=1.2\columnwidth]{fig/instruction_mix/stacked_bar_chart.pdf}
   \end{center}
-  \caption{\label{fig:instrmix}Dynamic instruction mix for purecap (left-hand bar) and hybrid (right-hand bar) benchmark runs. Higher bar means more instructions were executed.}
+  \caption{\label{fig:instrmix}
+  Dynamic instruction mix for purecap (left-hand bar) and hybrid (right-hand bar) benchmark runs.
+  Most of these are as expected. For example, branches are the same in hybrid
+  and purecap; some pointer arithmetic (a subset of `data proc' in hybrid)
+  moves from the AArch64 to Morello (`morello arith'). Similarly, some loads
+  and stores move from AArch64 to Morello. There is a small but noticeable
+  increase in the overall quantity of loads and stores (AArch64 and Morello
+  combined). The `Morello misc' category captures instructions related to
+  capability bounds, tag checks, and so on that we would only expect to see in
+  any quantity in purecap.}
 \end{figure}
 
 We then wondered whether the higher instruction counts on purecap benchmarks
@@ -944,17 +953,18 @@ results we show in~\autoref{fig:instrmix} result from our QEMU approach.
 
 Unsurprisingly the purecap benchmarks execute many `Morello' (i.e.~CHERI)
 instructions while the hybrid benchmarks execute normal AArch64 code. The
-instruction mixes look largely as we expected. Branches and, mostly,
-floating point (with a small exception in mstress) are the same in
+instruction mixes look largely as we expected. Branches are the same in
 hybrid and purecap. Some pointer arithmetic (a subset of `data proc' in hybrid)
-moves from AArch64 to Morello (`morello arith'). Similarly, some loads
+moves from the `normal' AArch64 instruction set to the `CHERI' Morello instruction set (`morello arith'). Similarly, some loads
 and stores move from AArch64 to Morello. There is a small but noticeable increase
 in the overall quantity of loads and stores (AArch64 and Morello combined)
 which, as we shall see later, is probably the result of missed compiler
 optimisations in purecap code. Finally the `Morello misc' category captures
 instructions related to capability bounds, tag checks, and so on that we would
-only expect to see in any quantity in purecap. Overall, once again, there
-are no obvious smoking guns.
+only expect to see in any quantity in purecap. Overall, while there are one or
+two minor oddities (e.g.~mstress uses Neon instructions -- classified as
+floating point -- on hybrid but not purecap), there are no obvious smoking
+guns.
 
 
 \section{Analysing The Disparity Between Hybrid and Purecap Performance}
