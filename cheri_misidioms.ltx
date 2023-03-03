@@ -647,7 +647,7 @@ We first allocate a block (line 1) and then check that the capability returned
 allows us to store data (\texttt{CHERI\_PERM\-\_STORE}) to that block (lines 2
 and 3). We then deliberately remove the store permission (line 4), checking
 that this permission really has been removed (lines 5 and 6). We then call
-\fnc{realloc} without changing the blocks size and check whether we have
+\fnc{realloc} without changing the block's size and check whether we have
 regained the ability to store data via the capability.
 
 
