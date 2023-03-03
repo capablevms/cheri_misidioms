@@ -795,8 +795,10 @@ hybrid or pure capability CHERI do appear to be meaningful.
 In this section we thus first detail a fairly traditional performance evaluation
 comparing performance amongst purecap CHERI allocators, before showing that
 performance across hybrid and purecap allocators is surprisingly slow.
-In~\autoref{sec:dissection} we dissect why there are such disparities
-between hybrid and purecap performance.
+We look for, but fail to find, obvious explanations for why allocator
+performance across hybrid and purecap varies so much. In~\autoref{sec:dissection} we
+attempt a more detailed, and generic, analysis of factors that might explain
+such differences.
 
 
 \subsection{Methodology}
@@ -851,7 +853,7 @@ use \texttt{LD\_PRELOAD} at runtime to dynamically switch between allocators.
 We measure wall-clock time on an otherwise unloaded Morello machine.
 
 
-\subsection{Results}
+\subsection{Results Within Hybrid and Purecap}
 
 \laurie{the within-hybrid and/or within-purecap results should go here}
 
@@ -863,7 +865,7 @@ when compiled in \emph{hybrid} and 1.24 times when compiled in \emph{purecap}.
 as the tests were aborted.}
 
 
-\subsection{Surprising Differences Between Hybrid and Purecap Performance}
+\subsection{Results Across Hybrid and Purecap}
 
 \begin{figure*}
   \begin{center}
@@ -900,21 +902,6 @@ counters do not allow us to identify a single cause.
 \laurie{do we have upto date correlation graphs? if not, can we at least give
 the reader some sense of what they tell us?}
 
-
-\subsection{Dynamic Instruction Mix}
-
-Finally we considered the dynamic instruction counts for
-these benchmark executions, categorizing instructions based on their
-opcode types---following the top-level classification from the index-by-opcode section of the Morello architecture reference manual \cite{arm22arm}).
-We generated instruction counts using the Morello QEMU emulator with a custom plugin, and validated a subset of these results by cross-checking them against the Arm FVP emulator for Morello.
-Instructions captured are user mode instructions (i.e.\ excluding kernel activity) during benchmark execution
-(i.e.\ excluding any OS boot activity).
-Figure \ref{fig:instrmix} shows the results, with purecap benchmark results presented relative to hybrid dynamic instruction counts.
-For the majority of benchmarks, we see that the pointer arithmetic (which in hybrid mode is captured as data processing) is now morello arithmetic, involving capabilities. Similarly, some load and store operations are now morello operations, loading and storing capabilities.
-We notice that sometimes there is an overall increase in loads and stores for purecap, possibly caused by immature compiler code generation for Morello.
-The `morello misc' overhead involves capability bounds checks, tag checks, etc --- which are intrinsic features of
-CHERI. This is inescapable overhead, additional instructions that must run to support capability-aware execution. In general, this overhead is within \jeremy{XXX 10?? } \% of the total instruction count. 
-
 \begin{figure}
   \begin{center}
     \includegraphics[width=1.2\columnwidth]{fig/instruction_mix/stacked_bar_chart.pdf}
@@ -922,10 +909,52 @@ CHERI. This is inescapable overhead, additional instructions that must run to su
   \caption{\label{fig:instrmix}Dynamic instruction mix for purecap (left-hand bar) and hybrid (right-hand bar) benchmark runs. Higher bar means more instructions were executed.}
 \end{figure}
 
-%%%
+We then wondered whether the higher instruction counts on purecap benchmarks
+was indicative was due to necessary extra instructions in purecap allocators
+(thinking back to Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2})
+or whether it might be due to other factors. To understand this, we wanted
+to count how often different classes of instruction were executed.
+Unfortunately, there is currently no direct way on either CheriBSD or Morello
+to obtain such a count, so we had to cobble together two approaches: a fast,
+but potentially imprecise, approach based on QEMU; and a slow, but much more
+precise, approach based on Arm's Morello Platform FVP~\cite[p.~23]{morellofvp}
+used as a sanity check for our QEMU results.
 
-\jacob{Put FVP trace performance results somewhere in here.}
+We wrote a custom QEMU plugin that maintains counts for each class of
+instruction as a Morello instance is running. This includes the kernel booting
+and shutting down as well as the benchmark we are interested in. We repeatedly
+ran CheriBSD without any meaningful workload, so that we could find the
+instruction counts that together constitute the `head' and `tail' of execution.
+When we ran a benchmark, we then subtracted the head/tail instruction counts to
+obtain the `benchmark only' instruction counts.
 
+To validate these results, we used the Morello Platform FVP, which can emit ``tarmac''
+traces~\cite[p.~5452]{fvpguide} which are complete records of execution. We
+altered the FVP so that when we executed an otherwise unused instruction, it
+toggled tracing on and off. We executed 1 iteration of the richards
+benchmark, examined the traces, and counted the instructions contained therein,
+which were a close match for our QEMU instruction counts. This gives us confidence
+that our QEMU figures are representative.
+
+Since our QEMU approach only has to track a few integers, whereas FVP produces
+tarmac traces that are often a TiB long for our workloads, our two approaches
+differ in performance by about 3 orders of magnitude. Running our full
+benchmark suite for its full duration would be infeasible in FVP, so the
+results we show in~\autoref{fig:instrmix} result from our QEMU approach.
+
+Unsurprisingly the purecap benchmarks execute many `Morello' (i.e.~CHERI)
+instructions while the hybrid benchmarks execute normal AArch64 code. The
+instruction mixes look largely as we expected. Branches and, mostly,
+floating point (with a small exception in mstress) are the same in
+hybrid and purecap. Some pointer arithmetic (a subset of `data proc' in hybrid)
+moves from AArch64 to Morello (`morello arith'). Similarly, some loads
+and stores move from AArch64 to Morello. There is a small but noticeable increase
+in the overall quantity of loads and stores (AArch64 and Morello combined)
+which, as we shall see later, is probably the result of missed compiler
+optimisations in purecap code. Finally the `Morello misc' category captures
+instructions related to capability bounds, tag checks, and so on that we would
+only expect to see in any quantity in purecap. Overall, once again, there
+are no obvious smoking guns.
 
 
 \section{Analysing The Disparity Between Hybrid and Purecap Performance}
@@ -969,6 +998,9 @@ allocator of~\autoref{lst:bump_alloc1}.
 
 
 \subsection{Analysis Techniques}
+
+CheriBSD currently lacks many of the advanced profiling tools one might find
+on other platforms. Instead, we have used a combination of other techniques.
 
 In addition to performance being affected by several factors, the available
 operating systems lack support for traditional profiling tools, making analysis
