@@ -431,9 +431,7 @@ in essence, simple wrappers around the \emph{builtin} API).
 
 \item
 The \emph{cheriintrin.h} API is similar to, but supersedes, the \emph{cheric.h}
-API. \laurie{can we explain why it supersedes cheric?}\jacob{We never asked. See: https://github.com/CTSRD-CHERI/cheribsd/issues/786}
-\andrei{does intrin fully cover cheric?}\jacob{Very nearly. The gaps are easy to express with other intrinsics, but they use different builtins.}
-It provides 34 functions and macros, 30 of which map
+API. It provides 34 functions and macros, 30 of which map
 directly to the \emph{builtin} API.
 \end{itemize}
 
@@ -449,15 +447,6 @@ course, any software that needs access to CHERI functions can choose to use the
 readily-available \emph{builtin} API. \andrei{I wonder if there's some
 documentation about what it offers, or do you need to look at source code? I
 would assume there is some document for the other two}
-
-\laurie{obvious question: why does cheriintrin.h exist if it's just wrapping
-the builtins?!}\andrei{I would assume to provde a cleaner interface to use
-(e.g., cheri-ddc-get is --builtin-cheri-global-data-get, and
-cheri-representable-length is --builtin-cheri-round-representable-length}
-\jacob{Again, assumptions, but builtins are not portable (in several respects),
-whilst cheriintrin.h can be, at least in principle. They're also the only
-documentation I've seen; I discovered several new-to-me builtins when I wrote
-code/parse-llvm-defs.pl}
 
 
 \section{The Attacks}
