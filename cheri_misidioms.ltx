@@ -1024,17 +1024,15 @@ with these microbenchmarks is not to indicate real-world performance, but to
 help us better understand larger benchmarks.
 
 \vspace{6pt}\noindent
-\texttt{00-factorial-asm-minimal} is a tail-recursive integer factorial
+\texttt{00-factorial-asm-minimal} is a tail-recursive factorial
     implementation that, despite not using capabilities in the loop, shows an
-    unusual bimodality in hybrid but a wide, and fairly even spread, in
-    purecap. We have no obvious explanation for this, so we assume it
+    unusual bimodality in hybrid. We have no obvious explanation for this, so we assume it
     is a microarchitectural artefact.
 
 \vspace{6pt}\noindent
 \texttt{01-factorial-asm-indirect} is similar, but uses an indirect
-    tail call (using Morello's \texttt{br} instruction). The purecap target
-    tail-calls a capability whilst the hybrid target tail-calls a plain
-    address. This shows there is a consistent overhead of just under
+    tail call of normal pointer in hybrid and a capability in purecap.
+    This shows there is a consistent overhead of just under
     10\% in branching via a capability.
 
 \vspace{6pt}\noindent
@@ -1043,8 +1041,8 @@ help us better understand larger benchmarks.
     suggests that there is no inherent overhead in reading from a capability.
 
 \vspace{6pt}\noindent
-\texttt{11-random-graph-walk-fixed} is similar, but uses a larger, constant
-    number of nodes. That set consumes 1MiB in hybrid and (due to capabilities
+\texttt{11-random-graph-walk-fixed} is similar, but uses a larger set
+    that consumes 1MiB in hybrid and (due to capabilities
     being double word width) 2MiB in purecap. Despite this, there is little
     performance difference between hybrid and purecap.
 
@@ -1056,8 +1054,8 @@ help us better understand larger benchmarks.
 \vspace{6pt}\noindent
 \texttt{30-ptr-add-asm} measures pointer addition, a common operation.
     Although capability addition is more complex (due to bounds checking),
-    it has a dedicated instruction, which probably explains why
-    there is no meaningful performance difference between hybrid and purecap.
+    it has a dedicated instruction.
+    There is no meaningful performance difference between hybrid and purecap.
 
 \vspace{6pt}\noindent
 \texttt{31-ptr-add-align} performs pointer addition followed by an
