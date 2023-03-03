@@ -98,7 +98,7 @@ RISC-V). In this paper, we use Arm's `Morello' implementation, which is an
 experimental ARMv8 chip extended with CHERI instructions.
 
 \label{abilities}
-Conceptually, a CHERI system starts with a `super' capability that has
+Conceptually, a CHERI system starts with a `root' capability that has
 the maximum set of abilities. Each
 new \emph{child} capability must be derived from one or more \emph{parent}
 capabilities. A child capability must have the same, or fewer, abilities than its
