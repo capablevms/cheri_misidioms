@@ -57,8 +57,8 @@ our running example, a trivial bump allocator (\autoref{sec:bumppointerallocator
 a simple example of how allocators can be vulnerable, or invulnerable, to attack on CHERI
 (\autoref{sec:atk}). Then, we introduce our experiments: the allocators
 under consideration (\autoref{sec:cheriallocators}); our attacks (\autoref{sec:atks});
-a partial performance evaluation (\autoref{performance}) and an analysis
-of some of the discrepancies we uncovered (\autoref{dissection}).
+a partial performance evaluation (\autoref{sec:performance}) and an analysis
+of some of the discrepancies we uncovered (\autoref{sec:dissection}).
 
 
 \section{CHERI Overview}
@@ -802,6 +802,7 @@ invulnerable to this attack.
 
 
 \section{Performance Evaluation}
+\label{sec:performance}
 
 We wanted to understand the performance impact of porting allocators to CHERI.
 Our intention was to run allocators on both hybrid and pure capability Morello
