@@ -699,8 +699,8 @@ data via a capability/pointer that it cannot ensure has been initialised. Less
 obviously, both attacker and non-attacker have an equivalent capability (with
 the same address and bounds) but, due to capability/pointer provenance rules,
 the non-attackers version of the capability has, technically speaking, no
-longer valid by those rules. This outcome is unlikely to trouble an attacker!
-nd who now has a capability \emph{C3} giving the same access as \emph{C1}.
+longer valid by those rules. This outcome is unlikely to trouble an attacker
+who now has a capability \emph{C3} giving the same access as \emph{C1}.
 
 
 \subsubsection{Mitigations}
@@ -1140,7 +1140,7 @@ tight bounds:
 Behaviours of this sort may be required (or at least be beneficial) under the
 purecap security model, and may therefore be difficult to optimise. We have
 completed neither security nor performance analysis for most benchmarks.
-For example, FVP trace anaysis\jacob{TODO: Link to method} indicates that
+For example, FVP trace analysis\jacob{TODO: Link to method} indicates that
 global variable accesses appear to be a major difference between hybrid and
 purecap compilations of hot functions in the richards benchmark. However, in
 the absence of profiling tools, it is unclear how much of the performance
