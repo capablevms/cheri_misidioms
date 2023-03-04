@@ -42,13 +42,13 @@ exit(1) unless GetOptions("help" => sub { ExitWithUsage(0) },
                           "n=i" => \$n);
 
 my @available_colour_sets = (
-  [qw/a74b32 c48652 ddc083 f8f9c3/], # Red-browns
-  [qw/488178 81c09e d1ffbc/],        # Blue-greens
-  [qw/6c3cad a07dd0/],               # Purples
+  [qw/fbec86 f6c859 ee962d d35d16 a13315/], # Red-browns
+  [qw/488178 81c09e d1ffbc/],               # Blue-greens
+  #[qw/6c3cad a07dd0/],                      # Purples
 );
 
-# Used for benchmark ELFs.
-my @neutrals = qw/474747 777777 aaaaaa e1e1e1/;
+# Purple-pinks.
+my @self_colours = reverse qw/412c4a 6d4576 9f5fa2 bc8ab9 d6b6d0/;
 
 my %colour_sets;
 my %colours;
@@ -112,15 +112,25 @@ for my $file (@hybrid, @purecap) {
   for (my $i = 0; $i < $n; $i++) {
     my $elf_sym = shift(@sorted);
     my ($elf, $symbol) = split(',', $elf_sym);
+    if ($symbol eq 'unknown symbol') {
+      $other += $symbols{$elf_sym};
+      next;
+    }
     if (!exists($colour_sets{$elf})) {
       if ($elf =~ /\.so/) {
         $colour_sets{$elf} = shift(@available_colour_sets) or die("Ran out of colour sets");
       } else {
-        $colour_sets{$elf} = [@neutrals];
+        $colour_sets{$elf} = [@self_colours];
       }
     }
     if (!exists($colours{$elf_sym})) {
-      $colours{$elf_sym} = shift(@{$colour_sets{$elf}}) or die("Ran out of colours for $elf");
+      if (my $colour = shift(@{$colour_sets{$elf}})) {
+        $colours{$elf_sym} = $colour;
+      } else {
+        warn("Ran out of colours for $elf");
+        $colours{$elf_sym} = 'eeeeee';
+      }
+
     }
     my $colour = $colours{$elf_sym};
     my $count = $symbols{$elf_sym};
