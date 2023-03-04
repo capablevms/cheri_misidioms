@@ -298,7 +298,7 @@ tools to make secure software, it is up to us to use them correctly --- and wise
 We must decide which attack model is relevant to our use-case, and then write,
 or adjust, the software, to withstand such attacks. In our context, allocators are
 subject to spatial (e.g.~buffer overrun) or temporal (e.g.~a sequence of
-function calls) attacks, and those attacks can be either on an allocators'
+function calls) attacks, and those attacks can either target an allocators'
 internals (e.g.~corrupting private data-structures) or its interface
 (e.g.~allowing user code to bypass security checks).
 
@@ -315,15 +315,15 @@ With the capability-unaware bump allocator from \autoref{lst:bump_alloc1} this
 code compiles successfully and, when run, prints `\texttt{c}'\footnote{Note
 that the example is in the realm of undefined behaviour, so a compiler could
 compile this code to do something entirely different -- though, at the time of
-writing, CheriBSD's LLVM does not do so.}. It does this because the bump
+writing, CheriBSD's LLVM does not do so.}. This is because the bump
 allocator allocates the second block immediately after the first in memory, so
-writing 1 past the end of the first block in fact writes to the first byte of
+writing 1 past the end of the first block writes to the first byte of
 the second block. However, with the
 capability-aware allocator from \autoref{lst:bump_alloc2}, the program aborts
 with a security exception when executing line 3.
 
 Buffer overruns are so common in C code that we expect most people to consider
-that part of their attack model: by extension, we believe that they
+them as part of their attack model: by extension, we believe that they
 would expect a CHERI allocator to protect against such attacks. However, the
 difference between~\autoref{lst:bump_alloc1} and~\autoref{lst:bump_alloc2}
 shows that such protection often requires careful adjustments of code to
@@ -346,7 +346,7 @@ CHERI.
 A number of allocators are available for CheriBSD, installable via three
 different routes: as part of the base distribution; via CheriBSD
 \emph{packages}; or via external sources.  We examined allocators
-available via all three routes. We excluded
+available from all three sources. We excluded
 allocators aimed at debugging e.g.~\memalloc{ElectricFence}).
 We then ran a simple validation test, \fnc{malloc}ing a block of memory,
 copying data into the block, and then \fnc{free}ing the block: we
