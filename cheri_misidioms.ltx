@@ -997,8 +997,8 @@ single word width addresses.
 
 \vspace{6pt}\noindent\textbf{\fabi}
 At the ABI level, the purecap CheriBSD ABI is different than the hybrid ABI
-(where the latter is largely the same as a non-CHERI ABI): the effects of this
-at the software level, or its impact on compiler optimisations are unclear.
+(where the latter is largely the same as a non-CHERI ABI), sometimes
+requiring different code generation.
 
 \vspace{6pt}\noindent\textbf{\fcompiler}
 At the compiler level, both hybrid and purecap modes require altered versions
@@ -1012,21 +1012,6 @@ LLVM will produce less optimal code than the hybrid LLVM.
 At the user level, code that wants to take advantage of CHERI will tend to use
 different execution paths when compiled for purecap (e.g.~the bump
 allocator of~\autoref{lst:bump_alloc1}).
-
-
-% \subsection{Analysis Techniques}
-%
-% We used the Morello Platform FVP, which can emit "tarmac"
-%     traces~\cite[p.~23]{morellofvp}\cite[p.~5452]{fvpguide} describing instructions
-%     executed. Tarmac traces includes virtual addresses which, combined with a
-%     record of each process's memory map, can map instructions to individual
-%     functions (using ELF analysis). This technique excludes kernel activity
-%     because the exception level is included in the trace, but includes
-%     (negligible) noise from other processes running on the system. The major
-%     disadvantage of this technique is that it requires a lot of storage, and is
-%     very slow, so we have applied it only to select workloads
-%     (\autoref{fig:fvpstats}). We also used this technique to verify a sample of
-%     QEMU measurements.
 
 
 \subsection{\fhardware: Hardware pointer operation (microbenchmarks)}
@@ -1097,20 +1082,19 @@ help us better understand larger benchmarks.
 \end{figure}
 
 
-\subsection{\fabi: Purecap ABI difficulties}
+\subsection{\fabi: ABI Implications}
 \label{ssec:purecap ABI difficulties}
 
-We have observed some toolchain behaviours that differ between hybrid and
-purecap. For example, this is a store (of zero) to a global variable in Morello
-hybrid:
+We observed some ABI-related differences between hybrid and purecap code.
+For example, this storing zero to a global variable in hybrid compiles
+to the following:
 
 \begin{lstlisting}
     adrp x8, #+0x20000
     str xzr, [x8, #2472]
 \end{lstlisting}
 
-In this case, the \texttt{adrp} combined with the \texttt{str} offset locate
-the global, and the store can write to it directly. However, the purecap ABI
+However, the purecap ABI
 requires another level of indirection in order to obtain a capability with
 tight bounds:
 
@@ -1120,14 +1104,13 @@ tight bounds:
     str xzr, [c1]
 \end{lstlisting}
 
-Behaviours of this sort may be required (or at least be beneficial) under the
-purecap security model, and may therefore be difficult to optimise. We have
-completed neither security nor performance analysis for most benchmarks.
-For example, FVP trace analysis indicates that
-global variable accesses appear to be a major difference between hybrid and
-purecap compilations of hot functions in the richards benchmark. However, in
-the absence of profiling tools, it is unclear how much of the performance
-discrepancy they are responsible for.
+It is difficult for us to tell if this behaviour is important for
+security in all, or merely some, situations. However, analysing
+the traces behind~\autoref{fig:fvpstats} showed that this can
+have a significant performance impact: in the richards benchmark,
+for example, we were able to observe that such code was executed
+frequently in some functions, though we cannot precisely quantify
+the performance impact.
 
 
 \subsection{\fcompiler: Toolchain maturity}
