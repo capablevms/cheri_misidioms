@@ -12,8 +12,9 @@ colours <- array(dimnames=list(data$ELF:data$Symbol), data=data$Colour)
 ggplot(data,
        aes(x = ABI, y = Normalised.Instruction.Count, fill = ELF:Symbol)) +
   scale_fill_manual(values=colours) +
-  geom_bar(stat = 'identity', position = 'stack', colour="black") +
+  geom_bar(stat = 'identity', position = 'stack', colour="black", width=1) +
   facet_grid(~ Benchmark) +
+  scale_x_discrete(expand=c(0,1.25)) +
   scale_y_continuous(expand=c(0,0),
                      breaks=seq(0,2,1/4),
                      limits=c(0,1.59),     # TODO: Calculate this automatically.
