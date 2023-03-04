@@ -752,7 +752,7 @@ of snmalloc as \memalloc{snmalloc-repo} which is invulnerable to \overlap.
 We wanted to understand the performance impact of porting allocators to CHERI.
 Our intention was to run both hybrid and purecap versions of each allocator
 and compare the results. However, while we expected to see differences
-in performance, we observed more than 2x
+in performance, we observed more than a 2x
 increase in wall-clock time for some benchmarks. As far as we know, we are the first to write
 publicly about such a comparison, and thus there is no obvious precedent to
 draw upon. Although we do not have complete explanations for these differences,
@@ -765,7 +765,7 @@ hybrid or pure capability CHERI do appear to be meaningful.
 In this section we thus first detail a fairly traditional performance evaluation
 comparing performance amongst purecap CHERI allocators, before showing that
 performance across hybrid and purecap allocators is surprisingly different.
-We look for, but fail to find, obvious explanations for why allocator
+We look for, but largely fail to find, simple explanations for why allocator
 performance across hybrid and purecap varies so much. In~\autoref{sec:dissection} we
 attempt a more detailed, and generic, analysis of factors that might explain
 such differences.
@@ -827,7 +827,7 @@ hybrid (\texttt{/usr/lib64/}) userlands installed.
 We wanted a benchmark suite that contains benchmarks written in C, that have
 minimal library dependencies (so that we best understand what is being run),
 and that execute fixed workloads (rather than those that execute for fixed
-time). We selected 5 benchmarks from \emph{mimalloc-bench}
+time). We selected 5 benchmarks from the \emph{mimalloc-bench}
 suite~\cite{leijen19mimalloc} that meet this criteria, as well as the `classic'
 binarytrees~\cite{boehm14artificial} and richards~\cite{richards99bench}
 benchmarks. \autoref{tab:benchmarks} shows our complete benchmark suite.
@@ -845,16 +845,21 @@ We measure wall-clock time on an otherwise unloaded Morello machine.
 \label{ssec:withinhybridpurecap}
 %Figure FIXME presents results for this experiment, showing that 
 %\jeremy{the majority of allocators are significantly slower than jemalloc (presumably because they are less optimized)}. 
-Benchmarks compiled with snmalloc saw a geometric mean speed-up of 1.24 times compared to the system default jemalloc
-in both \emph{hybrid} and \emph{purecap}. This can be attributed to benchmarks linking against
-jemalloc on average executing 1.42x the number of instructions compared to snmalloc. 
-Benchmarks linked against the \emph{hybrid} versions of snmalloc and jemalloc exhibit 
-a similar trend with the mean instructions retired by jemalloc 1.15x times snmalloc. 
+
+The two highest performing allocators were jemalloc and snmalloc. In
+hybrid, snmalloc is 1.24x faster with the geometric mean than
+jemalloc; in purecap, snmalloc is also 1.24x faster with the geometric mean
+than jemalloc. In both situations, the wall-clock time correlates
+with instructions counts (snmalloc retires 1.42x fewer instructions
+than jemalloc in hybrid and 1.15x fewer in purecap). Because these
+differences are clear and because, as we will soon see, there are much
+greater differences to consider elsewhere, we do not dwell further on these results.
+
 
 \subsection{Results Across Hybrid and Purecap}
 
-\autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} and \memalloc{snmalloc} in hybrid
-and purecap. As expected, purecap is always slower than hybrid in total
+\autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} and \memalloc{snmalloc} 
+across hybrid and purecap. As expected, purecap is always slower than hybrid in total
 execution time, and there is significant variance amongst benchmarks.
 However, using the geometric mean, both jemalloc and snmalloc \emph{purecap}
 are 1.59x slower than \emph{hybrid}, which is a much greater figure than we expected. That
@@ -862,13 +867,13 @@ richards, a benchmark which performs little allocation, is over 2x slower
 strongly suggests that such slowdowns are not related to allocators.
 
 To understand if there are simple explanations for the slowdown -- perhaps
-that capabilities place huge pressure on caches -- we measured
+that capabilities place pressure on caches -- we measured
 a number of performance counters, also shown in \autoref{fig:eval jemalloc}.
 Pairwise correlation analysis between our metrics indicates a strong
 linear relationship (Pearson > 0.95)
 between memory access (L1 data cache) and execution time.
 However there is variance amongst benchmarks and the performance
-counters do not allow us to identify a single cause.
+counters that do not allow us to identify a single cause.
 
 \begin{figure}
   \begin{center}
@@ -896,7 +901,7 @@ counters do not allow us to identify a single cause.
   Instruction counts per symbol, based on FVP traces for three benchmarks using
   the CheriBSD system allocator (jemalloc). "mstress" and "richards" were
   parameterised to perform fewer iterations than the default. Note that whilst
-  binary\_tree is extremely sensitive to \fnc{malloc} and \fnc{free}, the others
+  binary\_trees is dominated by the effects of \fnc{malloc} and \fnc{free}, the others
   are dominated by their own code.
   }
 \end{figure}
