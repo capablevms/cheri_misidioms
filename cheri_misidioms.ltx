@@ -1104,7 +1104,7 @@ results:
 \label{ssec:purecap ABI difficulties}
 
 We observed some ABI-related differences between hybrid and purecap code.
-For example, this storing zero to a global variable in hybrid compiles
+For example, storing zero to a global variable in hybrid compiles
 to the following:
 
 \begin{lstlisting}
@@ -1161,7 +1161,7 @@ can make it difficult for humans to comprehend differences between
 hybrid and purecap code generation.
 
 Another example we found relevant to allocators is in a hot path
-within jemallocs \fnc{malloc} function, where a byte-sized thread-local
+within jemalloc's \fnc{malloc} function, where a byte-sized thread-local
 is loaded from memory. In hybrid this is compiled to:
 
 \begin{lstlisting}
