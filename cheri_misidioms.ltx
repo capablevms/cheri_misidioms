@@ -987,13 +987,14 @@ section we analyse the following factors in detail:
 \newcommand\fcompiler{F$_{\textrm{Toolchain}}$\xspace}
 \newcommand\fuser{F$_{\textrm{User}}$\xspace}
 
+\setlength{\leftskip}{6pt}
+
 \vspace{6pt}\noindent\textbf{\fhardware}
 At the hardware level, pointer operations (including arithmetic, loads, and
-stores) have different semantics for capabilities, which is likely to lead to
+stores) have different semantics for capabilities, which are likely to have
 different performance characteristics relative to operations on normal
 pointers. Similarly, since capabilities are double word width, we would expect
-them to put greater pressure on caches and other system resources relative to
-single word width addresses.
+them to put greater pressure on caches and other system resources.
 
 \vspace{6pt}\noindent\textbf{\fabi}
 At the ABI level, the purecap CheriBSD ABI is different than the hybrid ABI
@@ -1003,7 +1004,7 @@ requiring different code generation.
 \vspace{6pt}\noindent\textbf{\fcompiler}
 At the compiler level, both hybrid and purecap modes require altered versions
 of LLVM. Neither is as mature as ``mainstream'' LLVM, and thus are unlikely to
-optimise code as fully as expected. This may have many subtle effects. Although
+optimise code as fully as expected. Although
 the purecap LLVM has received more attention than the hybrid LLVM, it is also
 more different from ``mainstream'' LLVM, so it is possible that the purecap
 LLVM will produce less optimal code than the hybrid LLVM.
@@ -1012,6 +1013,14 @@ LLVM will produce less optimal code than the hybrid LLVM.
 At the user level, code that wants to take advantage of CHERI will tend to use
 different execution paths when compiled for purecap (e.g.~the bump
 allocator of~\autoref{lst:bump_alloc1}).
+
+\setlength{\leftskip}{0pt}
+
+\vspace{6pt}\noindent
+Our expectation in this section is not that we can identify causal relationships
+for performance oddities, but that we can at least understand some of
+the `beneath the surface' factors that might explain part of the performance
+story.
 
 
 \subsection{\fhardware: Hardware pointer operation (microbenchmarks)}
