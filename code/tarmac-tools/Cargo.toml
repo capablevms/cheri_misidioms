@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[package]
+name = "tarmac-tools"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.1.6", features = ["derive"] }
+csv = "1.2.0"
+itertools = "0.10.5"
+regex = "1.7.1"
+serde = { version = "1.0.152", features = ["derive"] }
