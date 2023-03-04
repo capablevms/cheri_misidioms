@@ -1108,8 +1108,8 @@ For example, storing zero to a global variable in hybrid compiles
 to the following:
 
 \begin{lstlisting}
-    adrp x8, #+0x20000
-    str xzr, [x8, #2472]
+    adrp x1, #+0x20000
+    str xzr, [x1, #2472]
 \end{lstlisting}
 
 However, the purecap ABI
@@ -1199,9 +1199,9 @@ to code such as:
 ...     c0, ...  # Calculate address
 ...     x1, ...  # Calculate length
 scbndse c0, c0, x1
-mov     x8, #0xffffffffffff....
-movk    x8, #0x...., lsl #16
-clrperm c0, c0, x8
+mov     x2, #0xffffffffffff....
+movk    x2, #0x...., lsl #16
+clrperm c0, c0, x2
 \end{lstlisting}
 
 In this fragment, \texttt{scbndse} sets the bounds, and \texttt{clrperm} removes
