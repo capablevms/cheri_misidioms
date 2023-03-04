@@ -890,9 +890,12 @@ richards, a benchmark which performs little allocation, is over 2x slower
 strongly suggests that such slowdowns are not related to allocators.
 
 To understand if there are simple explanations for the slowdown -- perhaps
-that capabilities were placing huge pressure on caches -- we measured
-a number of performance counters, which are also shown in \autoref{fig:eval jemalloc}.
-While, again, there is variance amongst benchmarks, the performance
+that capabilities place huge pressure on caches -- we measured
+a number of performance counters, also shown in \autoref{fig:eval jemalloc}.
+Pairwise correlation analysis between our metrics indicates a strong
+linear relationship (Pearson > 0.95)
+between memory access (L1 data cache) and execution time.
+However there is variance amongst benchmarks and the performance
 counters do not allow us to identify a single cause.
 
 \begin{figure}
