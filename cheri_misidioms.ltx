@@ -60,9 +60,8 @@ relative performance impact of CHERI on software.
 
 This paper is structured as follows. First, we introduce the necessary
 background: a brief overview of capabilities and the CHERI project (\autoref{sec:cheri});
-our running example, a trivial bump allocator (\autoref{sec:bumppointerallocator}); and
-a simple example of how allocators can be vulnerable, or invulnerable, to attack on CHERI
-(\autoref{sec:atk}). Then, we introduce our experiments: the allocators
+and our running example, a trivial bump allocator (\autoref{sec:bumppointerallocator}).
+We then introduce our experiments: the allocators
 under consideration (\autoref{sec:cheriallocators}); our attacks (\autoref{sec:atks});
 a partial performance evaluation (\autoref{sec:performance}) and an analysis
 of some of the performance discrepancies we uncovered (\autoref{sec:dissection}).
@@ -85,7 +84,7 @@ only read from memory address range X to Y'). Capabilities have a long  history:
 provides a narrative overview of capability architectures, and
 may usefully be augmented by more recent work such as~\cite{miller06robust}.
 A good first intuition is that CHERI is a modern version of this longstanding
-idea, updated with fine-grained permissions, and adapted to work on recent
+idea, updated with fine-grained permissions, and adapted to work on recen
 processor instruction sets.
 
 We use the term \emph{CHERI} to refer to the `abstract capability machine'
@@ -281,49 +280,6 @@ in bytes) to ensure that it never copies more data than the input capability's
 bounds allow.
 
 
-\section{How can a CHERI Allocator be Attacked?}
-\label{sec:atk}
-
-Our definition of CHERI in~\autoref{sec:cheri} might suggest that software
-running on CHERI hardware is invulnerable to attack. Alas, while CHERI gives us the
-tools to make secure software, it is up to us to use them correctly --- and wisely.
-We must decide which attack model is relevant to our use-case, and then write,
-or adjust, the software, to withstand such attacks. In our context, allocators are
-subject to spatial (e.g.~buffer overrun) or temporal (e.g.~a sequence of
-function calls) attacks, and those attacks can either target an allocators'
-internals (e.g.~corrupting private data-structures) or its interface
-(e.g.~allowing user code to bypass security checks).
-
-For example, consider this C snippet, which models a buffer overrun:
-
-\begin{lstlisting}[language=C]
-char *a = malloc(16);
-char *b = malloc(16);
-a[16] = 'c';
-printf("%c\n", b[0]);
-\end{lstlisting}
-
-With the capability-unaware bump allocator from \autoref{lst:bump_alloc1} this
-code compiles successfully and, when run, prints `\texttt{c}'\footnote{Note
-that the example is in the realm of undefined behaviour, so a compiler could
-compile this code to do something entirely different -- though, at the time of
-writing, CheriBSD's LLVM does not do so.}. This is because the bump
-allocator allocates the second block immediately after the first in memory, so
-writing 1 past the end of the first block writes to the first byte of
-the second block. However, with the
-capability-aware allocator from \autoref{lst:bump_alloc2}, the program aborts
-with a security exception when executing line 3.
-
-Buffer overruns are so common in C code that we expect most people to consider
-them as part of their attack model: by extension, we believe that they
-would expect a CHERI allocator to protect against such attacks. However, the
-difference between~\autoref{lst:bump_alloc1} and~\autoref{lst:bump_alloc2}
-shows that such protection often requires careful adjustments of code to
-take advantage of CHERI. As we
-shall see later, it is not just our bump allocator that is subject to this
-particular attack.
-
-
 \section{CHERI Allocators}
 \label{sec:cheriallocators}
 
@@ -334,52 +290,6 @@ CHERI.
 
 
 \subsection{The Allocators Under Consideration}
-
-A number of allocators are available for CheriBSD, installable via three
-different routes: as part of the base distribution; via CheriBSD
-\emph{packages}; or via external sources.  We examined allocators
-available from all three sources. We excluded
-allocators aimed at debugging e.g.~\memalloc{ElectricFence}).
-We then ran a simple validation test, \fnc{malloc}ing a block of memory,
-copying data into the block, and then \fnc{free}ing the block: we
-excluded any allocator which failed this test. We
-document by which route we obtained all of the allocators we consider.
-
-On that basis, the allocators we consider in this paper, and the names we use
-for them for the rest of this paper, are as follows:
-\begin{itemize}
-\item \memalloc{jemalloc}, a modified version of the well-known
-    \emph{jemalloc}~\cite{evans06scalable} allocator, which is the default allocator
-    for CheriBSD.
-
-\item \memalloc{libmalloc-simple}\footnoteurl{https://github.com/CTSRD-CHERI/cheribsd/commit/e85ccde6d78d40f130ebf126a001589d75d60473}{23rd
-    February 2023} is a port of the allocator present in FreeBSD's
-    \texttt{rtld-elf} utility\footnoteurl{https://github.com/freebsd/freebsd-src/blob/releng/4.3/libexec/rtld-elf/malloc.c}{
-    23rd of February 2023}, based on Kingsley's malloc from 4.2BSD.
-
-\item \memalloc{snmalloc-cheribuild} is an old version of
-    \emph{snmalloc}~\cite{lietar19snmalloc} that can be installed via
-    \texttt{cheribuild}. We found this version to have several problems
-    which we rectified by manually building a version from \emph{snmalloc}'s
-    GitHub repository, which includes the \texttt{cheribuild} version, but has
-    more recent updates. We term this more recent version \texttt{snmalloc-repo}.
-
-\item \memalloc{dlmalloc-cheribuild} is a version of the well-known
-    \emph{dlmalloc} allocator~\cite{lea96memory} modified for CHERI,
-    installable via \texttt{cheribuild}. \memalloc{dlmalloc-pkg64c} is an unmodified version  of the allocator, available as a package in CheriBSD. The
-    ported version in \texttt{cheribuild} is based on the same as those in the
-    packages, namely 2.8.6.
-
-\item \memalloc{ptmalloc}~\cite{gloger06ptmalloc} is an extension of
-    \memalloc{dlmalloc}, with added support for multiple threads. A
-    non-modified package of \memalloc{ptmalloc3} version 1.8 is available in
-    the package manager of CheriBSD.
-
-\item \memalloc{bump-alloc-nocheri} is the simple, non-CHERI-aware bump
-    allocator from~\autoref{lst:bump_alloc1}. Conversely, the CHERI aware version is
-    \memalloc{bump-alloc-cheri},  presented
-    in~\autoref{lst:bump_alloc2}.
-\end{itemize}
 
 \begin{table}[tb]
 \begin{center}
@@ -395,12 +305,71 @@ Allocator & Version & SLoC & \multicolumn{2}{c}{Changed}\\
 \end{center}
   \caption{The allocators we examined, their size in Source Lines of Code
   (SLoC), and the number of lines changed (as an absolute value and relative
-  percentage) to adapt them for pure capability CheriBSD.}
+  percentage) to adapt them for pure capability CheriBSD. Note that
+  musl and newlib are Linux (not CheriBSD) allocators included so that
+  we can have some understanding as to whether the OS impacts allocator
+  changes.}
 \label{tab:allocator_summary}
 \end{table}
 
+A number of allocators are available for CheriBSD, installable via three
+different routes: as part of the base distribution; via CheriBSD
+\emph{packages}; or via external sources.  We examined allocators
+available from all three sources. We excluded
+allocators aimed at debugging e.g.~\memalloc{ElectricFence}).
+We then ran a simple validation test, \fnc{malloc}ing a block of memory,
+copying data into the block, and then \fnc{free}ing the block: we
+excluded any allocator which failed this test. We
+document by which route we obtained all of the allocators we consider.
+
+On that basis, the allocators we consider in this paper, and the names we use
+for them for the rest of this paper, are as follows:
+
+\setlength{\leftskip}{6pt}
+
+\vspace{6pt}\noindent
+\memalloc{jemalloc}, a modified version of the well-known
+    \emph{jemalloc}~\cite{evans06scalable} allocator, which is the default allocator
+    for CheriBSD.
+
+\vspace{6pt}\noindent
+\memalloc{libmalloc-simple}\footnoteurl{https://github.com/CTSRD-CHERI/cheribsd/commit/e85ccde6d78d40f130ebf126a001589d75d60473}{23rd
+    February 2023} is a port of the allocator present in FreeBSD's
+    \texttt{rtld-elf} utility\footnoteurl{https://github.com/freebsd/freebsd-src/blob/releng/4.3/libexec/rtld-elf/malloc.c}{
+    23rd of February 2023}, based on Kingsley's malloc from 4.2BSD.
+
+\vspace{6pt}\noindent
+\memalloc{snmalloc-cheribuild} is an old version of
+    \emph{snmalloc}~\cite{lietar19snmalloc} that can be installed via
+    \texttt{cheribuild}. We found this version to have several problems
+    which we rectified by manually building a version from \emph{snmalloc}'s
+    GitHub repository, which includes the \texttt{cheribuild} version, but has
+    more recent updates. We term this more recent version \texttt{snmalloc-repo}.
+
+\vspace{6pt}\noindent
+\memalloc{dlmalloc-cheribuild} is a version of the well-known
+    \emph{dlmalloc} allocator~\cite{lea96memory} modified for CHERI,
+    installable via \texttt{cheribuild}. \memalloc{dlmalloc-pkg64c} is an unmodified version  of the allocator, available as a package in CheriBSD. The
+    ported version in \texttt{cheribuild} is based on the same as those in the
+    packages, namely 2.8.6.
+
+\vspace{6pt}\noindent
+\memalloc{ptmalloc}~\cite{gloger06ptmalloc} is an extension of
+    \memalloc{dlmalloc}, with added support for multiple threads. A
+    non-modified package of \memalloc{ptmalloc3} version 1.8 is available in
+    the package manager of CheriBSD.
+
+\vspace{6pt}\noindent
+\memalloc{bump-alloc-nocheri} is the simple, non-CHERI-aware bump
+    allocator from~\autoref{lst:bump_alloc1}. Conversely, the CHERI aware version is
+    \memalloc{bump-alloc-cheri},  presented
+    in~\autoref{lst:bump_alloc2}.
+
+\setlength{\leftskip}{0pt}
+
+\vspace{6pt}\noindent
 \autoref{tab:allocator_summary} shows the version of each allocator we used.
-We also looked at CHERI versions of the musl and newlib C libraries
+We also looked at CHERI versions of the Linux musl and newlib C libraries
 for our source code analysis only.
 We are aware of at least two other major memory allocators that have been
 partly ported to CHERI: the \emph{Boehm-Demers-Weiser} conservative garbage
@@ -411,11 +380,11 @@ complete, we have not included them in this paper.
 \subsection{How Much Have the Allocators Been Adapted for CHERI?}
 \label{sec:rqs}
 
-As we saw from \autoref{lst:bump_alloc1}, simple allocators don't need to be
-adapted for CHERI, though they then derive only minor security gains. In
-practice, we expect most allocators to incorporate the capability bounds enforcement
-of \autoref{lst:bump_alloc2}. Indeed, more sophisticated allocators will tend
-to crash without at least some modifications, when ported to CHERI. Most of the allocators available
+As we saw from \autoref{lst:bump_alloc1}, simple allocators might not need
+adaption for CHERI, though they then derive only minor security gains. In
+practice, we expect most allocators to incorporate at least the capability bounds enforcement
+of \autoref{lst:bump_alloc2}. Indeed, more sophisticated allocators tend
+to crash on CHERI without at least some modifications. Most of the allocators available
 via CheriBSD package installer (e.g.~dlmalloc) have had no source-level
 changes for CHERI, so while they compile correctly, we found they crashed
 almost immediately upon use.
@@ -426,7 +395,7 @@ Instead, \autoref{tab:allocator_summary} shows what proportion of an
 allocator's LoC are `CHERI specific' by calculating the percentage of lines of code contained between
 \texttt{\#ifdef CHERI} blocks and similarly guarded code. This count is an under-approximation, as some
 code outside such \texttt{\#ifdef} blocks may also have been adapted, but it
-gives a rough idea of the extent of changes. This analysis was performed by a simple preprocessor-style script.
+gives a rough idea of the extent of changes.
 
 With the exception of the extremely small
 \texttt{bump-alloc} and \texttt{libmalloc-simple},
@@ -457,6 +426,16 @@ Allocator & \tblescunauthentic & \tblescperms & \tblnarrowwidencapleak & \tblove
 \label{tab:atks}
 \end{center}
 \end{table}
+
+Our definition of CHERI in~\autoref{sec:cheri} might suggest that software
+running on CHERI hardware is invulnerable to attack. Alas, while CHERI gives us the
+tools to make secure software, it is up to us to use them correctly --- and wisely.
+We must decide which attack model is relevant to our use-case, and then write,
+or adjust, the software, to withstand such attacks. In our context, allocators are
+subject to spatial (e.g.~buffer overrun) or temporal (e.g.~a sequence of
+function calls) attacks, and those attacks can either target an allocators'
+internals (e.g.~corrupting private data-structures) or its interface
+(e.g.~allowing user code to bypass security checks).
 
 In this section we introduce a number of `attacks' on CHERI allocators (4
 temporal and 1 spatial) and then run those attacks on the allocators from
