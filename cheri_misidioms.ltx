@@ -494,6 +494,8 @@ that is a copy of \texttt{c} except with the address \texttt{a}.
 to represent addresses but, unlike \texttt{intptr\_t} is not big enough to
 represent capabilities.
 
+\setlength{\leftskip}{6pt}
+
 \vspace{6pt}
 \noindent\texttt{void *cheri\_bounds\_set(void *c, \\size\_t s)}
 Takes a capability \texttt{c} as input and produces a new capability
@@ -515,6 +517,8 @@ with \texttt{perms}.
 \vspace{6pt}
 \noindent\texttt{size\_t cheri\_perms\_get(void *c)}
 Return the permissions of capability \texttt{c}.
+
+\setlength{\leftskip}{0pt}
 
 
 \subsection{\narrowwiden: Narrowing then Widening Can Allow Access to Hidden Data}
