@@ -954,13 +954,13 @@ guns.
 \label{sec:dissection}
 
 Hybrid and purecap CHERI imply certain differences which we would expect to
-account for at least some of the performance changes we see. In this
+account for some of the performance changes we see. In this
 section we analyse the following factors in detail:
 
-\newcommand\fhardware{F$_{\textrm{Hardware}}$}
-\newcommand\fabi{F$_{\textrm{ABI}}$}
-\newcommand\fcompiler{F$_{\textrm{Toolchain}}$}
-\newcommand\fuser{F$_{\textrm{User}}$}
+\newcommand\fhardware{F$_{\textrm{Hardware}}$\xspace}
+\newcommand\fabi{F$_{\textrm{ABI}}$\xspace}
+\newcommand\fcompiler{F$_{\textrm{Toolchain}}$\xspace}
+\newcommand\fuser{F$_{\textrm{User}}$\xspace}
 
 \vspace{6pt}\noindent\textbf{\fhardware}
 At the hardware level, pointer operations (including arithmetic, loads, and
@@ -1022,52 +1022,51 @@ To understand the impact of low-level Morello hardware performance, we wrote a
 series of simple microbenchmarks that we can run under both hybrid and purecap
 CheriBSD. Most are written in C (with annotations to minimise compiler
 variance), but many include, or are primarily written in, assembly. Our aim
-with these microbenchmarks is not to indicate real-world performance, but to
+with these microbenchmarks is not to judge `real-world' performance, but to
 help us better understand larger benchmarks.
 
 \vspace{6pt}\noindent
-\texttt{00-factorial-asm-minimal} is a tail-recursive factorial
-    implementation that, despite not using capabilities in the loop, shows an
-    unusual bimodality in hybrid. We have no obvious explanation for this, so we assume it
+\emph{factorial-asm-minimal} is a tail-recursive factorial
+    implementation that, despite not using capabilities in the loop, shows
+    bimodality in hybrid. We have no obvious explanation for this, so we assume it
     is a microarchitectural artefact.
 
 \vspace{6pt}\noindent
-\texttt{01-factorial-asm-indirect} is similar, but uses an indirect
-    tail call of normal pointer in hybrid and a capability in purecap.
+\emph{factorial-asm-indirect} is similar, but uses an indirect
+    tail call of a normal pointer in hybrid and a capability in purecap.
     This shows there is a consistent overhead of just under
-    10\% in branching via a capability.
+    10\% in calling via a capability.
 
 \vspace{6pt}\noindent
-\texttt{10-random-graph-walk-l1} performs a random walk through a
+\emph{random-graph-walk-l1} performs a random walk through a
     graph that fits in Morello's 64KiB L1 data cache. This
-    suggests that there is no inherent overhead in reading from a capability.
+    suggests that there is no overhead in reading from a capability.
 
 \vspace{6pt}\noindent
-\texttt{11-random-graph-walk-fixed} is similar, but uses a larger set
+\emph{random-graph-walk-fixed} is similar, but uses a larger set
     that consumes 1MiB in hybrid and (due to capabilities
     being double word width) 2MiB in purecap. Despite this, there is little
     performance difference between hybrid and purecap.
 
 \vspace{6pt}\noindent
-\texttt{20-so-call} measures the PLT overhead by having a simple loop
+\emph{so-call} measures the PLT overhead by having a simple loop
     call an empty function in another shared object. This operation
     is significantly slower in purecap.
 
 \vspace{6pt}\noindent
-\texttt{30-ptr-add-asm} measures pointer addition, a common operation.
+\emph{ptr-add-asm} measures pointer addition, a common operation.
     Although capability addition is more complex (due to bounds checking),
-    it has a dedicated instruction.
-    There is no meaningful performance difference between hybrid and purecap.
+    it has a dedicated instruction and hybrid and purecap perform similarly.
 
 \vspace{6pt}\noindent
-\texttt{31-ptr-add-align} performs pointer addition followed by an
+\emph{ptr-add-align} performs pointer addition followed by an
     align-down operation, a common operation in allocators. The capability
     variant has a dedicated instruction for this, while the hybrid version
     is a bitwise operation. Despite this, the purecap version is much slower
     than the hybrid version.
 
 \vspace{6pt}\noindent
-\texttt{99-busy-loop} is an empty C loop, to act as a control. The C
+\emph{busy-loop} is an empty C loop, to act as a control. The C
     loop uses no capabilities, and compiles to identical code for hybrid and
     purecap targets. Hybrid and purecap have the same performance.
 
