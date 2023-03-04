@@ -713,7 +713,7 @@ observed and tampered with by the attacker.
 
 A more complete mitigation for the concrete example is for \fnc{free} to
 scan memory looking for all references to a capability whose bounds
-encompass an address and render them inauthentic (so-called `revocation'~\cite{xia29cherivoke}).
+encompass an address and render them inauthentic (so-called `revocation'~\cite{xia19cherivoke}).
 In our case, this
 would cause the non-attack code to fail with a \texttt{SIGPROT} exception when it
 tried to dereference \emph{C1}, downgrading the security leak into a
