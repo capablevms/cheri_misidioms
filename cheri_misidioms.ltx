@@ -29,7 +29,7 @@ capabilities that allow programmers to make strong security guarantees
 about the memory safety properties of their programs~\cite{watson20cheriintroduction}. However, capabilities are
 not magic. Programmers must first decide which memory safety properties they
 wish to enforce and then write their software in such a way to enforce those properties.
-It is easy for mistakes to creep in during either step, undermining
+Mistakes or oversights undermine
 the security guarantees programmers believe their code possesses.
 
 In this paper we examine one of the most fundamental software components:
@@ -48,9 +48,9 @@ angles. We show that most CHERI allocators are subject to at least some simple a
 that are likely to surprise reasonable programmers.
 We then show that while some forms of allocator performance are meaningful,
 comparing the performance of hybrid and pure capability (i.e.~`running in
-non-CHERI vs.~running in CHERI modes') allocators does not appear to be meaningful.
+non-CHERI vs.~running in CHERI modes') allocators does not currently appear to be meaningful.
 We analyse some of the likely factors for this latter case,
-showing that it appears to be as much about the maturity of factors
+which suggest that this may be as much about the maturity of factors
 such as the compiler toolchain as it is about the effects of capabilities on hardware.
 We do not claim that our
 work is definitive, though it does suggest two things: that some allocators
@@ -108,9 +108,12 @@ An \emph{authentic}\footnote{CHERI calls these
 capability is one that has been derived from authentic parents according to
 CHERI's rules. Attempts to create capabilities that violate CHERI's rules
 cause the hardware to produce an \emph{inauthentic} result, guaranteeing
-that capabilities cannot be forged. For example,
-there is no user-space mechanism to set a capability as `valid'; only a child capability
-derived, correctly, from valid parent capabilities can itself be valid.
+that capabilities cannot be forged.
+On Morello and CHERI RISC-V, capabilities behave as if they are 128 bits in
+size, but also carry an additional (129th) bit that records the authenticity of each
+capability: the authenticity bit can be read, and unset, but cannot
+be set. There is no software mechanism to set a capability as authentic; only a child capability
+derived, correctly, from authentic parent capabilities can itself be authentic.
 
 A capability consists of a memory
 \emph{address}\footnote{This portion of a capability does not \emph{have} to store an
@@ -129,10 +132,10 @@ A capability's bounds
 are from a \emph{low} (inclusive) to a \emph{high} (exclusive) address: when
 we refer to a capability's bounds being of `$x$' bytes we mean that
 $\textit{high}-\textit{low}=x$. An address is
-\emph{in-bounds} for a given capability if it is wholly contained within the
+\emph{in-bounds} for a given capability if it is contained within the
 capability's bounds, or \emph{out-of-bounds} otherwise; a capability is
-in (or out) of bounds if its address is in (or out) of bounds\footnote{See~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
-capability might have an out-of-bounds address.}.
+in (or out) of bounds if its address is in (or out) of bounds (see~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
+capability might have an out-of-bounds address).
 A \emph{bounds check} is said to be successful if a given capability, address, or
 address range, is in-bounds for a given capability.
 
@@ -140,31 +143,20 @@ A processor instruction that operates on a capability requires one or more of: a
 check, a permissions check, or a bounds check. If a capability passes the
 relevant checks, then the operation \emph{exercises} the capability. If a
 capability fails the relevant checks then either: the hardware produces a
-\lstinline{SIGPROT} exception; or produces an inauthentic capability as a result (where this is not
+\lstinline{SIGPROT} exception that terminates the program
+(similarly to a \lstinline{SEGFAULT}; or produces an inauthentic capability as a result (where this is not
 in violation of the CHERI rules). For example, a failed attempt to exercise a capability for a
 sealing operation on Morello produces an inauthentic result, rather than an
 exception.
 
-On Morello and CHERI RISC-V, capabilities behave as if they are 128 bits in
-size, but also carry an additional (129th) bit that records the authenticity of each
-capability: the authenticity bit can be read, and can be unset, but cannot
-be set (i.e.~authentic capabilities must be created via hardware following
-CHERI's rules).
-
-CHERI also allows `traditional' single-width
+CHERI allows `traditional' single-width
 pointers-as-addresses (which on Morello and CHERI RISC-V are 64-bit addresses)
 to be used. Although CHERI processors allow both double-width capabilities and
 single-width addresses-as-pointers to exist alongside each other at any time,
 conventionally, a program which uses both traditional addresses and
 capabilities is said to be operating in \emph{hybrid} mode while a program
 which uses only capabilities is in \emph{pure capability} -- henceforth ``purecap'' -- mode. In this paper
-we concentrate exclusively on programs which operate in pure capability mode
-unless otherwise stated.
-Further, this study only explores capability-based memory safety
-and does not consider CHERI support for software compartmentalization.
-A Microsoft Research survey of CHERI \cite{joly20security} considered some
-of the security issues we highlight in this paper but their analysis
-was limited to emulation.
+we concentrate on purecap programs, but frequently compare them to hybrid variants.
 
 CHERI does not presuppose a particular Operating System (OS). While there is a
 CHERI Linux port, at the time of writing the most mature OS for CHERI hardware
@@ -240,7 +232,7 @@ As this suggests, using CHERI without careful consideration may lead to
 no additional security benefits of using CHERI. This then raises the question:
 how should a secure `CHERI aware' allocator behave? There can be no single
 answer to this question, but we believe that most programmers would at least expect
-\texttt{malloc} to return a capability restricted to the block of memory
+\texttt{malloc} to return a capability whose bounds are restricted to the block of memory
 allocated. \autoref{lst:bump_alloc2}
 shows how to adapt \texttt{malloc} to do this.
 
@@ -270,14 +262,14 @@ b[1] = 'b';
 
 On a non-CHERI system, or a CHERI system with \autoref{lst:bump_alloc1}
 as an allocator, this snippet compiles and runs without error. However, with
-the allocator from \autoref{lst:bump_alloc2} the code compiles but crashes with
-a security violation when attempting to execute line 3, due to the tighter
-capability bounds returned by its \texttt{malloc}, showing how CHERI can prevent
+the allocator from \autoref{lst:bump_alloc2} the code compiles, but the tighter
+capability bounds returned by \texttt{malloc} cause a \lstinline{SIGPROT}
+when executing line 3. This demonstrates how CHERI can prevent
 programmer errors becoming security violations.
 
 However, just because a program compiles with CHERI C does not guarantee that
-it will run without issue: when run on CHERI, \fnc{realloc} in~\autoref{lst:bump_alloc1}
-causes a \lstinline{SIGPROT} if asked to
+it will run without issue: when run on CHERI, the \fnc{realloc} in~\autoref{lst:bump_alloc1}
+causes a \lstinline{SIGPROT} when asked to
 increase the size of a block. This occurs because \fnc{memcpy} tries to copy
 beyond the bounds of the input capability (e.g.~if the existing block is 8
 bytes and we ask to resize it to 16 bytes, \fnc{memcpy} tries to read
