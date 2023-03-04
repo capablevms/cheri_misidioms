@@ -17,6 +17,6 @@ out="$(dirname "${BASH_SOURCE[0]}")"/../../fig/microbenchmarks.pdf
 # Skip 21-global and 22-global-other-so; they don't measure anything new and the
 # names promise more than they actually offer.
 grep -v '\<2.-global' results.csv |
-    "$BMPLOTTER" --width=0.5 --colours=759DA0,E1A765,8A67BA,E06A4A --out="$out" --overplot=jitter
-
-# TODO: The chart is too wide!
+    # Drop number prefixes, to save space (and match the text).
+    sed -e 's/\<[0-9][0-9]-//' |
+    "$BMPLOTTER" --width=0.5 --height=0.7 --no-legend-title --colours=759DA0,E1A765,8A67BA,E06A4A --out="$out" --overplot=jitter
