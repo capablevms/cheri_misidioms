@@ -1134,7 +1134,7 @@ the performance impact.
 \subsection{\fcompiler: Toolchain maturity}
 
 We noticed that the same C code compiled for hybrid and purecap by LLVM could
-sometimes lead to much longer/shorter machine code. The differences are
+sometimes lead to variable length machine code. The differences are
 far too extensive to admit a simple analysis, but we hypothesise that
 they might be due to capability code either: preventing LLVM from performing
 some of its normal optimisations when capability code is present; or LLVM
