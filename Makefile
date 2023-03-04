@@ -5,12 +5,11 @@
 
 LATEX_FILES = cheri_misidioms.ltx
 
-DIAGRAMS =
+DIAGRAMS = fig/fvp-stats.pdf fig/jemalloc_bm_overall.pdf fig/microbenchmarks.pdf fig/sn_je_malloc_bm_overall.pdf
 
 all: cheri_misidioms.pdf
 
 clean:
-	rm -rf ${DIAGRAMS} ${DIAGRAMS:S/.pdf/.eps/}
 	rm -rf cheri_misidioms.aux cheri_misidioms.bbl cheri_misidioms.blg cheri_misidioms.dvi cheri_misidioms.log cheri_misidioms.ps cheri_misidioms.pdf cheri_misidioms.toc cheri_misidioms.out cheri_misidioms.snm cheri_misidioms.nav cheri_misidioms.vrb cheri_misidioms_preamble.fmt texput.log
 
 cheri_misidioms.pdf: bib.bib local.bib ${LATEX_FILES} ${DIAGRAMS} cheri_misidioms_preamble.fmt code/*.c data/results/tests.tex data/results/slocs.tex
