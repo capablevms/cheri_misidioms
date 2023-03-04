@@ -123,7 +123,7 @@ prev = [0]*len(benchmarks) ## -- store previous value for stacking
 
 for metric in user_metrics:
     # offset = width * multiplier  -- add offset for purecap/hybrid
-    rects = ax.bar(x-(width/2), purecap_results[metric], width=width, bottom = prev, label=tidy_up_name(metric), edgecolor='black', color=find_color(metric), hatch=find_hatch(metric))
+    rects = ax.bar(x+(width/2), purecap_results[metric], width=width, bottom = prev, label=tidy_up_name(metric), edgecolor='black', color=find_color(metric), hatch=find_hatch(metric))
     prev += purecap_results[metric]
     ## ax.bar_label(rects, padding=3)
 
@@ -137,7 +137,7 @@ prev = [0]*len(benchmarks) ## -- store previous value for stacking
 
 for metric in user_metrics:
     # offset = width * multiplier  -- add offset for purecap/hybrid
-    rects = ax.bar(x+(width/2), hybrid_results[metric], width=width, bottom = prev, edgecolor='black', color=find_color(metric), hatch=find_hatch(metric))
+    rects = ax.bar(x-(width/2), hybrid_results[metric], width=width, bottom = prev, edgecolor='black', color=find_color(metric), hatch=find_hatch(metric))
     prev += hybrid_results[metric]
     ## ax.bar_label(rects, padding=3)
     
