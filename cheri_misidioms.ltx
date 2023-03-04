@@ -627,7 +627,7 @@ assert(cheri_perms_get(arr)
 
 We first allocate a block and check that the capability returned
 is allowed to store data (\texttt{CHERI\_PERM\-\_STORE}) to that block (lines 1--3).
-We then deliberately remove the store permission (line 4), checking
+We deliberately remove the store permission (line 4), checking
 that this permission really has been removed (lines 5 and 6). We then call
 \fnc{realloc} (without changing the block's size) and check whether we have
 regained the ability to store data via the capability.
@@ -929,7 +929,7 @@ counters do not allow us to identify a single cause.
   }
 \end{figure}
 
-We then wondered whether the higher instruction counts on purecap benchmarks
+We wondered whether the higher instruction counts on purecap benchmarks
 was due to necessary extra instructions in purecap allocators
 (thinking back to Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2})
 or whether it might be due to other factors. To understand this, we wanted
@@ -969,7 +969,7 @@ two minor oddities (e.g.~mstress uses Neon vector instructions -- classified as
 floating point -- to a much greater degree on hybrid compared to purecap), there are no obvious smoking
 guns.
 
-We then wrote an analysis tool over FVP traces (which contain virtual
+We wrote an analysis tool over FVP traces (which contain virtual
 addresses) to provide per-function profiling, and ran this for shortened
 versions of three benchmarks. \autoref{fig:fvpstats} shows that some
 functions execute many more instructions in purecap (vs.~hybrid) than
