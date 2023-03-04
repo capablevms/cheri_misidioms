@@ -1043,12 +1043,6 @@ help us better understand larger benchmarks.
     is a microarchitectural artefact.
 
 \vspace{6pt}\noindent
-\emph{factorial-asm-indirect} is similar, but uses an indirect
-    tail call of a normal pointer in hybrid and a capability in purecap.
-    This shows there is a consistent overhead of just under
-    10\% in calling via a capability.
-
-\vspace{6pt}\noindent
 \emph{random-graph-walk-L1} performs a random walk through a
     graph that fits in Morello's 64KiB L1 data cache. This
     suggests that there is no overhead in reading from a capability.
@@ -1060,14 +1054,30 @@ help us better understand larger benchmarks.
     performance difference between hybrid and purecap.
 
 \vspace{6pt}\noindent
-\emph{so-call} measures the PLT overhead by having a simple loop
-    call an empty function in another shared object. This operation
-    is significantly slower in purecap.
-
-\vspace{6pt}\noindent
 \emph{ptr-add-asm} measures pointer addition, a common operation.
     Although capability addition is more complex (due to bounds checking),
     it has a dedicated instruction and hybrid and purecap perform similarly.
+
+\vspace{6pt}\noindent
+\emph{busy-loop} is an empty C loop, to act as a control. The C
+    loop uses no capabilities, and compiles to identical code for hybrid and
+    purecap targets. Hybrid and purecap have the same performance.
+
+\vspace{3pt}
+While the above microbenchmarks don't show any particular performance impact in
+the two modes, the following potentially indicate ideas for further
+investigation:
+
+\vspace{6pt}\noindent
+\emph{factorial-asm-indirect} is similar, but uses an indirect
+    tail call of a normal pointer in hybrid and a capability in purecap.
+    This shows there is a consistent overhead of just under
+    10\% in calling via a capability.
+
+\vspace{6pt}\noindent
+\emph{so-call} measures the PLT overhead by having a simple loop
+    call an empty function in another shared object. This operation
+    is significantly slower in purecap.
 
 \vspace{6pt}\noindent
 \emph{ptr-add-align} performs pointer addition followed by an
@@ -1075,11 +1085,6 @@ help us better understand larger benchmarks.
     variant has a dedicated instruction for this, while the hybrid version
     is a bitwise operation. Despite this, the purecap version is much slower
     than the hybrid version.
-
-\vspace{6pt}\noindent
-\emph{busy-loop} is an empty C loop, to act as a control. The C
-    loop uses no capabilities, and compiles to identical code for hybrid and
-    purecap targets. Hybrid and purecap have the same performance.
 
 
 \begin{figure}
