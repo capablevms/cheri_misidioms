@@ -437,11 +437,11 @@ function calls) attacks, and those attacks can either target an allocators'
 internals (e.g.~corrupting private data-structures) or its interface
 (e.g.~allowing user code to bypass security checks).
 
-In this section we introduce a number of `attacks' on CHERI allocators (4
+In this section we introduce a number of simple `attacks' on CHERI allocators (4
 temporal and 1 spatial) and then run those attacks on the allocators from
 \autoref{sec:cheriallocators}, with the results shown in \autoref{tab:atks}.
-Only snmalloc is immune to all the attacks; even the default CheriBSD allocator
-jemalloc is vulnerable to several of the attacks.
+Even the default CheriBSD allocator is vulnerable to some attacks: only
+snmalloc is invulnerable.
 
 In the rest of this section we explain each attack, giving C code using the
 CHERI API. Our code examples assume that we start with a `non-attacker' who
@@ -457,6 +457,8 @@ truth for \autoref{sec:cheriallocators}.
 
 Our descriptions use the following CHERI functions:
 
+\setlength{\leftskip}{6pt}
+
 \vspace{6pt}
 \noindent\texttt{void *cheri\_address\_set(void *c, \\vaddr\_t a)}~~~~
 Takes a capability \texttt{c} as input and produces a new capability
@@ -464,8 +466,6 @@ that is a copy of \texttt{c} except with the address \texttt{a}.
 \texttt{vaddr\_t} is a CHERI C integer type that is guaranteed to be big enough
 to represent addresses but, unlike \texttt{intptr\_t} is not big enough to
 represent capabilities.
-
-\setlength{\leftskip}{6pt}
 
 \vspace{6pt}
 \noindent\texttt{void *cheri\_bounds\_set(void *c, \\size\_t s)}
@@ -539,8 +539,8 @@ first use \fnc{cheri\_address\_set} to derive a new capability from
 those of \texttt{SC} (lines 5 and 6) before narrowing those bounds to
 \texttt{size} (lines 6 and 7).
 
-When implemented in this style, an allocator can be subject to a trivial
-attack we call \narrowwiden:
+When implemented in this style, an allocator can be subject to the following
+attack:
 
 \begin{lstlisting}[language=C]
 uint8_t *arr = malloc(256);
@@ -558,31 +558,33 @@ that we can later test the success of the attack (lines 2 and 3). We then
 \fnc{realloc} the block down to a single byte, receiving back a capability
 whose bounds are 1 byte\footnote{Some allocators return bigger bounds, but
 we ignore that for now.} (line 5).
-At this point, we expect to have permanently lost access to the values written to bytes 2-256 (inc.)
+At this point, we expect to have permanently lost access to the values written to bytes 2-255
 in lines 2 and 3. If we then \fnc{realloc} the block back to
 its original size we should not have access to the values written to bytes
-2-256 (inc.). However, allocators using the optimisation above will often
+2-255. However, allocators using the optimisation above will often
 return a capability that covers the same portion of memory as the original
 block, without zeroing it, allowing us to read the original bytes out
 unchanged.
 
-It might seem merely undesirable for \fnc{realloc} to allow us access to the
+It might seem merely undesirable for \fnc{realloc} to allow an attacker access to the
 original data, but in a capability system this attack is particularly
-egregious if that data contains capabilities: an attacker can read those
+egregious if that data contains capabilities, since an attacker can read those
 and gain new abilities.
+
+\subsubsection{Mitigations}
 
 Mitigating this attack is relatively simple. When \fnc{realloc} shrinks a
 block, any excess storage should be zeroed. Note that we consider this safer
 than the seemingly similar alternative of zeroing excess storage when
-\fnc{realloc} enlarges a block, because this implies a delay in zeroing that
-might allow other attacks to read data unexpectedly.
+\fnc{realloc} enlarges a block, because that implies a delay in zeroing that
+might give an attacker other unexpected opportunities to read data.
 
 
 \subsection{\escperms: Escalate Permissions}
 
 When an allocator uses a `super' capability (as seen in
 e.g.~\autoref{narrowwiden}), there may be potential to upgrade a
-capabilities permissions as shown in the following simple attack:
+capability's permissions as shown in the following simple attack:
 
 \begin{lstlisting}[language=C]
 uint8_t *arr = malloc(16);
@@ -638,7 +640,13 @@ assert(cheri_tag_get(arr));
 \end{lstlisting}
 
 Interestingly, none of the allocators we examined was vulnerable to this
-attack.
+attack. However, several fall into something of a
+grey zone: the allocators cause a \lstinline{SIGPROT} when they try to perform
+an operation on the inauthentic capability. In none of theses cases does the
+allocator check the capability's authenticity, and it is an open question as to
+whether the allocator was deliberately designed to \lstinline{SIGPROT} with an inauthentic capability. However, we
+prefer to give the allocators the benefit of doubt, and have classified them as
+invulnerable to this attack.
 
 
 \subsection{\myundef: Authentic capabilities from Undefined Behaviour}
@@ -670,12 +678,11 @@ which allows them access to secret data (lines 7 and 8).
 
 Interestingly, this attack places both the `non-attack' and `attack' portions
 into undefined behaviour. Most obviously, the attack portion of the code reads
-data via a capability/pointer that it cannot ensure has been initialised. Less
+data via a capability / pointer that it cannot ensure has been initialised. Less
 obviously, both attacker and non-attacker have an equivalent capability (with
-the same address and bounds) but, due to capability/pointer provenance rules,
+the same address and bounds) but, due to capability / pointer provenance rules,
 the non-attackers version of the capability is, technically speaking, no
-longer valid by those rules. This outcome is unlikely to trouble an attacker
-who now has a capability \emph{C3} giving the same access as \emph{C1}.
+longer valid by those rules. This outcome is unlikely to trouble an attacker.
 
 
 \subsubsection{Mitigations}
@@ -690,7 +697,7 @@ A more complete mitigation for the concrete example is for \fnc{free} to
 scan memory looking for all references to a capability whose bounds
 encompass an address and render them inauthentic (so-called `revocation'~\cite{xia19cherivoke}).
 In our case, this
-would cause the non-attack code to fail with a \texttt{SIGPROT} exception when it
+would cause the non-attack code to crash with a \texttt{SIGPROT} exception when it
 tried to dereference \emph{C1}, downgrading the security leak into a
 denial-of-service. However, it is not currently possible to perform capability
 revocation at speeds that most allocators would find acceptable.
@@ -724,25 +731,19 @@ as bounds and then randomly allocates multiple blocks to see if any of the
 resulting capabilities overlap.
 
 
-\subsection{Failed or Challenging-to-Classify Attacks}
+\subsection{Failed Attacks}
 
 Two attacks in~\autoref{tab:atks} failed ($\oslash$) in a way that means
 we cannot state whether the allocator is vulnerable or invulnerable.
+
 \escperms fails on \memalloc{bump-alloc-nocheri} because its \fnc{realloc}
 causes a \lstinline{SIGPROT} when trying to increase a block in size. By
 design, \memalloc{bump-alloc-cheri} contains a version of \fnc{realloc} which
 fixes this issue (see~\autoref{sec:adapting_to_cheri}).
+
 \overlap fails on \memalloc{snmalloc-cheribuild} due to what appears to be
 an internal snmalloc bug. Because of this, we included a newer version
 of snmalloc as \memalloc{snmalloc-repo} which is invulnerable to \overlap.
-
-In the case of \escinauthentic, several allocators fall into something of a
-grey zone: the allocators cause a \lstinline{SIGPROT} when they try to perform
-an operation on the inauthentic capability. In none of theses cases does the
-allocator check the capability's authenticity, and it is an open question as to
-whether the allocator was deliberately designed to \lstinline{SIGPROT} with an inauthentic capability. However, we
-prefer to give the allocators the benefit of doubt, and have classified them as
-invulnerable to this attack.
 
 
 \section{Performance Evaluation}
