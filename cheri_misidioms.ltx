@@ -909,6 +909,20 @@ counters do not allow us to identify a single cause.
   any quantity in purecap.}
 \end{figure}
 
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=1.1\columnwidth]{fig/fvp-stats.pdf}
+    \vspace{-30pt}
+  \end{center}
+  \caption{\label{fig:fvpstats}
+  Instruction counts per symbol, based on FVP traces for three benchmarks using
+  the CheriBSD system allocator (jemalloc). "mstress" and "richards" were
+  parameterised to perform fewer iterations than the default. Note that whilst
+  binary\_tree is extremely sensitive to \fnc{malloc} and \fnc{free}, the others
+  are dominated by their own code.
+  }
+\end{figure}
+
 We then wondered whether the higher instruction counts on purecap benchmarks
 was due to necessary extra instructions in purecap allocators
 (thinking back to Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2})
@@ -948,6 +962,15 @@ and purecap uses Morello instructions. Overall, while there are one or
 two minor oddities (e.g.~mstress uses Neon instructions -- classified as
 floating point -- on hybrid but not purecap), there are no obvious smoking
 guns.
+
+We then wrote an analysis tool over FVP traces (which contain virtual
+addresses) to provide per-function profiling, and ran this for shortened
+versions of three benchmarks. \autoref{fig:fvpstats} shows that some
+functions execute many more instructions in purecap (vs.~hybrid) than
+others. Slightly anticipating our later analysis, functions which call
+across shared objects, and those that use global variables seem
+particularly impacted --- though, again, this can not explain all
+the differences we see.
 
 
 \section{Analysing The Disparity Between Hybrid and Purecap Performance}
@@ -989,32 +1012,20 @@ different execution paths when compiled for purecap (e.g.~the bump
 allocator of~\autoref{lst:bump_alloc1}).
 
 
-\subsection{Analysis Techniques}
+% \subsection{Analysis Techniques}
+%
+% We used the Morello Platform FVP, which can emit "tarmac"
+%     traces~\cite[p.~23]{morellofvp}\cite[p.~5452]{fvpguide} describing instructions
+%     executed. Tarmac traces includes virtual addresses which, combined with a
+%     record of each process's memory map, can map instructions to individual
+%     functions (using ELF analysis). This technique excludes kernel activity
+%     because the exception level is included in the trace, but includes
+%     (negligible) noise from other processes running on the system. The major
+%     disadvantage of this technique is that it requires a lot of storage, and is
+%     very slow, so we have applied it only to select workloads
+%     (\autoref{fig:fvpstats}). We also used this technique to verify a sample of
+%     QEMU measurements.
 
-We used the Morello Platform FVP, which can emit "tarmac"
-    traces~\cite[p.~23]{morellofvp}\cite[p.~5452]{fvpguide} describing instructions
-    executed. Tarmac traces includes virtual addresses which, combined with a
-    record of each process's memory map, can map instructions to individual
-    functions (using ELF analysis). This technique excludes kernel activity
-    because the exception level is included in the trace, but includes
-    (negligible) noise from other processes running on the system. The major
-    disadvantage of this technique is that it requires a lot of storage, and is
-    very slow, so we have applied it only to select workloads
-    (\autoref{fig:fvpstats}). We also used this technique to verify a sample of
-    QEMU measurements.
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=1.1\columnwidth]{fig/fvp-stats.pdf}
-    \vspace{-30pt}
-  \end{center}
-  \caption{\label{fig:fvpstats}}
-  Instruction counts per symbol, based on FVP traces for three benchmarks using
-  the CheriBSD system allocator (jemalloc). "mstress" and "richards" were
-  parameterised to perform fewer iterations than the default. Note that whilst
-  binary\_tree is extremely sensitive to \fnc{malloc} and \fnc{free}, the others
-  are dominated by their own code.
-\end{figure}
 
 \subsection{\fhardware: Hardware pointer operation (microbenchmarks)}
 
@@ -1171,6 +1182,7 @@ on performance, but do not appear to have any security benefit:
 the \texttt{c2} register is not indexed by a variable, and a greater capability is
 already available in \texttt{c1}. It seems likely that this is a missed
 optimisation opportunity by the compiler rather than a deliberate security restriction.
+
 
 \subsection{\fuser: Security behaviours}
 
