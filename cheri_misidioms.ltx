@@ -603,8 +603,8 @@ might allow other attacks to read data unexpectedly.
 
 \subsection{\escperms: Escalate Permissions}
 
-In situations where an allocator uses a `super' capability (as seen in
-e.g.~\autoref{narrowwiden}), there is also the potential to upgrade a
+When an allocator uses a `super' capability (as seen in
+e.g.~\autoref{narrowwiden}), there may be potential to upgrade a
 capabilities permissions as shown in the following simple attack:
 
 \begin{lstlisting}[language=C]
@@ -710,9 +710,9 @@ since the attack has in effect `aliased' the capability, future writes can be
 observed and tampered with by the attacker.
 
 A more complete mitigation for the concrete example is for \fnc{free} to
-revoke all references to the capability. In other words, CHERI allows\andrei{could allow?} one to
-scan memory looking for all capabilities with bounds encompassing an address
-$p$ and render them inauthentic~\cite{xia29cherivoke}. In our case, this
+scan memory looking for all references to a capability whose bounds
+encompass an address and render them inauthentic (so-called `revocation'~\cite{xia29cherivoke}).
+In our case, this
 would cause the non-attack code to fail with a \texttt{SIGPROT} exception when it
 tried to dereference \emph{C1}, downgrading the security leak into a
 denial-of-service. However, it is not currently possible to perform capability
@@ -727,9 +727,7 @@ an allocator returns two distinct capabilities whose bounds overlap
 (e.g.~because of the bounds imprecision we saw in
 \autoref{sec:adapting_to_cheri} as a result of
 \cite{woodruff19chericoncentrate}), an attacker might be able to read or write
-memory they should not have access to.
-
-An example attack in this mould is:
+memory they should not have access to. An example attack in this mould is:
 
 \begin{lstlisting}[language=C]
 void *b1 = malloc(16);
@@ -749,17 +747,14 @@ as bounds and then randomly allocates multiple blocks to see if any of the
 resulting capabilities overlap.
 
 
-\subsection{Failed Attacks}
+\subsection{Failed or Challenging-to-Classify Attacks}
 
-Several attacks in~\autoref{tab:atks} failed ($\oslash$) in a manner that means
-we cannot state whether the allocator is vulnerable or invulnerable. In
-this subsection we explain each such failure.
-
+Two attacks in~\autoref{tab:atks} failed ($\oslash$) in a way that means
+we cannot state whether the allocator is vulnerable or invulnerable.
 \escperms fails on \memalloc{bump-alloc-nocheri} because its \fnc{realloc}
 causes a \lstinline{SIGPROT} when trying to increase a block in size. By
 design, \memalloc{bump-alloc-cheri} contains a version of \fnc{realloc} which
-fixes this issue. See~\autoref{sec:adapting_to_cheri} for more details.
-
+fixes this issue (see~\autoref{sec:adapting_to_cheri}).
 \overlap fails on \memalloc{snmalloc-cheribuild} due to what appears to be
 an internal snmalloc bug. Because of this, we included a newer version
 of snmalloc as \memalloc{snmalloc-repo} which is invulnerable to \overlap.
@@ -768,8 +763,7 @@ In the case of \escinauthentic, several allocators fall into something of a
 grey zone: the allocators cause a \lstinline{SIGPROT} when they try to perform
 an operation on the inauthentic capability. In none of theses cases does the
 allocator check the capability's authenticity, and it is an open question as to
-whether anyone involved in porting the allocator to CHERI explicitly realised
-that they would \lstinline{SIGPROT} with an inauthentic capability. However, we
+whether the allocator was deliberately designed to \lstinline{SIGPROT} with an inauthentic capability. However, we
 prefer to give the allocators the benefit of doubt, and have classified them as
 invulnerable to this attack.
 
@@ -845,12 +839,12 @@ such differences.
   much slower than hybrid.}
 \end{figure*}
 
-Our experiments are conducted on Arm's prototype Morello hardware:
-a quad-core, modified Armv8-A 2.5GHz processor; with a 64KiB L1 data cache,
-a 64KiB L1 instruction cache and a 1MiB L2 unified cache per core; two 1MiB L3 unified
-caches, each shared between a pair of cores; and 16GiB DDR4 RAM. We ran
-CheriBSD 22.12 as the OS, with both purecap (in \texttt{/usr/lib/}) and
-hybrid (in \texttt{/usr/lib64/}) userlands installed.
+We conducted our experiments on Arm's prototype Morello hardware:
+a quad-core Armv8-A 2.5GHz CPU, with 64KiB L1 data cache,
+64KiB L1 instruction cache, 1MiB L2 unified cache per core, two 1MiB L3 unified
+caches (each shared between a pair of cores), and 16GiB DDR4 RAM. We ran
+CheriBSD 22.12 as the OS, with both purecap (\texttt{/usr/lib/}) and
+hybrid (\texttt{/usr/lib64/}) userlands installed.
 
 We wanted a benchmark suite that contains benchmarks written in C, that have
 minimal library dependencies (so that we best understand what is being run),
