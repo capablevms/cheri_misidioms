@@ -26,7 +26,7 @@ ggplot(data,
         axis.text.x = element_text(angle=90, vjust=0.5),
         axis.title.x = element_blank(),
         legend.title = element_blank(),
-        strip.text = element_text(size=7),
+        strip.text = element_text(size=7.3),
         #strip.background = element_rect(fill="white", colour="grey50", size=1),
         strip.background = element_rect(fill=NA, colour=NA),
         panel.background = element_rect(fill="white", colour=NA),
@@ -38,4 +38,4 @@ ggplot(data,
         panel.grid = element_blank()) +
   # Hack: draw the top of the box.
   geom_hline(yintercept=1.59, colour="black", size=1)
-ggsave("../../fig/fvp-stats.pdf",width=5.5)
+ggsave("../../fig/fvp-stats.pdf",width=5.5,height=4.5)
