@@ -274,8 +274,8 @@ capability bounds returned by its \texttt{malloc}, showing how CHERI can prevent
 programmer errors becoming security violations.
 
 However, just because a program compiles with CHERI C does not guarantee that
-it will always run without issue: when run on CHERI, \fnc{realloc} in~\autoref{lst:bump_alloc1}
-causes a hardware security exception if asked to
+it will run without issue: when run on CHERI, \fnc{realloc} in~\autoref{lst:bump_alloc1}
+causes a \lstinline{SIGPROT} if asked to
 increase the size of a block. This occurs because \fnc{memcpy} tries to copy
 beyond the bounds of the input capability (e.g.~if the existing block is 8
 bytes and we ask to resize it to 16 bytes, \fnc{memcpy} tries to read
@@ -294,11 +294,11 @@ Our definition of CHERI in~\autoref{sec:cheri} might suggest that software
 running on CHERI hardware is invulnerable to attack. Alas, while CHERI gives us the
 tools to make secure software, it is up to us to use them correctly --- and wisely.
 We must decide which attack model is relevant to our use-case, and then write,
-or adjust, the software, to withstand such attacks. Broadly speaking, allocators are
+or adjust, the software, to withstand such attacks. In our context, allocators are
 subject to spatial (e.g.~buffer overrun) or temporal (e.g.~a sequence of
 function calls) attacks, and those attacks can be either on an allocators'
-internals (e.g.~corrupting its private data-structures) or its interface
-(e.g.~allowing code using the allocator to subvert expectations).
+internals (e.g.~corrupting private data-structures) or its interface
+(e.g.~allowing user code to bypass security checks).
 
 For example, consider this C snippet, which models a buffer overrun:
 
@@ -482,9 +482,7 @@ vulnerable, invulnerable, or whether the attack fails for other reasons. The
 full code (available on GitHub) must be considered the definitive source of
 truth for \autoref{sec:cheriallocators}.
 
-In the rest of this section we make use of the following CHERI functions:
-
-\setlength{\leftskip}{6pt}
+Our descriptions use the following CHERI functions:
 
 \vspace{6pt}
 \noindent\texttt{void *cheri\_address\_set(void *c, \\vaddr\_t a)}~~~~
@@ -497,7 +495,7 @@ represent capabilities.
 \vspace{6pt}
 \noindent\texttt{void *cheri\_bounds\_set(void *c, \\size\_t s)}
 Takes a capability \texttt{c} as input and produces a new capability
-that is a copy of \texttt{c} except with bounds of size \texttt{s}.
+that is a copy of \texttt{c} except with bounds \texttt{s}.
 
 \vspace{6pt}
 \noindent\texttt{size\_t cheri\_length\_get(void *c)}
@@ -515,8 +513,6 @@ with \texttt{perms}.
 \vspace{6pt}
 \noindent\texttt{size\_t cheri\_perms\_get(void *c)}
 Return the permissions of capability \texttt{c}.
-
-\setlength{\leftskip}{0pt}
 
 
 \subsection{\narrowwiden: Narrowing then Widening Can Allow Access to Hidden Data}
@@ -580,13 +576,12 @@ for (uint8_t i = 0; i < 256; i++)
 \end{lstlisting}
 
 This attack first \fnc{malloc}s a block of memory, receiving a capability with
-a bounds of 256 bytes (line 1). We fill the block of memory up with data so
+a bounds of 256 bytes (line 1). We fill the block up with data so
 that we can later test the success of the attack (lines 2 and 3). We then
 \fnc{realloc} the block down to a single byte, receiving back a capability
 whose bounds are 1 byte\footnote{Some allocators return bigger bounds, but
-we ignore that possibility for now.} (line 5).
+we ignore that for now.} (line 5).
 At this point, we expect to have permanently lost access to the values written to bytes 2-256 (inc.)
-\andrei{if we start at byte 2, we imply we have access to only byte 1, and byte 0 doesn't exist. So this could either be 1-255 or 2-256, not 2-255 I don't think}
 in lines 2 and 3. If we then \fnc{realloc} the block back to
 its original size we should not have access to the values written to bytes
 2-256 (inc.). However, allocators using the optimisation above will often
@@ -596,10 +591,8 @@ unchanged.
 
 It might seem merely undesirable for \fnc{realloc} to allow us access to the
 original data, but in a capability system this attack is particularly
-egregious, as it may allow us to read capabilities that a programmer thought
-they were hiding from us. In other words, allocators subject to this attack
-can give an attacker access to capabilities, which in turn may give them new abilities,
-undermining the security of the entire software.
+egregious if that data contains capabilities: an attacker can read those
+and gain new abilities.
 
 Mitigating this attack is relatively simple. When \fnc{realloc} shrinks a
 block, any excess storage should be zeroed. Note that we consider this safer
@@ -626,17 +619,17 @@ assert(cheri_perms_get(arr)
   & CHERI_PERM_STORE);
 \end{lstlisting}
 
-We first allocate a block (line 1) and then check that the capability returned
-allows us to store data (\texttt{CHERI\_PERM\-\_STORE}) to that block (lines 2
-and 3). We then deliberately remove the store permission (line 4), checking
+We first allocate a block and check that the capability returned
+is allowed to store data (\texttt{CHERI\_PERM\-\_STORE}) to that block (lines 1--3).
+We then deliberately remove the store permission (line 4), checking
 that this permission really has been removed (lines 5 and 6). We then call
-\fnc{realloc} without changing the block's size and check whether we have
+\fnc{realloc} (without changing the block's size) and check whether we have
 regained the ability to store data via the capability.
 
 
 \subsubsection{Mitigations}
 
-There are two ways of mitigating such an attack. The simplest one is to AND
+There are two ways of mitigating such an attack. The simplest to AND
 the output capability's permissions with the input capability's permissions:
 doing so guarantees that the output capability has no more permissions
 than the input capability.
@@ -648,7 +641,7 @@ capability has the read and write permissions unset, should \fnc{realloc}
 refuse to reallocate the block? Perhaps \fnc{realloc} should check that
 the capability handed to it has exactly the same permissions as the
 capability handed out by the most recent \fnc{malloc} or \fnc{realloc}?
-There are probably no universal answers to all possibilities, but some may be
+There are no universal answers, but some cases may be
 easier to rule upon than others.
 
 
@@ -901,8 +894,6 @@ that capabilities were placing huge pressure on caches -- we measured
 a number of performance counters, which are also shown in \autoref{fig:eval jemalloc}.
 While, again, there is variance amongst benchmarks, the performance
 counters do not allow us to identify a single cause.
-\laurie{do we have upto date correlation graphs? if not, can we at least give
-the reader some sense of what they tell us?}
 
 \begin{figure}
   \begin{center}
@@ -967,8 +958,7 @@ guns.
 
 Hybrid and purecap CHERI imply certain differences which we would expect to
 account for at least some of the performance changes we see. In this
-section we analyse several factors in detail. Those factors, and the names
-we give them are as follows:
+section we analyse the following factors in detail:
 
 \newcommand\fhardware{F$_{\textrm{Hardware}}$}
 \newcommand\fabi{F$_{\textrm{ABI}}$}
@@ -998,8 +988,8 @@ LLVM will produce less optimal code than the hybrid LLVM.
 
 \vspace{6pt}\noindent\textbf{\fuser}
 At the user level, code that wants to take advantage of CHERI will tend to use
-different execution paths when compiled for purecap, as we saw in the bump
-allocator of~\autoref{lst:bump_alloc1}.
+different execution paths when compiled for purecap (e.g.~the bump
+allocator of~\autoref{lst:bump_alloc1}).
 
 
 \subsection{Analysis Techniques}
