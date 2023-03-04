@@ -1115,7 +1115,7 @@ the performance impact.
 
 \subsection{\fcompiler: Toolchain maturity}
 
-We noticed that the same code compiled for hybrid and purecap by LLVM could
+We noticed that the same C code compiled for hybrid and purecap by LLVM could
 sometimes lead to much longer/shorter machine code. The differences are
 far too extensive to admit a simple analysis, but we hypothesise that
 they might be due to capability code either: preventing LLVM from performing
@@ -1169,44 +1169,33 @@ already available in \texttt{c1}. It seems likely that this is a missed
 optimisation opportunity by the compiler rather than a deliberate security restriction.
 
 
-\subsection{\fuser: Security behaviours}
+\subsection{\fuser: The Impact of CHERI Security on User Code}
 
-Most purecap allocators aim to provide additional security by adding bounds to
-allocations, and in some cases restricting other permissions. This is the
-\emph{purpose} of using purecap rather than hybrid. However, these restrictions
-require additional instructions, and this carries unavoidable overhead. We
-classify such behaviours as part of the fundamental security-performance
-trade-off, rather than something that can be improved with future
-optimisations.
-
+CHERI aware allocators often improve security by restricting capability bounds
+and other permissions. Doing so requires generating and running more code.
 For example, after allocating space internally, a purecap \fnc{malloc}
-implementation will need to derive a capability from some heap- or arena-wide
-super-capability:
+may need to derive a capability from a `super' capability which leads
+to code such as:
 
 \begin{lstlisting}
-...     c0, ...  # Calculate address (unbounded).
-...     x1, ...  # Calculate length.
+...     c0, ...  # Calculate address
+...     x1, ...  # Calculate length
 scbndse c0, c0, x1
 mov     x8, #0xffffffffffff....
 movk    x8, #0x...., lsl #16
 clrperm c0, c0, x8
 \end{lstlisting}
 
-The \texttt{scbndse} sets the bounds, and the \texttt{clrperm} removes
-permissions that \fnc{malloc} results should not have, for example ensuring
-that it is not executable. An optimisation could perform some of these
-operations at an earlier stage (for example removing permissions from the
-super-capability), but consider that the locality of it (just before returning
-to the caller) might offer a useful level of confidence.
+In this fragment, \texttt{scbndse} sets the bounds, and \texttt{clrperm} removes
+permissions that \fnc{malloc} results should not have. Although it is
+difficult for us to say with certainty, it appears that such instructions
+are not as well optimised as they could be: we observed situations where
+it would seem more efficient to reorder some of these instructions,
+exposing further opportunities for optimisation. Either way, it would
+be interesting to understand the performance impact of these CHERI-aware
+aspects in isolation from other aspects of code generation, but this
+would require a very challenging analysis that is beyond the scope of our work.
 
-Similar sequences are seen even in general code. For example, setting bounds on
-pointers to arrays provides spatial protection against buggy or malicious
-callees, and again, is the intended purpose of purecap.
-
-Ultimately, we would like to be able to calculate the performance cost of
-\fuser\ in isolation, since everything else can be reduced or removed with
-optimisation work. Unfortunately, difficulty in classification (and unavoidable
-overlaps between these categories) makes that infeasible today.
 
 \section{Conclusions}
 
