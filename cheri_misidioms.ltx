@@ -1064,9 +1064,9 @@ help us better understand larger benchmarks.
     purecap targets. Hybrid and purecap have the same performance.
 
 \vspace{3pt}
-While the above microbenchmarks don't show any particular performance impact in
-the two modes, the following potentially indicate ideas for further
-investigation:
+While the above microbenchmarks perform very similarly under each ABI, the
+following reveal some behaviours that might help us to understand other
+results:
 
 \vspace{6pt}\noindent
 \emph{factorial-asm-indirect} is similar, but uses an indirect
@@ -1082,9 +1082,9 @@ investigation:
 \vspace{6pt}\noindent
 \emph{ptr-add-align} performs pointer addition followed by an
     align-down operation, a common operation in allocators. The capability
-    variant has a dedicated instruction for this, while the hybrid version
-    is a bitwise operation. Despite this, the purecap version is much slower
-    than the hybrid version.
+    variant has to check bounds encodability and so uses a dedicated
+    instruction, while the hybrid version uses a simple bitwise operation. As a
+    result, the purecap version is much slower than the hybrid version.
 
 
 \begin{figure}
