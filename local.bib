@@ -33,3 +33,22 @@
   year = {2020},
   note = {\url{https://msrc.microsoft.com/blog/2020/10/security-analysis-of-cheri-isa/}},
 }
+
+@inproceedings{xia19cherivoke,
+author = {Xia, Hongyan and Woodruff, Jonathan and Ainsworth, Sam and Filardo, Nathaniel W. and Roe, Michael and Richardson, Alexander and Rugg, Peter and Neumann, Peter G. and Moore, Simon W. and Watson, Robert N. M. and Jones, Timothy M.},
+title = {CHERIvoke: Characterising Pointer Revocation Using CHERI Capabilities for Temporal Memory Safety},
+year = {2019},
+isbn = {9781450369381},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3352460.3358288},
+doi = {10.1145/3352460.3358288},
+abstract = {A lack of temporal safety in low-level languages has led to an epidemic of use-after-free exploits. These have surpassed in number and severity even the infamous buffer-overflow exploits violating spatial safety. Capability addressing can directly enforce spatial safety for the C language by enforcing bounds on pointers and by rendering pointers unforgeable. Nevertheless, an efficient solution for strong temporal memory safety remains elusive.CHERI is an architectural extension to provide hardware capability addressing that is seeing significant commercial and open-source interest. We show that CHERI capabilities can be used as a foundation to enable low-cost heap temporal safety by facilitating out-of-date pointer revocation, as capabilities enable precise and efficient identification and invalidation of pointers, even when using unsafe languages such as C. We develop CHERIvoke, a technique for deterministic and fast sweeping revocation to enforce temporal safety on CHERI systems. CHERIvoke quarantines freed data before periodically using a small shadow map to revoke all dangling pointers in a single sweep of memory, and provides a tunable trade-off between performance and heap growth. We evaluate the performance of such a system using high-performance x86 processors, and further analytically examine its primary overheads. When configured with a heap-size overhead of 25%, we find that CHERIvoke achieves an average execution-time overhead of under 5%, far below the overheads associated with traditional garbage collection, revocation, or page-table systems.},
+booktitle = {52nd Annual IEEE/ACM International Symposium on Microarchitecture},
+pages = {545–557},
+numpages = {13},
+keywords = {temporal safety, security, architecture, use-after-free},
+location = {Columbus, OH, USA},
+series = {MICRO '52},
+month = Oct
+}
