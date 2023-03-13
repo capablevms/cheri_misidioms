@@ -6,11 +6,11 @@
 
 \begin{abstract}
 \noindent
-Various open-source memory allocators have been ported to CHERI, a hardware capability
+Several open-source memory allocators have been ported to CHERI, a hardware capability
 platform. In this paper we examine the security and performance of these
 allocators when run under CheriBSD on Arm's experimental Morello platform.
-We introduce a number of security attacks and show that all but one allocator,
-including the default CheriBSD allocator, are vulnerable to some of the attacks.
+We introduce a number of security attacks and show that all but one allocator
+is vulnerable to some of the attacks -- including the default CheriBSD allocator.
 We then show that while some forms of allocator performance are meaningful,
 comparing the performance of hybrid and pure capability (i.e.~`running in
 non-CHERI vs.~running in CHERI modes') allocators does not appear to be meaningful.
@@ -27,41 +27,37 @@ hardware.
 CHERI (Capability Hardware Enhanced RISC Instructions) provides and enforces hardware
 capabilities that allow programmers to make strong security guarantees
 about the memory safety properties of their programs~\cite{watson20cheriintroduction}. However, capabilities are
-not magic. Programmers must first decide which memory safety properties they
+not magic --- programmers must first decide which memory safety properties they
 wish to enforce and then write their software in such a way to enforce those properties.
 Mistakes or oversights undermine
-the security guarantees programmers believe their code possesses.
+the security guarantees that programmers believe their code possesses.
 
-In this paper we examine one of the most fundamental software components:
-memory allocators (henceforth just ``allocators'').
-Apart from some embedded
+In this paper we study memory allocators (henceforth just ``allocators'')
+in the context of CHERI. Apart from some embedded
 systems (which preallocate fixed quantities of memory), allocators are
 ubiquitous, because they allow us to write programs that are generic over a
-variety of memory usage patterns. Since allocators are used so frequently,
-their security properties and performance are a major part of
-the security properties and performance of software in general. In other words,
-allocators with security flaws and/or performance problems have significant,
-widespread consequences.
+variety of memory usage patterns. Allocators' security properties and performance are a fundamental pillar supporting
+the security properties and performance of software in general --- any
+security flaws and/or performance problems in allocators thus have
+have significant, widespread, consequences.
 
-Our work studies allocators and CHERI from both security and performance
-angles. We show that most CHERI allocators are subject to at least some simple attacks
-that are likely to surprise reasonable programmers.
+In this paper we show that most CHERI allocators are subject to at least some, surprisingly simple, attacks.
 We then show that while some forms of allocator performance are meaningful,
-comparing the performance of hybrid and pure capability (i.e.~`running in
-non-CHERI vs.~running in CHERI modes') allocators does not currently appear to be meaningful.
+comparing the performance of hybrid and pure capability (roughly speaking: ``running in
+non-CHERI vs.~running in CHERI modes'') allocators does not currently appear to be meaningful.
 We analyse some of the likely factors for this latter case,
 which suggest that this may be as much about the maturity of factors
-such as the compiler toolchain as it is about the effects of capabilities on hardware.
+such as compiler toolchains as about the effects of capabilities on hardware.
 We do not claim that our
 work is definitive, though it does suggest two things: that some allocators
-undermine the security properties one might expect from software running on
+undermine the security properties one might reasonably expect from software running on
 pure capability CHERI; and that it is currently difficult to reason about the
-relative performance impact of CHERI on software.
+performance impact of CHERI on software.
 
 This paper is structured as follows. First, we introduce the necessary
-background: a brief overview of capabilities and the CHERI project (\autoref{sec:cheri});
+background: a brief overview of capabilities and CHERI (\autoref{sec:cheri});
 and our running example, a trivial bump allocator (\autoref{sec:bumppointerallocator}).
-We then introduce our experiments: the allocators
+We then introduce our study: the allocators
 under consideration (\autoref{sec:cheriallocators}); our attacks (\autoref{sec:atks});
 a partial performance evaluation (\autoref{sec:performance}) and an analysis
 of some of the performance discrepancies we uncovered (\autoref{sec:dissection}).
@@ -71,7 +67,7 @@ of some of the performance discrepancies we uncovered (\autoref{sec:dissection})
 \label{sec:cheri}
 
 In this section, we provide a simple overview of CHERI, and its major concepts.
-Since CHERI has been developed over a number of years, and is explained across
+Since CHERI has developed over a number of years, and is explained across
 a range of documentation and papers, some concepts have acquired more than one name,
 or names that subtly conflict with mainstream
 software development definitions. We use a single name for each concept, sometimes
@@ -79,21 +75,22 @@ introducing new names where we believe that makes things clearer.
 
 A \emph{capability} is a token that gives those who bear it \emph{abilities} to
 perform certain actions. By restricting who has access to a given capability,
-one can enforce security properties (e.g.~`this part of the software can
-only read from memory address range X to Y'). Capabilities have a long  history: \cite{levy84capability}
+one can enforce security properties (e.g.~``this part of the software can
+only read from memory address range X to Y''). Capabilities have a long  history: \cite{levy84capability}
 provides a narrative overview of capability architectures, and
 may usefully be augmented by more recent work such as~\cite{miller06robust}.
 A good first intuition is that CHERI is a modern version of this longstanding
-idea, updated with fine-grained permissions, and adapted to work on recen
+idea, with fineer-grained permissions, and adapted to work on recent
 processor instruction sets.
 
 We use the term \emph{CHERI} to refer to the `abstract capability machine'
 that software can observe: that is, the combination of a capability hardware
-instruction set, an ABI (e.g.~\cite{brooks19cheriabi}), a user-facing library that exposes
+instruction set, an ABI (roughly speaking, the interface between userland and kernel
+e.g.~\cite{brooks19cheriabi}), a user-facing library that exposes
 capability-related functions, and a CHERI-aware language. (e.g.~CHERI C~\cite{watson20chericprogramming},
 an adaption, in the sense of both extending and occasionally altering, of C).
-We refer to specific hardware implementations by their name (e.g.~CHERI
-RISC-V). In this paper, we use Arm's `Morello' implementation, which is an
+Except where we use the name of a different hardware implementation (e.g.~CHERI
+RISC-V), we assume the use of Arm's `Morello' hardware, which is an
 experimental ARMv8 chip extended with CHERI instructions.
 
 \label{abilities}
@@ -110,8 +107,8 @@ cause the hardware to produce an \emph{inauthentic} result, guaranteeing
 that capabilities cannot be forged.
 On Morello and CHERI RISC-V, capabilities behave as if they are 128 bits in
 size, but also carry an additional (129th) bit that records the authenticity of each
-capability: the authenticity bit can be read, and unset, but cannot
-be set. There is no software mechanism to set a capability as authentic; only a child capability
+capability. Software can read, and unset, but cannot set the authenticity bit:
+only a child capability
 derived, correctly, from authentic parent capabilities can itself be authentic.
 
 A capability consists of a memory
@@ -133,8 +130,9 @@ we refer to a capability's bounds being of `$x$' bytes we mean that
 $\textit{high}-\textit{low}=x$. An address is
 \emph{in-bounds} for a given capability if it is contained within the
 capability's bounds, or \emph{out-of-bounds} otherwise; a capability is
-in (or out) of bounds if its address is in (or out) of bounds (see~\cite{woodruff19chericoncentrate} for an explanation of why an authentic
-capability might have an out-of-bounds address).
+in (or out) of bounds if its address is in (or out) of
+bounds\footnote{\cite{woodruff19chericoncentrate} shows why authentic
+capabilities can have an out-of-bounds address.}.
 A \emph{bounds check} is said to be successful if a given capability, address, or
 address range, is in-bounds for a given capability.
 
@@ -143,23 +141,19 @@ check, a permissions check, or a bounds check. If a capability passes the
 relevant checks, then the operation \emph{exercises} the capability. If a
 capability fails the relevant checks then either: the hardware produces a
 \lstinline{SIGPROT} exception that terminates the program
-(similarly to a \lstinline{SEGFAULT}; or produces an inauthentic capability as a result (where this is not
-in violation of the CHERI rules). For example, a failed attempt to exercise a capability for a
-sealing operation on Morello produces an inauthentic result, rather than an
-exception.
+(similarly to a \lstinline{SEGFAULT}); or produces an inauthentic capability as a result (where this is not
+in violation of the CHERI rules).
 
-CHERI allows `traditional' single-width
-pointers-as-addresses (which on Morello and CHERI RISC-V are 64-bit addresses)
-to be used. Although CHERI processors allow both double-width capabilities and
-single-width addresses-as-pointers to exist alongside each other at any time,
-conventionally, a program which uses both traditional addresses and
+CHERI allows both double-width capabilities and
+single-width addresses-as-pointers to exist alongside each other at any time.
+Conventionally, a program which uses both traditional addresses and
 capabilities is said to be operating in \emph{hybrid} mode while a program
 which uses only capabilities is in \emph{pure capability} -- henceforth ``purecap'' -- mode. In this paper
 we concentrate on purecap programs, but frequently compare them to hybrid variants.
 
 CHERI does not presuppose a particular Operating System (OS). While there is a
 CHERI Linux port, at the time of writing the most mature OS for CHERI hardware
-is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD exclusively.
+is CheriBSD, a FreeBSD descendent. In this paper we CheriBSD exclusively.
 
 
 \section{A Basic Pure Capability Allocator}
@@ -184,13 +178,13 @@ non-CHERI aware allocator to become CHERI aware.
 label=lst:bump_alloc1]{code/bump_alloc1.c}
 \end{figure}
 
-We start with a simple, complete, example of a C bump allocator in~\autoref{lst:bump_alloc1}:
+\autoref{lst:bump_alloc1} shows a simple, complete, example of a C bump allocator:
 \fnc{malloc} works as per normal; \fnc{free} is
 a no-op; and \fnc{realloc} always allocates a new chunk of memory. The
 allocator reserves a large chunk of memory using a single \fnc{mmap} call then
 doles out chunks on each \fnc{malloc} / \fnc{realloc} calls. The bump pointer
 moves through the \fnc{mmap}ed chunk until it reaches the upper limit, at which
-point the allocator returns \texttt{NULL}s. \fnc{realloc} is intentionally
+point the allocator returns \texttt{NULL}. \fnc{realloc} is intentionally
 simplistic, but correct even when the block is increased in size.
 
 
@@ -204,10 +198,10 @@ compatible with normal C code, though pointer types are transparently `upgraded'
 non-capability pointer). CHERI also implies changes in libraries: on CheriBSD,
 for example, \fnc{mmap} returns a capability whose bounds are at least those of
 the size requested: from that capability our bump allocator derives new
-capabilities that differ in their address, but not their bounds. In other
+capabilities that differ in their address but not their bounds. In other
 words, two calls to \fnc{malloc} will produce two capabilities that have the
 same bounds, allowing anyone who possesses one of the capabilities to read and
-write from any portion of \fnc{malloc}ed memory.
+write from all past and future blocks returned by \fnc{malloc}.
 
 \begin{figure}[t]
 \lstinputlisting[language=C,
@@ -259,6 +253,7 @@ b[0] = 'a';
 b[1] = 'b';
 \end{lstlisting}
 
+\noindent
 On a non-CHERI system, or a CHERI system with \autoref{lst:bump_alloc1}
 as an allocator, this snippet compiles and runs without error. However, with
 the allocator from \autoref{lst:bump_alloc2} the code compiles, but the tighter
@@ -303,7 +298,9 @@ Allocator & Version & SLoC & \multicolumn{2}{c}{Changed}\\
 \\ \bottomrule
 \end{tabular}
 \end{center}
-  \caption{The allocators we examined, their size in Source Lines of Code
+  \caption{\laurie{let's split this table into three: in the top, the allocators
+  that work, in the middle the allocators that don't work, in the bottom Linux
+  allocators.}The allocators we examined, their size in Source Lines of Code
   (SLoC), and the number of lines changed (as an absolute value and relative
   percentage) to adapt them for pure capability CheriBSD. Note that
   musl and newlib are Linux (not CheriBSD) allocators included so that
@@ -316,11 +313,10 @@ A number of allocators are available for CheriBSD, installable via three
 different routes: as part of the base distribution; via CheriBSD
 \emph{packages}; or via external sources.  We examined allocators
 available from all three sources. We excluded
-allocators aimed at debugging e.g.~\memalloc{ElectricFence}).
+allocators aimed at debugging (e.g.~\memalloc{ElectricFence}).
 We then ran a simple validation test, \fnc{malloc}ing a block of memory,
 copying data into the block, and then \fnc{free}ing the block: we
-excluded any allocator which failed this test. We
-document by which route we obtained all of the allocators we consider.
+excluded any allocator which failed this test.
 
 On that basis, the allocators we consider in this paper, and the names we use
 for them for the rest of this paper, are as follows:
@@ -329,7 +325,7 @@ for them for the rest of this paper, are as follows:
 
 \vspace{6pt}\noindent
 \memalloc{jemalloc}, a modified version of the well-known
-    \emph{jemalloc}~\cite{evans06scalable} allocator, which is the default allocator
+    allocator~\cite{evans06scalable}: this is the default allocator
     for CheriBSD.
 
 \vspace{6pt}\noindent
@@ -347,11 +343,10 @@ for them for the rest of this paper, are as follows:
     more recent updates. We term this more recent version \texttt{snmalloc-repo}.
 
 \vspace{6pt}\noindent
-\memalloc{dlmalloc-cheribuild} is a version of the well-known
-    \emph{dlmalloc} allocator~\cite{lea96memory} modified for CHERI,
-    installable via \texttt{cheribuild}. \memalloc{dlmalloc-pkg64c} is an unmodified version  of the allocator, available as a package in CheriBSD. The
-    ported version in \texttt{cheribuild} is based on the same as those in the
-    packages, namely 2.8.6.
+\memalloc{dlmalloc-cheribuild}, a modified version of the well-known~\cite{lea96memory}
+    installable via \texttt{cheribuild}. \memalloc{dlmalloc-pkg64c} is an
+    unmodified version  of the allocator, available as a package in CheriBSD. Both
+    versions are based on dlmalloc 2.8.6.
 
 \vspace{6pt}\noindent
 \memalloc{ptmalloc}~\cite{gloger06ptmalloc} is an extension of
@@ -369,25 +364,24 @@ for them for the rest of this paper, are as follows:
 
 \vspace{6pt}\noindent
 \autoref{tab:allocator_summary} shows the version of each allocator we used.
-We also looked at CHERI versions of the Linux musl and newlib C libraries
-for our source code analysis only.
-We are aware of at least two other major memory allocators that have been
+As a simple means to understand the influence of CheriBSD, we also briefly
+examined the source code of the musl and newlib C libraries for Linux, though
+these play no part in our later experiments. We have not included two other
+major memory allocators that have only been
 partly ported to CHERI: the \emph{Boehm-Demers-Weiser} conservative garbage
-collector; and the \emph{WebKit} garbage collector. Since neither port is yet
-complete, we have not included them in this paper.
+collector; and the \emph{WebKit} garbage collector.
 
 
 \subsection{How Much Have the Allocators Been Adapted for CHERI?}
 \label{sec:rqs}
 
-As we saw from \autoref{lst:bump_alloc1}, simple allocators might not need
-adaption for CHERI, though they then derive only minor security gains. In
+As we saw from \autoref{lst:bump_alloc1}, simple allocators may not need
+adapting for CHERI, though they are then likely to derive only minor security gains. In
 practice, we expect most allocators to incorporate at least the capability bounds enforcement
 of \autoref{lst:bump_alloc2}. Indeed, more sophisticated allocators tend
-to crash on CHERI without at least some modifications. Most of the allocators available
-via CheriBSD package installer (e.g.~dlmalloc) have had no source-level
-changes for CHERI, so while they compile correctly, we found they crashed
-almost immediately upon use.
+to crash on CHERI without at least some modifications. For example, most of the allocators available
+via CheriBSD's package installer (e.g.~dlmalloc-pkg64c) have had no source-level
+changes for CHERI: they compile correctly but crash on even the most trivial examples.
 
 Understanding the details of the CHERI modifications to all of the allocators under
 consideration is beyond the scope of this work.
@@ -422,7 +416,9 @@ Allocator & \tblescunauthentic & \tblescperms & \tblnarrowwidencapleak & \tblove
 \input{./data/results/tests.tex}
 \\ \bottomrule
 \end{tabular}
-\caption{Attacks which succeed on a given allocator are marked with a $\times$, while unsuccessful attacks are marked with a $\checkmark$; attack executions which fail due to other reasons (e.g., segmentation faults) are marked with $\oslash$.}
+\caption{Attacks per allocator: $\times$ indicates that an allocator is vulnerable to an attack;
+  $\checkmark$ that the allocator is invulnerable; and $\oslash$ a failure for other
+  reasons (e.g.~a segfault).}
 \label{tab:atks}
 \end{center}
 \end{table}
@@ -446,12 +442,13 @@ snmalloc is invulnerable.
 In the rest of this section we explain each attack, giving C code using the
 CHERI API. Our code examples assume that we start with a `non-attacker' who
 allocates memory and hands it over to another part of the system which has been
-taken over by an `attacker'. We model this via a series of \lstinline{assert}s:
+taken over by an `attacker'. For each (allocator, attack) pair, we state whether it is
+vulnerable, invulnerable, or whether the attack fails for other reasons.
+We model this via a series of \lstinline{assert}s:
 if all the \lstinline{assert}s pass, the attack is successful. The code we show
 in the paper is elided relative to the version we run, which contains changes
 that makes it possible for us to automate the running of the attacks over
-multiple allocators. For each (allocator, attack) pair, we state whether it is
-vulnerable, invulnerable, or whether the attack fails for other reasons. The
+multiple allocators. The
 full code (available on GitHub) must be considered the definitive source of
 truth for \autoref{sec:cheriallocators}.
 
@@ -461,15 +458,15 @@ Our descriptions use the following CHERI functions:
 
 \vspace{6pt}
 \noindent\texttt{void *cheri\_address\_set(void *c, \\vaddr\_t a)}~~~~
-Takes a capability \texttt{c} as input and produces a new capability
+Takes a capability \texttt{c} as input and returns a new capability
 that is a copy of \texttt{c} except with the address \texttt{a}.
 \texttt{vaddr\_t} is a CHERI C integer type that is guaranteed to be big enough
-to represent addresses but, unlike \texttt{intptr\_t} is not big enough to
+to represent addresses but, unlike \texttt{intptr\_t}, is not big enough to
 represent capabilities.
 
 \vspace{6pt}
 \noindent\texttt{void *cheri\_bounds\_set(void *c, \\size\_t s)}
-Takes a capability \texttt{c} as input and produces a new capability
+Takes a capability \texttt{c} as input and returns a new capability
 that is a copy of \texttt{c} except with bounds \texttt{s}.
 
 \vspace{6pt}
@@ -482,12 +479,12 @@ Returns true if the capability \texttt{c} is authentic or false otherwise.
 
 \vspace{6pt}
 \noindent\texttt{void* cheri\_perms\_and(void *c,\\ size\_t perms)}
-Return the capability \texttt{c} with its permissions bitwise-ANDed
+Returns the capability \texttt{c} with its permissions bitwise-ANDed
 with \texttt{perms}.
 
 \vspace{6pt}
 \noindent\texttt{size\_t cheri\_perms\_get(void *c)}
-Return the permissions of capability \texttt{c}.
+Returns the permissions of capability \texttt{c}.
 
 \setlength{\leftskip}{0pt}
 
@@ -518,7 +515,7 @@ alignment), \fnc{realloc} will then look as follows:
 
 \begin{lstlisting}[language=C]
 void *realloc(void *ptr, size_t size) {
-  if (size_of_bucket(ptr) <= size) {
+  if (size <= size_of_bucket(ptr)) {
     // No need to reallocate.
     void *new_ptr =
       cheri_address_set(SC, ptr),
@@ -552,18 +549,20 @@ for (uint8_t i = 0; i < 256; i++)
   assert(arr[i] == i);
 \end{lstlisting}
 
+\noindent
 This attack first \fnc{malloc}s a block of memory, receiving a capability with
-a bounds of 256 bytes (line 1). We fill the block up with data so
-that we can later test the success of the attack (lines 2 and 3). We then
+a bounds of 256 bytes (line 1). We fill the block up with data (lines 2 and 3)
+so that we can later test the success of the attack. We then
 \fnc{realloc} the block down to a single byte, receiving back a capability
-whose bounds are 1 byte\footnote{Some allocators return bigger bounds, but
-we ignore that for now.} (line 5).
+whose bounds are 1 byte\footnote{Some allocators bounds bigger than 1 byte, though
+none we tested returned a bounds of 256 bytes or more.} (line 5).
+
 At this point, we expect to have permanently lost access to the values written to bytes 2-255
-in lines 2 and 3. If we then \fnc{realloc} the block back to
-its original size we should not have access to the values written to bytes
+in lines 2 and 3. If an attacker then \fnc{realloc}s the block back to
+its original size they should not have access to the values written to bytes
 2-255. However, allocators using the optimisation above will often
 return a capability that covers the same portion of memory as the original
-block, without zeroing it, allowing us to read the original bytes out
+block, without zeroing it, allowing an attacker to read the original bytes out
 unchanged.
 
 It might seem merely undesirable for \fnc{realloc} to allow an attacker access to the
@@ -583,7 +582,7 @@ might give an attacker other unexpected opportunities to read data.
 \subsection{\escperms: Escalate Permissions}
 
 When an allocator uses a `super' capability (as seen in
-e.g.~\autoref{narrowwiden}), there may be potential to upgrade a
+\autoref{narrowwiden}), there may be potential to upgrade a
 capability's permissions as shown in the following simple attack:
 
 \begin{lstlisting}[language=C]
@@ -598,6 +597,7 @@ assert(cheri_perms_get(arr)
   & CHERI_PERM_STORE);
 \end{lstlisting}
 
+\noindent
 We first allocate a block and check that the capability returned
 is allowed to store data (\texttt{CHERI\_PERM\-\_STORE}) to that block (lines 1--3).
 We deliberately remove the store permission (line 4), checking
@@ -639,6 +639,7 @@ arr = realloc(arr, 16);
 assert(cheri_tag_get(arr));
 \end{lstlisting}
 
+\noindent
 Interestingly, none of the allocators we examined was vulnerable to this
 attack. However, several fall into something of a
 grey zone: the allocators cause a \lstinline{SIGPROT} when they try to perform
@@ -653,7 +654,7 @@ invulnerable to this attack.
 
 It is easy to assume that authentic capabilities can only be derived if one
 follows CHERI-C's rules correctly. However, it is possible for an attacker to use undefined
-behaviour to trick an allocator into returning authentic capabilities
+behaviour at the language level to trick an allocator into returning authentic capabilities
 that it should not possess as shown in this attack:
 
 \begin{lstlisting}[language=C]
@@ -667,6 +668,7 @@ for (uint8_t i = 0; i < 256; i++)
   assert(arr[i] == i);
 \end{lstlisting}
 
+\noindent
 This follows a similar pattern to \narrowwiden. We first allocate a block
 and fill it with data (lines 1--3). Although not strictly necessary to demonstrate
 the attack, we then reallocate the block down to a single byte, modelling the
@@ -723,6 +725,7 @@ assert(
 );
 \end{lstlisting}
 
+\noindent
 In practice, such a simple attack is unlikely to succeed on all but the
 most basic allocators, as the most likely attack vector is when an allocator
 fails to take into account bounds imprecision. The `full' \overlap
@@ -765,10 +768,7 @@ hybrid or pure capability CHERI do appear to be meaningful.
 In this section we thus first detail a fairly traditional performance evaluation
 comparing performance amongst purecap CHERI allocators, before showing that
 performance across hybrid and purecap allocators is surprisingly different.
-We look for, but largely fail to find, simple explanations for why allocator
-performance across hybrid and purecap varies so much. In~\autoref{sec:dissection} we
-attempt a more detailed, and generic, analysis of factors that might explain
-such differences.
+In~\autoref{sec:dissection} we investigate possible reasons for these differences.
 
 
 \subsection{Methodology}
@@ -843,13 +843,11 @@ We measure wall-clock time on an otherwise unloaded Morello machine.
 
 \subsection{Results Within Hybrid and Purecap}
 \label{ssec:withinhybridpurecap}
-%Figure FIXME presents results for this experiment, showing that 
-%\jeremy{the majority of allocators are significantly slower than jemalloc (presumably because they are less optimized)}. 
 
 The two highest performing allocators were jemalloc and snmalloc. In
 hybrid, snmalloc is 1.25x faster with the geometric mean than
 jemalloc; in purecap, snmalloc is 1.24x faster with the geometric mean
-than jemalloc. In both situations, the wall-clock time correlates
+than jemalloc. In both situations, the wall-clock time roughly correlates
 with instructions counts (snmalloc retires 1.42x fewer instructions
 than jemalloc in hybrid and 1.15x fewer in purecap). Because these
 differences are clear and because, as we will soon see, there are much
@@ -864,16 +862,8 @@ execution time, and there is significant variance amongst benchmarks.
 However, using the geometric mean, both jemalloc and snmalloc \emph{purecap}
 are 1.59x slower than \emph{hybrid}, which is a much greater figure than we expected. That
 richards, a benchmark which performs little allocation, is over 2x slower
-strongly suggests that such slowdowns are not related to allocators.
+shows that such slowdowns may have little correlation to allocators.
 
-To understand if there are simple explanations for the slowdown -- perhaps
-that capabilities place pressure on caches -- we measured
-a number of performance counters, also shown in \autoref{fig:eval jemalloc}.
-Pairwise correlation analysis between our metrics indicates a strong
-linear relationship (Pearson > 0.95)
-between memory access (L1 data cache) and execution time.
-However there is variance amongst benchmarks and the performance
-counters that do not allow us to identify a single cause.
 
 \begin{figure}
   \begin{center}
@@ -906,11 +896,36 @@ counters that do not allow us to identify a single cause.
   }
 \end{figure}
 
+
+\section{Analysing The Disparity Between Hybrid and Purecap Performance}
+\label{sec:dissection}
+
+The disparity in performance between hybrid and purecap surprised us. In this
+section, we explain the three avenues of investigation we undertook to try
+and understand possible causes for the disparity. Roughly speaking, we
+attempted (and explain) the avenues in ascending order of difficulty.
+
+
+\subsection{Performance Counters}
+
+We started by measuring several of the available CPU performance counters,
+whose results are shown in ~\autoref{fig:eval jemalloc}.
+We hoped that this might highlight possible causes such as increased cache pressure
+in purecap.
+\laurie{jeremy: I think the next two sentences need changing?} Pairwise correlation analysis between our metrics indicates a strong
+linear relationship (Pearson > 0.95)
+between memory access (L1 data cache) and execution time.
+However there is variance amongst benchmarks and the performance
+counters do not allow us to identify a single cause.
+
+
+\subsection{Class, and Quantity of, Instructions}
+
 We wondered whether the higher instruction counts on purecap benchmarks
-was due to necessary extra instructions in purecap allocators
-(thinking back to Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2})
-or whether it might be due to other factors. To understand this, we wanted
-to count how often different classes of instructions were executed.
+could be explained by the extra CHERI instructions that we saw
+even a simple allocator needs (compare Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2}).
+To understand this, we wanted
+to count how often different `classes' of instructions were executed.
 Unfortunately, there is currently no direct way on either CheriBSD or Morello
 to obtain such a count, so we had to cobble together two approaches: a fast,
 but potentially imprecise, approach based on QEMU; and a slow, but much more
@@ -925,20 +940,20 @@ instruction counts that together constitute the `head' and `tail' of execution.
 When we ran a benchmark, we then subtracted the head/tail instruction counts to
 obtain the `benchmark only' instruction counts.
 
-To validate these results, we used the Morello Platform FVP, which can emit ``tarmac''
+To validate these results, we used the Morello Platform FVP, which can emit \emph{tarmac}
 traces~\cite[p.~5452]{fvpguide} representing complete records of execution. We
 altered the FVP so that when we executed an otherwise unused instruction, it
 toggled tracing on and off. We executed a complete run of the binary\_tree
 benchmark, examined the traces, and counted the instructions contained therein,
 which were a close match to our QEMU instruction counts. This gives us confidence
 that our QEMU figures are representative.
-
 Since our QEMU approach only has to track a few integers, whereas FVP produces
 tarmac traces that are often a TiB long for our workloads, our two approaches
 differ in performance by about 3 orders of magnitude. Running our full
 benchmark suite for its full duration would be infeasible in FVP, so the
-results we show in~\autoref{fig:instrmix} result from our QEMU approach.
-As the figure shows, the instruction mixes look largely sensible: some
+results we are from our QEMU approach.
+
+The instruction mixes in \autoref{fig:instrmix} look largely sensible: some
 aspects (e.g.~branches) are identical in hybrid and purecap; some
 vary where capabilities are sometimes used (e.g.~loads and stores);
 and purecap uses Morello instructions. Overall, while there are some
@@ -946,7 +961,7 @@ minor oddities (e.g.~mstress uses Neon vector instructions -- classified as
 floating point -- to a much greater degree on hybrid compared to purecap), there are no obvious smoking
 guns.
 
-We wrote an analysis tool over FVP traces (which contain virtual
+We then wrote an analysis tool for our FVP traces (which contain virtual
 addresses) to provide per-function profiling, and ran this for shortened
 versions of three benchmarks. \autoref{fig:fvpstats} shows that some
 functions execute many more instructions in purecap (vs.~hybrid) than
@@ -956,8 +971,7 @@ particularly impacted --- though, again, this can not explain all
 the differences we see.
 
 
-\section{Analysing The Disparity Between Hybrid and Purecap Performance}
-\label{sec:dissection}
+\subsection{Low-level Differences}
 
 Hybrid and purecap CHERI imply certain differences which we would expect to
 account for some of the performance changes we see. In this
@@ -998,13 +1012,13 @@ allocator of~\autoref{lst:bump_alloc1}).
 \setlength{\leftskip}{0pt}
 
 \vspace{6pt}\noindent
-Our expectation in this section is not that we can identify causal relationships
+Our expectation in not that we can identify causal relationships
 for performance oddities, but that we can at least understand some of
 the `beneath the surface' factors that might explain part of the performance
 story.
 
 
-\subsection{\fhardware: Hardware pointer operation (microbenchmarks)}
+\subsubsection{\fhardware: Hardware pointer operation (microbenchmarks)}
 
 To understand the impact of low-level Morello hardware performance, we wrote a
 series of simple microbenchmarks that we can run under both hybrid and purecap
@@ -1013,11 +1027,12 @@ variance), but many include, or are primarily written in, assembly. Our aim
 with these microbenchmarks is not to judge `real-world' performance, but to
 help us better understand larger benchmarks.
 
+We split our microbenchmarks into two. First those microbenchmarks which
+show little or no difference between hybrid and purecap:
+
+\setlength{\leftskip}{6pt}
+
 \vspace{6pt}\noindent
-\emph{factorial-asm-minimal} is a tail-recursive factorial
-    implementation that, despite not using capabilities in the loop, shows
-    bimodality in hybrid. We have no obvious explanation for this, so we assume it
-    is a microarchitectural artefact.
 
 \vspace{6pt}\noindent
 \emph{random-graph-walk-L1} performs a random walk through a
@@ -1040,10 +1055,18 @@ help us better understand larger benchmarks.
     loop uses no capabilities, and compiles to identical code for hybrid and
     purecap targets. Hybrid and purecap have the same performance.
 
-\vspace{3pt}
-While the above microbenchmarks perform very similarly under each ABI, the
-following reveal some behaviours that might help us to understand other
-results:
+\setlength{\leftskip}{0pt}
+
+\vspace{6pt}\noindent
+Second those benchmarks which do show noticeable differences:
+
+\setlength{\leftskip}{6pt}
+
+\vspace{6pt}\noindent
+\emph{factorial-asm-minimal} is a tail-recursive factorial
+    implementation that, despite not using capabilities in the loop, shows
+    bimodality in hybrid. We have no obvious explanation for this, so we assume it
+    is a microarchitectural artefact.
 
 \vspace{6pt}\noindent
 \emph{factorial-asm-indirect} is similar, but uses an indirect
@@ -1063,6 +1086,13 @@ results:
     instruction, while the hybrid version uses a simple bitwise operation. As a
     result, the purecap version is much slower than the hybrid version.
 
+\setlength{\leftskip}{0pt}
+
+\laurie{jacob: If we measured the number of cross-.so calls in our benchmarks,
+I wonder if we would account for much of the performance difference we see? (my
+guess is that ptr-add-align doesn't happen often enough to cost us much, but i
+might be wrong about that!)}
+
 
 \begin{figure}
   \begin{center}
@@ -1077,7 +1107,7 @@ results:
 \end{figure}
 
 
-\subsection{\fabi: ABI Implications}
+\subsubsection{\fabi: ABI Implications}
 \label{ssec:purecap ABI difficulties}
 
 We observed some ABI-related differences between hybrid and purecap code.
@@ -1089,7 +1119,7 @@ to the following:
     str xzr, [x1, #2472]
 \end{lstlisting}
 
-However, the purecap ABI
+\noindent However, the purecap ABI
 requires another level of indirection in order to obtain a capability with
 tight bounds:
 
@@ -1099,6 +1129,7 @@ tight bounds:
     str xzr, [c1]
 \end{lstlisting}
 
+\noindent
 It is difficult for us to tell if this behaviour is important for
 security in all, or merely some, situations. However, analysing
 the traces behind~\autoref{fig:fvpstats} showed that this can
@@ -1108,7 +1139,7 @@ frequently in some functions, though we cannot precisely quantify
 the performance impact.
 
 
-\subsection{\fcompiler: Toolchain maturity}
+\subsubsection{\fcompiler: Toolchain maturity}
 
 We noticed that the same C code compiled for hybrid and purecap by LLVM could
 sometimes lead to variable length machine code. The differences are
@@ -1147,6 +1178,7 @@ mrs     x1, TPIDR_EL0
 ldrb    w0, [x2, x1]
 \end{lstlisting}
 
+\noindent
 In purecap this is compiled to a load and a bounds restriction:
 
 \begin{lstlisting}
@@ -1157,6 +1189,7 @@ scbnds  c2, c2, x3
 ldrb    w0, [c2]
 \end{lstlisting}
 
+\noindent
 These additional instructions will almost certainly have a measurable impact
 on performance, but do not appear to have any security benefit:
 the \texttt{c2} register is not indexed by a variable, and a greater capability is
@@ -1164,7 +1197,7 @@ already available in \texttt{c1}. It seems likely that this is a missed
 optimisation opportunity by the compiler rather than a deliberate security restriction.
 
 
-\subsection{\fuser: The Impact of CHERI Security on User Code}
+\subsubsection{\fuser: The Impact of CHERI Security on User Code}
 
 CHERI aware allocators often improve security by restricting capability bounds
 and other permissions. Doing so requires generating and running more code.
@@ -1181,6 +1214,7 @@ movk    x2, #0x...., lsl #16
 clrperm c0, c0, x2
 \end{lstlisting}
 
+\noindent
 In this fragment, \texttt{scbndse} sets the bounds, and \texttt{clrperm} removes
 permissions that \fnc{malloc} results should not have. Although it is
 difficult for us to say with certainty, it appears that such instructions
