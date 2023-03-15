@@ -80,7 +80,7 @@ only read from memory address range X to Y''). Capabilities have a long  history
 provides a narrative overview of capability architectures, and
 may usefully be augmented by more recent work such as~\cite{miller06robust}.
 A good first intuition is that CHERI is a modern version of this longstanding
-idea, with fineer-grained permissions, and adapted to work on recent
+idea, with finer-grained permissions, and adapted to work on recent
 processor instruction sets.
 
 We use the term \emph{CHERI} to refer to the `abstract capability machine'
@@ -153,7 +153,7 @@ we concentrate on purecap programs, but frequently compare them to hybrid varian
 
 CHERI does not presuppose a particular Operating System (OS). While there is a
 CHERI Linux port, at the time of writing the most mature OS for CHERI hardware
-is CheriBSD, a FreeBSD descendent. In this paper we CheriBSD exclusively.
+is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD exclusively.
 
 
 \section{A Basic Pure Capability Allocator}
@@ -953,7 +953,7 @@ Since our QEMU approach only has to track a few integers, whereas FVP produces
 tarmac traces that are often a TiB long for our workloads, our two approaches
 differ in performance by about 3 orders of magnitude. Running our full
 benchmark suite for its full duration would be infeasible in FVP, so the
-results we are from our QEMU approach.
+results are from our QEMU approach.
 
 The instruction mixes in \autoref{fig:instrmix} look largely sensible: some
 aspects (e.g.~branches) are identical in hybrid and purecap; some
@@ -964,8 +964,9 @@ floating point -- to a much greater degree on hybrid compared to purecap), there
 guns.
 
 We then wrote an analysis tool for our FVP traces (which contain virtual
-addresses) to provide per-function profiling, and ran this for shortened
-versions of three benchmarks. \autoref{fig:fvpstats} shows that some
+addresses) to provide per-function profiling, and ran this for one full
+benchmark, and shortened versions of two others.
+\autoref{fig:fvpstats} shows that some
 functions execute many more instructions in purecap (vs.~hybrid) than
 others. Slightly anticipating our later analysis, functions which call
 across shared objects, and those that use global variables seem
@@ -1014,7 +1015,7 @@ allocator of~\autoref{lst:bump_alloc1}).
 \setlength{\leftskip}{0pt}
 
 \vspace{6pt}\noindent
-Our expectation in not that we can identify causal relationships
+Our expectation is not that we can identify causal relationships
 for performance oddities, but that we can at least understand some of
 the `beneath the surface' factors that might explain part of the performance
 story.
@@ -1033,8 +1034,6 @@ We split our microbenchmarks into two. First those microbenchmarks which
 show little or no difference between hybrid and purecap:
 
 \setlength{\leftskip}{6pt}
-
-\vspace{6pt}\noindent
 
 \vspace{6pt}\noindent
 \emph{random-graph-walk-L1} performs a random walk through a
