@@ -14,6 +14,7 @@
 
 uint64_t fact_impl(uint64_t acc, uint64_t next);
 __asm__("   .type fact_impl, @function\n"
+        "   .balign 16\n"
         "fact_impl:\n"
         "   cmp     x1, #1\n"
         "   b.hi    1f\n"
