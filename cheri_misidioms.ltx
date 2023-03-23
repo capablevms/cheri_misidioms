@@ -804,10 +804,11 @@ In~\autoref{sec:dissection} we investigate possible reasons for these difference
   \end{center}
   \caption{\label{fig:eval jemalloc}
   \memalloc{jemalloc} (top) and \memalloc{snmalloc} (bottom) running on purecap, normalised
-  to their respective hybrid allocators. For example, barnes's wall-clock
-  execution time \emph{total-time} on purecap is 1.22x greater than
+  to their respective hybrid allocators. For example, the wall-clock
+  execution time \emph{total-time} of
+  barnes with \memalloc{jemalloc} on purecap is 1.22x greater than
   on hybrid. To understand why purecap is slower than we expected, we recorded
-  several performance counters: \emph{rss-kb} is 
+  several performance metrics: \emph{rss-kb} is 
   maximum memory utilisation; \emph{INST\_RETIRED} the number of instructions
   retired while executing the benchmark; and \emph{\{L1I, L1D, L2D\}\_CACHE}
   the L1 instruction, L1 data, and L2 data, cache accesses respectively.
