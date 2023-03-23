@@ -912,11 +912,17 @@ We started by measuring several of the available CPU performance counters,
 whose results are shown in ~\autoref{fig:eval jemalloc}.
 We hoped that this might highlight possible causes such as increased cache pressure
 in purecap.
-\laurie{jeremy: I think the next two sentences need changing?} Pairwise correlation analysis between our metrics indicates a strong
-linear relationship (Pearson > 0.95)
-between memory access (L1 data cache) and execution time.
-However there is variance amongst benchmarks and the performance
-counters do not allow us to identify a single cause.
+In all cases, we observe the resident set size (RSS)
+increases for purecap relative to hybrid. We only see
+the worst-case near-doubling in size for mstress and binary\_tree;
+these benchmarks have the most pointer-intensive heap-allocated data structures.
+In almost all cases, the L2 data cache accesses increase for purecap relative
+to hybrid. This indicates L1 data cache pressure due to handling
+double-pointer-width capability values. However it doesn't account entirely
+for the relative performance slowdown of purecap: e.g.\ consider richards with
+\memalloc{snmalloc} which has more than 2x slowdown but no additional L2 data cache accesses.
+We concede that performance
+counters do not allow us to identify a single cause of slowdown.
 
 
 \subsection{Class, and Quantity of, Instructions}
