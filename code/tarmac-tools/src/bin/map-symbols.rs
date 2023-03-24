@@ -500,25 +500,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     // https://developer.arm.com/documentation/102225/0200/Reference-information/Morello-specific-changes-to-tarmac-trace
     let it_re = Regex::new(
         r"(?x)
-        ^\d+\s+                                         # Timestamp
-        (?:ps|clk)\s+                                   # Timestamp units
-        \S+\s+                                          # CPU name
-        IT\s+                                           # Instruction taken
-        \(\d+\)\s+                                      # Tick count
-        \((?P<pcc>[01]\|[[:xdigit:]]+\|[[:xdigit:]]+)\) # PCC (including virtual address)
-        :[[:xdigit:]]+_NS\s+                            # Physical address (non-secure)
-        (?P<insn>[[:xdigit:]]{8})\s+                    # Instruction
-        [OC]\s+                                         # ISA (A64 or C64)
-        EL0t_n\s+                                       # EL0, non-secure only
+        ^\d+\s+                                              # Timestamp
+        (?:ps|clk)\s+                                        # Timestamp units
+        \S+\s+                                               # CPU name
+        IT\s+                                                # Instruction taken
+        \(\d+\)\s+                                           # Tick count
+        \([01]\|[[:xdigit:]]+\|(?P<pcc_addr>[[:xdigit:]]+)\) # PCC (including virtual address)
+        :[[:xdigit:]]+_NS\s+                                 # Physical address (non-secure)
+        (?P<insn>[[:xdigit:]]{8})\s+                         # Instruction
+        [OC]\s+                                              # ISA (A64 or C64)
+        EL0t_n\s+                                            # EL0, non-secure only
         :\s+
-        (?P<asm>.*)                                     # Disassembly
+        (?P<asm>.*)                                          # Disassembly
     ",
     )
     .unwrap();
-
-    let cap_re =
-        Regex::new(r"^(?P<tag>[01])\|(?P<high64>[[:xdigit:]]+)\|(?P<low64>[[:xdigit:]]+)$")
-            .unwrap();
 
     let mut insn_count = InsnCount::default();
 
@@ -538,16 +534,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     for line in io::BufReader::new(tarmac).lines() {
         let line = line?;
         if let Some(caps) = it_re.captures(&line) {
-            let pcc = caps.name("pcc").unwrap().as_str();
+            let pcc_addr = caps.name("pcc_addr").unwrap().as_str();
             let insn = caps.name("insn").unwrap().as_str();
             let asm = caps.name("asm").unwrap().as_str();
 
-            let pcc_caps = cap_re.captures(pcc).unwrap();
-            let pcc_addr = pcc_caps.name("low64").unwrap().as_str();
             let pcc_addr = u64::from_str_radix(pcc_addr, 16).unwrap();
 
             if args.annotate_trace {
-                print!("{pcc}  {insn}  {asm:32}");
+                print!("{pcc_addr}  {insn}  {asm:32}");
                 // We'll append a comment below.
             }
             match vmmap.entry_for(pcc_addr) {
