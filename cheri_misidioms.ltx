@@ -10,7 +10,7 @@ Several open-source memory allocators have been ported to CHERI, a hardware capa
 platform. In this paper we examine the security and performance of these
 allocators when run under CheriBSD on Arm's experimental Morello platform.
 We introduce a number of security attacks and show that all but one allocator
-is vulnerable to some of the attacks -- including the default CheriBSD allocator.
+are vulnerable to some of the attacks -- including the default CheriBSD allocator.
 We then show that while some forms of allocator performance are meaningful,
 comparing the performance of hybrid and pure capability (i.e.~`running in
 non-CHERI vs.~running in CHERI modes') allocators does not appear to be meaningful.
@@ -39,7 +39,7 @@ ubiquitous, because they allow us to write programs that are generic over a
 variety of memory usage patterns. Allocators' security properties and performance are a fundamental pillar supporting
 the security properties and performance of software in general --- any
 security flaws and/or performance problems in allocators thus have
-have significant, widespread, consequences.
+significant, widespread, consequences.
 
 In this paper we show that most CHERI allocators are subject to at least some, surprisingly simple, attacks.
 We then show that while some forms of allocator performance are meaningful,
@@ -301,9 +301,9 @@ Allocator & Version & SLoC & \multicolumn{2}{c}{Changed}\\
   \caption{The allocators we examined, their size in Source Lines of Code
   (SLoC), and the number of lines changed (as an absolute value and relative
   percentage) to adapt them for pure capability CheriBSD. The table
-  is split into two: `functional on CHERI' are those allocators which
-  passed a basic test and are used in our experiments; `not functional
-  on CHERI' are those allocators which failed a basic test.}
+  is split into two: on top are those allocators which
+  passed a basic test and are used in our experiments; on bottom
+  are those allocators which failed a basic test.}
 \label{tab:allocator_summary}
 \end{table}
 
