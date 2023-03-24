@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use clap::Parser;
+use elf::section::SectionHeader;
 use elf::segment::ProgramHeader;
 use elf::ElfStream;
 use itertools::Itertools as _;
@@ -191,6 +192,7 @@ impl VmMapEntry {
 
         // Find the segment that refers to `file_offset`.
         let mut elf_vm_addr = None;
+        let mut sec_info = None;
         let mut sym_info = None;
         if let Some(NamedMorelloElfFile { ref elf, .. }) = self.local_elf {
             for segment in elf.borrow().segments() {
@@ -207,6 +209,25 @@ impl VmMapEntry {
             }
 
             if let Some(elf_vm_addr) = elf_vm_addr {
+                if let (sections, Some(strtab)) = elf.borrow_mut().section_headers_with_strtab()? {
+                    for section in sections {
+                        let SectionHeader {
+                            sh_name,
+                            sh_addr,
+                            sh_size,
+                            sh_type,
+                            ..
+                        } = *section;
+                        if sh_type == elf::abi::SHT_PROGBITS
+                            && sh_addr <= elf_vm_addr
+                            && elf_vm_addr < (sh_addr + sh_size)
+                        {
+                            sec_info = Some(strtab.get(sh_name.try_into().unwrap())?.to_string());
+                            break;
+                        }
+                    }
+                }
+
                 if let Some((symtab, strtab)) = elf.borrow_mut().symbol_table()? {
                     for sym in symtab.iter() {
                         if sym.st_name == 0 || sym.st_size == 0 || sym.is_undefined() {
@@ -229,6 +250,7 @@ impl VmMapEntry {
         Ok(VmAddrInfo {
             entry: self,
             elf_vm_addr,
+            sec_info,
             sym_info,
         })
     }
@@ -248,6 +270,7 @@ impl fmt::Display for SymbolicVmAddrInfo {
 struct VmAddrInfo<'a> {
     entry: &'a VmMapEntry,
     elf_vm_addr: Option<u64>,
+    sec_info: Option<String>,
     sym_info: Option<SymbolicVmAddrInfo>,
 }
 
@@ -270,9 +293,15 @@ impl<'a> fmt::Display for VmAddrInfo<'a> {
             write!(f, ":{elf_vm_addr:#x}")?;
         }
         match self.sym_info {
-            None => write!(f, ": (unknown)"),
-            Some(ref sym_info) => write!(f, ": {sym_info}"),
+            None => write!(f, ": (unknown)")?,
+            Some(ref sym_info) => write!(f, ": {sym_info}")?,
+        };
+        if let Some(sec_info) = self.sec_info.as_deref() {
+            if sec_info != ".text" {
+                write!(f, " in {sec_info}")?;
+            }
         }
+        Ok(())
     }
 }
 
@@ -528,7 +557,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                         println!("  # {info}");
                     }
                     let file = entry.tgt_elf_path();
-                    let sym = info.sym_info.map(|sym| sym.name.clone());
+                    let sym = info
+                        .sym_info
+                        .map(|sym| sym.name.clone())
+                        .or_else(|| info.sec_info.map(|sec| format!("unknown ({sec})")));
                     insn_count.add(file, sym);
                 }
                 None => {
