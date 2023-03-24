@@ -888,7 +888,7 @@ shows that such slowdowns may have little correlation to allocators.
   \end{center}
   \caption{\label{fig:fvpstats}
   Instruction counts per symbol, based on FVP traces for three benchmarks using
-  the CheriBSD system allocator (jemalloc). "mstress" and "richards" were
+  the CheriBSD system allocator (jemalloc). mstress and richards were
   parameterised to perform fewer iterations than the default. Note that whilst
   binary\_trees is dominated by the effects of \fnc{malloc} and \fnc{free}, the others
   are dominated by their own code.
@@ -905,23 +905,18 @@ and understand possible causes for the disparity. Roughly speaking, we
 attempted (and explain) the avenues in ascending order of difficulty.
 
 
-\subsection{Performance Counters}
+\subsection{Simple Metrics}
 
-We started by measuring several of the available CPU performance counters,
-whose results are shown in ~\autoref{fig:eval jemalloc}.
+We started by measuring several simple metrics, including the
+resident set size (RSS), and several CPU performance counters: the results are
+shown in ~\autoref{fig:eval jemalloc}.
 We hoped that this might highlight possible causes such as increased cache pressure
-in purecap.
-In all cases, we observe the resident set size (RSS)
-increases for purecap relative to hybrid. We only see
-the worst-case near-doubling in size for mstress and binary\_tree;
-these benchmarks have the most pointer-intensive heap-allocated data structures.
-In almost all cases, the L2 data cache accesses increase for purecap relative
-to hybrid. This indicates L1 data cache pressure due to handling
-double-pointer-width capability values. However it doesn't account entirely
-for the relative performance slowdown of purecap: e.g.\ consider richards with
-\memalloc{snmalloc} which has more than 2x slowdown but no additional L2 data cache accesses.
-We concede that performance
-counters do not allow us to identify a single cause of slowdown.
+in purecap. Unsurprisingly, overall purecap has higher costs across all
+metrics. L2 data cache accesses increase in almost all cases in purecap,
+suggesting increased pressure on the L1 data cache with capabilities. In most
+cases memory usage is only slightly worse in purecap, though in the
+allocator-intensive mstress RSS doubles.
+However, overall, these factors do not allow us to identify a single cause of slowdown.
 
 
 \subsection{Class, and Quantity of, Instructions}
