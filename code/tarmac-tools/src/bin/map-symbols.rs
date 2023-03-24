@@ -3,20 +3,25 @@
 
 use clap::Parser;
 use elf::section::SectionHeader;
-use elf::segment::ProgramHeader;
+use elf::symbol::Symbol;
 use elf::ElfStream;
 use itertools::Itertools as _;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use std::borrow::Cow;
 use std::cell::RefCell;
-use std::collections::{BTreeSet, HashMap};
+use std::cmp::Ordering;
+use std::collections::{BTreeMap, HashMap};
 use std::error::Error;
+use std::ffi::OsStr;
 use std::fmt;
 use std::fs;
 use std::io;
 use std::io::{BufRead as _, Read as _, Seek as _};
+use std::ops::RangeInclusive;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::str::FromStr;
 
 #[derive(Clone, Debug, Parser)]
 #[command()]
@@ -72,50 +77,340 @@ struct Args {
 }
 
 type MorelloElfFile = ElfStream<elf::endian::LittleEndian, fs::File>;
+type Result<T> = core::result::Result<T, Box<dyn Error>>;
 
-#[derive(Clone)]
-struct NamedMorelloElfFile {
-    path: PathBuf,
-    elf: Rc<RefCell<MorelloElfFile>>,
+pub trait AddrRange {
+    fn display(&self) -> String;
+    fn overlaps(&self, other: &Self) -> bool;
 }
 
-impl PartialOrd for NamedMorelloElfFile {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.path.partial_cmp(&other.path)
+impl AddrRange for RangeInclusive<u64> {
+    fn display(&self) -> String {
+        let start = *self.start();
+        let end = u128::from(*self.end()) + 1;
+        format!("[{start:#x},{end:#x})")
+    }
+
+    fn overlaps(&self, other: &Self) -> bool {
+        self.start() <= other.end() && self.end() >= other.start()
     }
 }
-impl Ord for NamedMorelloElfFile {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.path.cmp(&other.path)
-    }
-}
-impl PartialEq for NamedMorelloElfFile {
-    fn eq(&self, other: &Self) -> bool {
-        self.path == other.path
-    }
-}
-impl Eq for NamedMorelloElfFile {}
 
-impl fmt::Debug for NamedMorelloElfFile {
+/// Mappings are ordered if they are equal or non-overlapping.
+fn cmp_mappings(a: &RangeInclusive<u64>, b: &RangeInclusive<u64>) -> Option<Ordering> {
+    if a == b {
+        Some(Ordering::Equal)
+    } else if a.overlaps(b) {
+        None
+    } else {
+        Some(a.start().cmp(b.start()))
+    }
+}
+
+fn cmp_mappings_with_eq_check(
+    a: &RangeInclusive<u64>,
+    b: &RangeInclusive<u64>,
+    eq: impl FnOnce() -> bool,
+) -> Option<Ordering> {
+    match cmp_mappings(a, b) {
+        Some(Ordering::Equal) => eq().then_some(Ordering::Equal),
+        ord => ord,
+    }
+}
+
+/// A map of various properties of all virtual memory.
+#[derive(Clone, Debug)]
+struct VmMap {
+    elfs: BTreeMap<PathBuf, Option<Rc<LocalMorelloElfFile>>>,
+    // Non-overlapping, sorted by address, so slice::binary_search* functions can be used.
+    mappings: Vec<VmMapping>,
+}
+
+impl VmMap {
+    fn from_csv(source: &str, elf_dirs: &[PathBuf], rootfs: &[PathBuf]) -> Result<Self> {
+        let mut reader = csv::Reader::from_reader(source.as_bytes());
+        let mut elfs = Default::default();
+        let mut mappings: Vec<VmMapping> = reader
+            .deserialize::<DumpedVmMapEntry>()
+            .map(|maybe_entry| maybe_entry?.into_vm_mapping(&mut elfs, elf_dirs, rootfs))
+            .try_collect()?;
+        mappings.sort_by_key(|mapping| *mapping.va.start());
+        if let Some((a, b)) = mappings
+            .iter()
+            .tuple_windows()
+            .find(|(a, b)| a.va.overlaps(&b.va))
+        {
+            let e = format!(
+                "Mappings {a} and {b} overlap.",
+                a = a.va.display(),
+                b = b.va.display()
+            );
+            Err(e.into())
+        } else {
+            Ok(VmMap { elfs, mappings })
+        }
+    }
+
+    pub fn from_stdout(file: &str, elf_dirs: &[PathBuf], rootfs: &[PathBuf]) -> Result<Self> {
+        let text = fs::read_to_string(file)?;
+        // If the file contains a delimited region, use that. Otherwise, use the whole file.
+        let mut lines = text.lines();
+        if let Some(begin) = lines.position(|line| line.trim() == "---- BEGIN VM MAP ----") {
+            if let Some(len) = lines.position(|line| line.trim() == "---- END VM MAP ----") {
+                Self::from_csv(
+                    &text.lines().skip(begin + 1).take(len).join("\n"),
+                    elf_dirs,
+                    rootfs,
+                )
+            } else {
+                Err("'BEGIN VM MAP' marker found with no matching 'END VM MAP'".into())
+            }
+        } else {
+            Self::from_csv(&text, elf_dirs, rootfs)
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &VmMapping> {
+        self.mappings.iter()
+    }
+
+    pub fn addr_info(&self, va: u64) -> Result<Option<VmAddrInfo<'_>>> {
+        self.mappings
+            .iter()
+            .find(|mapping| mapping.va.contains(&va))
+            .map(|mapping| mapping.addr_info(va))
+            .transpose()
+    }
+}
+
+/// A single, contiguous virtual memory mapping, typically from part of an ELF file to part of the
+/// virtual memory space.
+#[derive(Clone, Debug)]
+struct VmMapping {
+    va: RangeInclusive<u64>,
+    offset_into_file: u64,
+    target_path: Option<PathBuf>,
+    perms: VmPerms,
+    // Non-overlapping, sorted by address, so slice::binary_search* fucntions can be used.
+    sections: Vec<VmSectionMapping>,
+}
+
+impl VmMapping {
+    pub fn target_path(&self) -> Option<Cow<'_, str>> {
+        self.target_path.as_deref().map(Path::to_string_lossy)
+    }
+
+    pub fn simple_path(&self) -> Option<Cow<'_, str>> {
+        self.target_path
+            .as_deref()
+            .and_then(Path::file_name)
+            .map(OsStr::to_string_lossy)
+    }
+
+    fn addr_info(&self, va: u64) -> Result<VmAddrInfo<'_>> {
+        // The caller should check this first.
+        debug_assert!(self.va.contains(&va));
+
+        // We call this for every traced instruction, so it needs to be fast.
+        // We already did all the VA calculations up front, so we just need to look it up.
+
+        let search = |range: &RangeInclusive<u64>| -> Ordering {
+            if *range.end() < va {
+                Ordering::Less
+            } else if *range.start() > va {
+                Ordering::Greater
+            } else {
+                Ordering::Equal
+            }
+        };
+
+        let (section, symbol) = match self.sections.binary_search_by(|sec| search(&sec.va)) {
+            Err(_) => (None, None),
+            Ok(idx) => {
+                let sec = &self.sections[idx];
+                match sec.symbols.binary_search_by(|sym| search(&sym.va)) {
+                    Err(_) => (Some(sec), None),
+                    Ok(idx) => (Some(sec), sec.symbols.get(idx)),
+                }
+            }
+        };
+
+        Ok(VmAddrInfo {
+            va,
+            mapping: self,
+            section,
+            symbol,
+        })
+    }
+
+    pub fn sections(&self) -> &[VmSectionMapping] {
+        &self.sections
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct VmAddrInfo<'m> {
+    // We build one of these for every queried address, so keep it fast to construct.
+    va: u64,
+    mapping: &'m VmMapping,
+    section: Option<&'m VmSectionMapping>,
+    symbol: Option<&'m VmSymbolMapping>,
+}
+
+impl<'m> fmt::Display for VmAddrInfo<'m> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.mapping.simple_path() {
+            Some(path) => write!(f, "{path}")?,
+            None => write!(f, "[anonymous]")?,
+        };
+        // TODO: Can we retrieve this?
+        //if let Some(elf_addr) = self.elf_addr {
+        //    write!(f, ":{elf_addr:#x}")?;
+        //}
+        match self.symbol {
+            Some(VmSymbolMapping { va, name, .. }) => {
+                write!(f, ": {name}+{:#x}", self.va - va.start())?
+            }
+            None => write!(f, ": unknown symbol")?,
+        };
+        match self.section {
+            Some(VmSectionMapping { va, name, .. }) => {
+                if name != ".text" {
+                    write!(f, " at {name}+{:#x}", self.va - va.start())?
+                }
+            }
+            None => write!(f, " in unknown section")?,
+        };
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct VmPerms {
+    pub read: bool,
+    pub write: bool,
+    pub execute: bool,
+    pub read_cap: bool,
+    pub write_cap: bool,
+}
+
+impl FromStr for VmPerms {
+    type Err = Box<dyn Error>;
+    fn from_str(s: &str) -> Result<Self> {
+        let perm = |c: Option<char>, t: char| -> Result<bool> {
+            match c {
+                Some('-') => Ok(false),
+                Some(c) if c == t => Ok(true),
+                Some(_) => Err("Unrecognised permission: {c} in '{s}'.".into()),
+                None => Err("Expected another char ('-', '{t}') in '{s}'.".into()),
+            }
+        };
+        let mut chars = s.chars();
+        let perms = Self {
+            read: perm(chars.next(), 'r')?,
+            write: perm(chars.next(), 'w')?,
+            execute: perm(chars.next(), 'x')?,
+            read_cap: perm(chars.next(), 'R')?,
+            write_cap: perm(chars.next(), 'W')?,
+        };
+        match chars.next() {
+            None => Ok(perms),
+            Some(_) => Err("Too many permission chars: '{s}'.".into()),
+        }
+    }
+}
+
+impl fmt::Display for VmPerms {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "NamedMorelloElfFile {{ path: {}, .. }}",
+            "{}{}{}{}{}",
+            if self.read { 'r' } else { '-' },
+            if self.write { 'w' } else { '-' },
+            if self.execute { 'x' } else { '-' },
+            if self.read_cap { 'R' } else { '-' },
+            if self.write_cap { 'W' } else { '-' },
+        )
+    }
+}
+
+/// A single, contigous section in virtual memory.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct VmSectionMapping {
+    va: RangeInclusive<u64>,
+    name: String,
+    // Non-overlapping, sorted by address, so slice::binary_search* fucntions can be used.
+    symbols: Vec<VmSymbolMapping>,
+}
+
+impl VmSectionMapping {
+    pub fn symbols(&self) -> &[VmSymbolMapping] {
+        &self.symbols
+    }
+}
+
+impl PartialOrd for VmSectionMapping {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        cmp_mappings_with_eq_check(&self.va, &other.va, || self.name == other.name)
+    }
+}
+
+/// A single symbol (with non-zero size) in virtual memory.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct VmSymbolMapping {
+    va: RangeInclusive<u64>,
+    name: String,
+    isa: Isa,
+}
+
+impl PartialOrd for VmSymbolMapping {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        cmp_mappings_with_eq_check(&self.va, &other.va, || self.name == other.name)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Isa {
+    A64,
+    C64,
+}
+
+impl fmt::Display for Isa {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::A64 => write!(f, "A64"),
+            Self::C64 => write!(f, "C64"),
+        }
+    }
+}
+
+/// A local ELF file that we can inspect, assuming that it is the same as the one that ran on the
+/// target.
+struct LocalMorelloElfFile {
+    path: PathBuf,
+    elf: RefCell<MorelloElfFile>,
+}
+
+impl fmt::Debug for LocalMorelloElfFile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "LocalMorelloElfFile {{ path: {}, .. }}",
             self.path.display()
         )
     }
 }
 
-impl NamedMorelloElfFile {
+impl LocalMorelloElfFile {
     /// Load the specified ELF.
     ///
     /// It's not an error if the file couldn't be opened (including if it doesn't exist). This
     /// results in `Ok(None)`.
     ///
     /// It is an error if a file exists that cannot be loaded as an ELF.
-    pub fn try_load(path: PathBuf) -> Result<Option<Self>, Box<dyn Error>> {
+    pub fn try_load(path: PathBuf) -> Result<Option<Self>> {
         if let Ok(file) = fs::File::open(&path) {
-            let elf = Rc::new(RefCell::new(MorelloElfFile::open_stream(file)?));
+            let elf = RefCell::new(MorelloElfFile::open_stream(file)?);
             Ok(Some(Self { path, elf }))
         } else {
             Ok(None)
@@ -123,375 +418,396 @@ impl NamedMorelloElfFile {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct VmMapEntry {
+#[derive(Clone, Debug, Deserialize)]
+struct DumpedVmMapEntry {
     #[serde(rename = "Start")]
     start: u64, // Inclusive
     #[serde(rename = "End")]
     end: u64, // Exclusive
     #[serde(rename = "Permissions")]
     perms: String,
-    #[serde(rename = "Type")]
-    map_type: String,
+    // #[serde(rename = "Type")]
+    // map_type: String,
     #[serde(rename = "Offset")]
     offset: u64,
     #[serde(rename = "Path")]
     path: Option<PathBuf>,
-
-    #[serde(skip)]
-    local_elf: Option<NamedMorelloElfFile>,
 }
 
-impl VmMapEntry {
-    pub fn contains(&self, va: u64) -> bool {
-        self.start <= va && va < self.end
-    }
-
-    pub fn find_local_elf<'a>(
-        &mut self,
-        elf_dirs: &'a [PathBuf],
-        rootfs: &'a [PathBuf],
-    ) -> Result<Option<&Path>, Box<dyn Error>> {
-        if let Some(ref tgt_elf) = self.path {
-            if let Some(basename) = tgt_elf.file_name() {
-                for dir in elf_dirs.iter() {
-                    let path = dir.join(basename);
-                    if let Some(elf) = NamedMorelloElfFile::try_load(path)? {
-                        self.local_elf = Some(elf);
-                        return Ok(self.local_elf_path());
+impl DumpedVmMapEntry {
+    fn into_vm_mapping(
+        self,
+        elfs: &mut BTreeMap<PathBuf, Option<Rc<LocalMorelloElfFile>>>,
+        elf_dirs: &[PathBuf],
+        rootfs: &[PathBuf],
+    ) -> Result<VmMapping> {
+        assert!(
+            self.end > self.start,
+            "Empty VM mapping: {}..{}",
+            self.start,
+            self.end
+        );
+        let target_path = self.path;
+        let local_elf = match target_path.as_deref() {
+            None => None,
+            Some(target_path) => {
+                if let Some(local) = elfs.get(target_path) {
+                    local.as_ref().map(Rc::clone)
+                } else {
+                    let local = Self::find_and_load_local_elf(target_path, elf_dirs, rootfs)?;
+                    elfs.insert(target_path.to_path_buf(), local.as_ref().map(Rc::clone));
+                    local
+                }
+            }
+        };
+        let va = self.start..=(self.end - 1);
+        let file_range = self.offset..=(self.offset + self.end + 1 - self.start);
+        // Read section and symbol data from the ELF up front.
+        let mut sections = Vec::new();
+        let mut section_map = Vec::new();
+        if let Some(ref local_elf) = local_elf {
+            if let (headers, Some(strtab)) =
+                local_elf.elf.borrow_mut().section_headers_with_strtab()?
+            {
+                for header in headers {
+                    let SectionHeader {
+                        sh_name,
+                        sh_addr,
+                        sh_offset,
+                        sh_size,
+                        sh_flags,
+                        ..
+                    } = *header;
+                    let overlaps = *file_range.start() < (sh_offset + sh_size)
+                        && *file_range.end() >= sh_offset;
+                    // Filter out non-page-aligned collateral.
+                    let has_instrs = (sh_flags & u64::from(elf::abi::SHF_EXECINSTR)) != 0;
+                    if overlaps && has_instrs {
+                        let sec_va_start = va.start() + sh_offset - *file_range.start();
+                        let sec_va_end = sec_va_start + sh_size - 1;
+                        section_map.push(Some((sections.len(), sh_addr, sec_va_start)));
+                        sections.push(VmSectionMapping {
+                            va: sec_va_start..=sec_va_end,
+                            name: strtab.get(sh_name.try_into().unwrap())?.to_string(),
+                            symbols: Vec::new(),
+                        });
+                    } else {
+                        section_map.push(None);
                     }
                 }
             }
-            for dir in rootfs.iter() {
-                let path = dir.join(tgt_elf.strip_prefix("/")?);
-                if let Some(elf) = NamedMorelloElfFile::try_load(path)? {
-                    self.local_elf = Some(elf);
-                    return Ok(self.local_elf_path());
-                }
-            }
-        }
-        return Ok(None);
-    }
 
-    pub fn tgt_elf_path(&self) -> Option<&Path> {
-        self.path.as_ref().map(|path| path.as_path())
-    }
+            if let Some((symtab, strtab)) = local_elf.elf.borrow_mut().symbol_table()? {
+                for symbol in symtab.iter() {
+                    let Symbol {
+                        st_name,
 
-    pub fn local_elf_path(&self) -> Option<&Path> {
-        self.local_elf.as_ref().map(|elf| elf.path.as_path())
-    }
-
-    pub fn vm_addr_info(&self, vm_addr: u64) -> Result<VmAddrInfo<'_>, Box<dyn Error>> {
-        assert!(self.contains(vm_addr));
-        // ELF symbols are defined in terms of the ELF's idea of the virtual address. The actual
-        // virtual address (vm_addr) typically differs, due to dynamic loading, so we have to do
-        // some work to map it back to the ELF address.
-
-        let map_offset = vm_addr - self.start;
-        let file_offset = map_offset + self.offset;
-
-        // Find the segment that refers to `file_offset`.
-        let mut elf_vm_addr = None;
-        let mut sec_info = None;
-        let mut sym_info = None;
-        if let Some(NamedMorelloElfFile { ref elf, .. }) = self.local_elf {
-            for segment in elf.borrow().segments() {
-                let ProgramHeader {
-                    p_offset,
-                    p_vaddr,
-                    p_memsz,
-                    ..
-                } = *segment;
-                if p_offset <= file_offset && file_offset < (p_offset + p_memsz) {
-                    elf_vm_addr = Some(file_offset - p_offset + p_vaddr);
-                    break;
-                }
-            }
-
-            if let Some(elf_vm_addr) = elf_vm_addr {
-                if let (sections, Some(strtab)) = elf.borrow_mut().section_headers_with_strtab()? {
-                    for section in sections {
-                        let SectionHeader {
-                            sh_name,
-                            sh_addr,
-                            sh_size,
-                            sh_type,
-                            ..
-                        } = *section;
-                        if sh_type == elf::abi::SHT_PROGBITS
-                            && sh_addr <= elf_vm_addr
-                            && elf_vm_addr < (sh_addr + sh_size)
-                        {
-                            sec_info = Some(strtab.get(sh_name.try_into().unwrap())?.to_string());
-                            break;
-                        }
+                        st_value,
+                        st_size,
+                        st_shndx,
+                        ..
+                    } = symbol;
+                    if st_name == 0 || st_size == 0 || symbol.is_undefined() {
+                        continue;
                     }
-                }
-
-                if let Some((symtab, strtab)) = elf.borrow_mut().symbol_table()? {
-                    for sym in symtab.iter() {
-                        if sym.st_name == 0 || sym.st_size == 0 || sym.is_undefined() {
-                            continue;
-                        }
-                        let start = sym.st_value & !1; // Strip C64 bit.
-                        let end = start + sym.st_size;
-                        if start <= elf_vm_addr && elf_vm_addr < end {
-                            sym_info = Some(SymbolicVmAddrInfo {
-                                name: strtab.get(sym.st_name.try_into().unwrap())?.to_string(),
-                                sym_offset: elf_vm_addr - start,
+                    let st_shndx = usize::from(st_shndx);
+                    if let Some((mapped_section_index, sh_addr, sec_va_start)) =
+                        section_map[st_shndx]
+                    {
+                        let isa = match st_value & 1 {
+                            0 => Isa::A64,
+                            _ => Isa::C64,
+                        };
+                        let value = st_value & !1; // Strip C64 bit.
+                        let sym_va_start = sec_va_start + value - sh_addr;
+                        let sym_va_end = sym_va_start + st_size - 1;
+                        sections[mapped_section_index]
+                            .symbols
+                            .push(VmSymbolMapping {
+                                va: sym_va_start..=sym_va_end,
+                                name: strtab.get(st_name.try_into().unwrap())?.to_string(),
+                                isa,
                             });
-                            break;
-                        }
                     }
                 }
             }
         }
 
-        Ok(VmAddrInfo {
-            entry: self,
-            elf_vm_addr,
-            sec_info,
-            sym_info,
+        // Ensure that sections are sorted and non-overlapping.
+        sections.sort_by_key(|sec| *sec.va.start());
+        assert!(!sections
+            .iter()
+            .tuple_windows()
+            .any(|(a, b)| a.va.overlaps(&b.va)));
+        for section in sections.iter_mut() {
+            let mut symbols = std::mem::take(&mut section.symbols);
+            // Ensure that symbols are sorted and non-overlapping.
+            symbols.sort_by_key(|sym| *sym.va.start());
+            // Symbols are often aliased.
+            section.symbols = symbols
+                .into_iter()
+                .coalesce(|a, b| {
+                    if a.va == b.va {
+                        if a.name.len() <= b.name.len() {
+                            Ok(a)
+                        } else {
+                            Ok(b)
+                        }
+                    } else if a.va.overlaps(&b.va) {
+                        // TODO: What else can we do here?
+                        panic!(
+                            "{a} {ava} overlaps {b} {bva}",
+                            a = &a.name,
+                            ava = a.va.display(),
+                            b = &b.name,
+                            bva = b.va.display()
+                        );
+                    } else {
+                        Err((a, b))
+                    }
+                })
+                .collect();
+            assert!(!section
+                .symbols
+                .iter()
+                .tuple_windows()
+                .any(|(a, b)| a.va.overlaps(&b.va)));
+        }
+
+        Ok(VmMapping {
+            va,
+            offset_into_file: self.offset,
+            target_path,
+            perms: VmPerms::from_str(&self.perms)?,
+            sections,
         })
     }
-}
 
-struct SymbolicVmAddrInfo {
-    name: String,
-    sym_offset: u64,
-}
-
-impl fmt::Display for SymbolicVmAddrInfo {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}{:+#x}", self.name, self.sym_offset)
-    }
-}
-
-struct VmAddrInfo<'a> {
-    entry: &'a VmMapEntry,
-    elf_vm_addr: Option<u64>,
-    sec_info: Option<String>,
-    sym_info: Option<SymbolicVmAddrInfo>,
-}
-
-impl<'a> fmt::Display for VmAddrInfo<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(path) = self.entry.local_elf_path() {
-            if f.alternate() {
-                write!(f, "{}", path.display())?;
-            } else {
-                let simple_name = path
-                    .file_name()
-                    .unwrap_or(path.as_os_str())
-                    .to_string_lossy();
-                write!(f, "{simple_name}")?;
-            }
-        } else {
-            write!(f, "(no local ELF)")?;
-        }
-        if let Some(elf_vm_addr) = self.elf_vm_addr {
-            write!(f, ":{elf_vm_addr:#x}")?;
-        }
-        match self.sym_info {
-            None => write!(f, ": (unknown)")?,
-            Some(ref sym_info) => write!(f, ": {sym_info}")?,
-        };
-        if let Some(sec_info) = self.sec_info.as_deref() {
-            if sec_info != ".text" {
-                write!(f, " in {sec_info}")?;
+    fn find_and_load_local_elf(
+        target_path: &Path,
+        elf_dirs: &[PathBuf],
+        rootfs: &[PathBuf],
+    ) -> Result<Option<Rc<LocalMorelloElfFile>>> {
+        if let Some(basename) = target_path.file_name() {
+            for dir in elf_dirs.iter() {
+                let path = dir.join(basename);
+                if let Some(local_elf) = LocalMorelloElfFile::try_load(path)? {
+                    return Ok(Some(Rc::new(local_elf)));
+                }
             }
         }
-        Ok(())
-    }
-}
-
-struct VmMap {
-    map: Vec<VmMapEntry>,
-}
-
-impl VmMap {
-    fn from_csv(source: &str) -> Result<Self, Box<dyn Error>> {
-        let mut reader = csv::Reader::from_reader(source.as_bytes());
-        let map = reader.deserialize().try_collect()?;
-        // TODO: Check that entries don't overlap.
-        // TODO: Discard entries that aren't executable.
-        Ok(VmMap { map })
-    }
-
-    pub fn from_stdout(file: &str) -> Result<Self, Box<dyn Error>> {
-        let text = fs::read_to_string(file)?;
-        // If the file contains a delimited region, use that. Otherwise, use the whole file.
-        let mut lines = text.lines();
-        if let Some(begin) = lines.position(|line| line.trim() == "---- BEGIN VM MAP ----") {
-            if let Some(len) = lines.position(|line| line.trim() == "---- END VM MAP ----") {
-                Self::from_csv(&text.lines().skip(begin + 1).take(len).join("\n"))
-            } else {
-                Err("'BEGIN VM MAP' marker found with no matching 'END VM MAP'".into())
+        if let Ok(suffix) = target_path.strip_prefix("/") {
+            for dir in rootfs.iter() {
+                if let Some(local_elf) = LocalMorelloElfFile::try_load(dir.join(suffix))? {
+                    return Ok(Some(Rc::new(local_elf)));
+                }
             }
-        } else {
-            Self::from_csv(&text)
         }
+        Ok(None)
     }
+}
 
-    pub fn find_local_elfs<'a>(
-        &mut self,
-        elf_dirs: &'a [PathBuf],
-        rootfs: &'a [PathBuf],
-    ) -> Result<(), Box<dyn Error>> {
-        // TODO: We already wrap the ElfStream in an Rc, and the same ELF tends to be mapped
-        // multiple times, so it might make sense to coalesce them.
-        for entry in self.map.iter_mut() {
-            entry.find_local_elf(elf_dirs, rootfs)?;
+#[derive(Clone, Copy, Debug)]
+struct InsnCountKey<'m> {
+    // Fields from VmAddrInfo, but without the address.
+    mapping: &'m VmMapping,
+    section: Option<&'m VmSectionMapping>,
+    symbol: Option<&'m VmSymbolMapping>,
+}
+
+impl<'m> PartialEq for InsnCountKey<'m> {
+    fn eq(&self, other: &Self) -> bool {
+        // Mappings don't overlap and are not duplicated, so we can use fast pointer comparisons.
+        fn eq_opt<T>(a: Option<&T>, b: Option<&T>) -> bool {
+            match (a, b) {
+                (None, None) => true,
+                (Some(a), Some(b)) => std::ptr::eq(a, b),
+                _ => false,
+            }
         }
-        Ok(())
+        std::ptr::eq(self.mapping, other.mapping)
+            && eq_opt(self.section, other.section)
+            && eq_opt(self.symbol, other.symbol)
     }
+}
+impl<'m> Eq for InsnCountKey<'m> {}
 
-    pub fn iter(&self) -> impl Iterator<Item = &VmMapEntry> {
-        self.map.iter()
-    }
-
-    pub fn entry_for(&self, vm_addr: u64) -> Option<&VmMapEntry> {
-        self.iter().find(|entry| entry.contains(vm_addr))
+impl<'m> std::hash::Hash for InsnCountKey<'m> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        (self.mapping as *const VmMapping).hash(state);
+        self.section
+            .map(|sec| sec as *const VmSectionMapping)
+            .hash(state);
+        self.symbol
+            .map(|sym| sym as *const VmSymbolMapping)
+            .hash(state);
     }
 }
 
 #[derive(Default, Debug, Clone)]
-struct FileInsnCount {
-    by_symbol: HashMap<Option<String>, u64>,
-}
-
-impl FileInsnCount {
-    pub fn total(&self) -> u64 {
-        self.by_symbol.values().sum()
-    }
-
-    pub fn add(&mut self, symbol: Option<String>) {
-        *self.by_symbol.entry(symbol).or_default() += 1;
-    }
-
-    pub fn by_symbol(&self) -> impl Iterator<Item = (&Option<String>, &u64)> {
-        self.by_symbol.iter()
-    }
-}
-
-#[derive(Default, Debug, Clone)]
-struct InsnCount<'a> {
-    by_file: HashMap<Option<&'a Path>, FileInsnCount>,
-
-    // We query this often, so cache it.
+struct InsnCount<'m> {
     total: u64,
+    unknown_mapping: u64,
+    counts: HashMap<InsnCountKey<'m>, u64>,
 }
 
-impl<'a> InsnCount<'a> {
+impl<'m> InsnCount<'m> {
     pub fn total(&self) -> u64 {
         self.total
     }
 
-    pub fn add(&mut self, file: Option<&'a Path>, symbol: Option<String>) {
+    pub fn add_unknown(&mut self) {
         self.total += 1;
-        self.by_file.entry(file).or_default().add(symbol);
+        self.unknown_mapping += 1;
     }
 
-    pub fn by_file(&self) -> impl Iterator<Item = (&Option<&'a Path>, &FileInsnCount)> {
-        self.by_file.iter()
+    pub fn add(&mut self, info: VmAddrInfo<'m>) {
+        let VmAddrInfo {
+            mapping,
+            section,
+            symbol,
+            ..
+        } = info;
+        let key = InsnCountKey {
+            mapping,
+            section,
+            symbol,
+        };
+        *self.counts.entry(key).or_default() += 1;
+        self.total += 1;
     }
 
     pub fn report(&self) {
         println!("----------------");
-        for (path, file_insn_count) in self.by_file().sorted_by_key(|(_, c)| !c.total()) {
+
+        // Collate first.
+        #[derive(Default)]
+        struct FileCount<'m> {
+            total: u64,
+            by_symbol: HashMap<u64, (u64, &'m VmSectionMapping, &'m VmSymbolMapping)>,
+            unknown_by_section: HashMap<u64, (u64, &'m VmSectionMapping)>,
+            unknown: u64,
+        }
+        let mut by_file: HashMap<_, FileCount> = HashMap::new();
+        for (
+            &InsnCountKey {
+                mapping,
+                section,
+                symbol,
+            },
+            count,
+        ) in self.counts.iter()
+        {
+            let entry = by_file.entry(mapping.target_path()).or_default();
+            entry.total += count;
+            match (section, symbol) {
+                (None, _) => entry.unknown += count,
+                (Some(sec), None) => {
+                    let v = entry
+                        .unknown_by_section
+                        .entry(*sec.va.start())
+                        .or_insert((0, sec));
+                    assert!(v.1 == sec);
+                    v.0 += count;
+                }
+                (Some(sec), Some(sym)) => {
+                    let v = entry
+                        .by_symbol
+                        .entry(*sym.va.start())
+                        .or_insert((0, sec, sym));
+                    assert!(v.1 == sec);
+                    assert!(v.2 == sym);
+                    v.0 += count;
+                }
+            }
+        }
+
+        for (path, file_count) in by_file.iter().sorted_by_key(|(_, fc)| !fc.total) {
             println!(
                 "{path}: {total}",
-                path = path.unwrap_or(Path::new("unknown file")).display(),
-                total = file_insn_count.total()
+                path = path.as_deref().unwrap_or("unknown file"),
+                total = file_count.total,
             );
-            for (name, symbol_insn_count) in file_insn_count.by_symbol().sorted_by_key(|(_, c)| !*c)
+            for (_, (count, sec, sym)) in file_count
+                .by_symbol
+                .iter()
+                .sorted_by_key(|(_, (count, ..))| !count)
             {
+                if sec.name == ".text" {
+                    println!("  {sym}: {count}", sym = &sym.name);
+                } else {
+                    println!(
+                        "  {sym} (in {sec}): {count}",
+                        sym = &sym.name,
+                        sec = &sec.name
+                    );
+                }
+            }
+            for (_, (count, sec)) in file_count
+                .unknown_by_section
+                .iter()
+                .sorted_by_key(|(_, (count, ..))| !count)
+            {
+                println!("  unknown symbol (in {sec}): {count}", sec = &sec.name);
+            }
+            if file_count.unknown != 0 {
                 println!(
-                    "  {name}: {symbol_insn_count}",
-                    name = name.as_deref().unwrap_or("unknown symbol")
+                    "  unknown symbol (in unknown section): {}",
+                    file_count.unknown
                 );
             }
         }
+
         println!("Total: {total}", total = self.total());
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
     let args = Args::parse();
-    let mut vmmap = VmMap::from_stdout(&args.vmmap)?;
-    vmmap.find_local_elfs(&args.elf_dir, &args.rootfs)?;
-
-    // BTreeSet naturally sorts.
-    let mut unique_elfs: BTreeSet<&NamedMorelloElfFile> = BTreeSet::new();
+    let vmmap = VmMap::from_stdout(&args.vmmap, &args.elf_dir, &args.rootfs)?;
 
     if args.verbose >= 1 {
-        for entry in vmmap.iter() {
-            let VmMapEntry {
-                start,
-                end,
-                offset,
-                path,
-                local_elf,
-                ..
-            } = entry;
-            if let Some(path) = path {
-                print!("[{start:#x},{end:#x})  {}  +{offset:#x}", path.display());
-                if let Some(local_elf) = local_elf {
-                    println!("  (represented by {})", local_elf.path.display());
-                    // We might load an ELF multiple times, but only want to print it (with -v) once,
-                    // so use a map to avoid duplication.
-                    unique_elfs.insert(&local_elf);
-                } else {
-                    println!("  (no local ELF found)");
-                }
+        for (target_path, local) in vmmap.elfs.iter() {
+            match local {
+                None => println!("No local ELF found to represent {}.", target_path.display()),
+                Some(elf) => println!(
+                    "Using {} to represent {}.",
+                    elf.path.display(),
+                    target_path.display()
+                ),
             }
         }
 
-        println!("Loaded ELFs for analysis:");
-        for local_elf in unique_elfs.iter() {
-            println!("  {}", local_elf.path.display());
-            println!("    Loadable segments:");
-            for segment in local_elf.elf.borrow().segments() {
-                let elf::segment::ProgramHeader {
-                    p_type,
-                    p_offset,
-                    p_vaddr,
-                    p_filesz,
-                    p_memsz,
-                    p_flags,
-                    ..
-                } = segment;
-                if *p_type == elf::abi::PT_LOAD {
-                    print!("    ");
-                    print!("  offset:{p_offset:#x}");
-                    print!("  va:{p_vaddr:#x}");
-                    print!("  file_sz:{p_filesz:#x}");
-                    print!("  mem_sz:{p_memsz:#x}");
-                    if (*p_flags & elf::abi::PF_X) != 0 {
-                        print!("  (executable)");
-                    }
-                    println!();
-                }
-            }
-            if let Some((symtab, strtab)) = local_elf.elf.borrow_mut().symbol_table()? {
-                if args.verbose >= 2 {
-                    println!("    Symbols with non-zero size:");
-                    for sym in symtab.iter().sorted_by_key(|s| s.st_value) {
-                        if sym.st_name == 0 || sym.st_size == 0 || sym.is_undefined() {
-                            continue;
+        println!();
+        for mapping in vmmap.iter() {
+            let perms = mapping.perms;
+            if perms.execute || args.verbose >= 3 {
+                println!(
+                    "{range:24}  {perms}  {file}  +{offset:#x}",
+                    range = mapping.va.display(),
+                    offset = mapping.offset_into_file,
+                    file = mapping.target_path().unwrap_or("(no target file)".into()),
+                );
+                if args.verbose >= 1 {
+                    for section in mapping.sections() {
+                        println!(
+                            "  - {range:24}  {name} ({n} symbols)",
+                            range = section.va.display(),
+                            name = &section.name,
+                            n = section.symbols().len(),
+                        );
+                        if args.verbose >= 2 {
+                            for symbol in section.symbols() {
+                                println!(
+                                    "     - {range:24}  {isa}  {name}",
+                                    range = symbol.va.display(),
+                                    isa = symbol.isa,
+                                    name = &symbol.name
+                                );
+                            }
                         }
-                        let name = strtab.get(sym.st_name.try_into().unwrap())?;
-                        let isa = match sym.st_value & 1 {
-                            1 => "C64",
-                            _ => "A64/data",
-                        };
-                        let start = sym.st_value & !1;
-                        let end = start + sym.st_size;
-                        println!("      [{start:#x},{end:#x}) {name} ({isa})");
                     }
                 }
-            } else {
-                println!("  (no symbol table)\n");
             }
         }
     }
@@ -541,27 +857,21 @@ fn main() -> Result<(), Box<dyn Error>> {
             let pcc_addr = u64::from_str_radix(pcc_addr, 16).unwrap();
 
             if args.annotate_trace {
-                print!("{pcc_addr}  {insn}  {asm:32}");
+                print!("{pcc_addr:>#18x}  {insn}  {asm:32}");
                 // We'll append a comment below.
             }
-            match vmmap.entry_for(pcc_addr) {
-                Some(entry) => {
-                    let info = entry.vm_addr_info(pcc_addr)?;
+            match vmmap.addr_info(pcc_addr)? {
+                Some(info) => {
                     if args.annotate_trace {
                         println!("  # {info}");
                     }
-                    let file = entry.tgt_elf_path();
-                    let sym = info
-                        .sym_info
-                        .map(|sym| sym.name.clone())
-                        .or_else(|| info.sec_info.map(|sec| format!("unknown ({sec})")));
-                    insn_count.add(file, sym);
+                    insn_count.add(info);
                 }
                 None => {
                     if args.annotate_trace {
-                        println!("");
+                        println!();
                     }
-                    insn_count.add(None, None);
+                    insn_count.add_unknown();
                 }
             }
             if !args.annotate_trace && insn_count.total() % (1024 * 1024) == 0 {
