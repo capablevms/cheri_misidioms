@@ -294,16 +294,17 @@ Allocator & Version & SLoC & \multicolumn{2}{c}{Changed}\\
 \cmidrule(lr){4-5}
   &   &   & LoC & \multicolumn{1}{c}{\%}\\
 \midrule
+\multicolumn{5}{c}{Functional on CHERI}\\
 \input{./data/results/slocs.tex}
 \\ \bottomrule
 \end{tabular}
 \end{center}
   \caption{The allocators we examined, their size in Source Lines of Code
   (SLoC), and the number of lines changed (as an absolute value and relative
-  percentage) to adapt them for pure capability CheriBSD. Note that
-  musl and newlib are Linux (not CheriBSD) allocators included so that
-  we can have some understanding as to whether the OS impacts allocator
-changes.\andrei{linux "allocators" are full-blown "libc"s, and the allocator is a fraction of the SLoC; how does this affect the table?}}
+  percentage) to adapt them for pure capability CheriBSD. The table
+  is split into two: `functional on CHERI' are those allocators which
+  passed a basic test and are used in our experiments; `not functional
+  on CHERI' are those allocators which failed a basic test.}
 \label{tab:allocator_summary}
 \end{table}
 
@@ -362,9 +363,7 @@ for them for the rest of this paper, are as follows:
 
 \vspace{6pt}\noindent
 \autoref{tab:allocator_summary} shows the version of each allocator we used.
-As a simple means to understand the influence of CheriBSD, we also briefly
-examined the source code of the musl and newlib C libraries for Linux, though
-these play no part in our later experiments. We have not included two other
+We have not included two other
 major memory allocators that have only been
 partly ported to CHERI: the \emph{Boehm-Demers-Weiser} conservative garbage
 collector; and the \emph{WebKit} garbage collector.
