@@ -1161,7 +1161,7 @@ but serves as an example of how quickly minor code generation differences
 can make it difficult for humans to comprehend differences between
 hybrid and purecap code generation.
 
-Another example we found relevant to allocators is in a hot path
+Another example relevant to allocators is in a hot path
 within jemalloc's \fnc{malloc} function, where a byte-sized thread-local
 is loaded from memory. In hybrid this is compiled to:
 
@@ -1195,8 +1195,7 @@ optimisation opportunity by the compiler rather than a deliberate security restr
 CHERI aware allocators often improve security by restricting capability bounds
 and other permissions. Doing so requires generating and running more code.
 For example, after allocating space internally, a purecap \fnc{malloc}
-may need to derive a capability from a `super' capability which leads
-to code such as:
+may need to derive a capability from a `super' capability:
 
 \begin{lstlisting}
 ...     c0, ...  # Calculate address
