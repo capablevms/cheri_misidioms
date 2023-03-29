@@ -29,6 +29,6 @@ void free(void *ptr) { }
 void *realloc(void *ptr, size_t size) {
   void *new_ptr = malloc(size);
   if (new_ptr == NULL) return NULL;
-  memcpy(new_ptr, ptr, size);
+  if (ptr) memcpy(new_ptr, ptr, size);
   return new_ptr;
 }

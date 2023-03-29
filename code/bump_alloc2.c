@@ -22,8 +22,9 @@ void *malloc(size_t size) {
 void *realloc(void *ptr, size_t size) {
   void *new_ptr = malloc(size);
   if (new_ptr == NULL) return NULL;
-  memcpy(new_ptr, ptr,
-    cheri_length_get(ptr) < size
-    ? cheri_length_get(ptr) : size);
+  if (ptr)
+    memcpy(new_ptr, ptr,
+      cheri_length_get(ptr) < size
+      ? cheri_length_get(ptr) : size);
   return new_ptr;
 }
