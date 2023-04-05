@@ -15,23 +15,25 @@
 // (which CheriBSD's jemalloc currently does).
 
 int main() {
-    // malloc returns a capability C1 to a block 0..n bytes long
     uint8_t *arr = malloc(256);
     for (uint8_t i = 0; i < 255; i++)
         arr[i] = i;
-
-    arr = realloc(arr, 1);
-    assert(arr);
     free(arr);
-    arr = malloc(256);
 
-    for (uint8_t i = 1; i < 255; i++) {
-        if (arr[i] != i) {
-            printf("Attack unsuccessful\n");
-            return 0;
+    for (size_t i = 0; i < 10000; i++) {
+        arr = malloc(256);
+        for (uint8_t j = 1; j < 255; j++) {
+            if (arr[j] != j) {
+                goto next;
+            }
         }
+        printf("Attack successful\n");
+        return 0;
+
+next:
+        free(arr);
     }
 
-    printf("Attack successful\n");
+    printf("Attack unsuccessful\n");
     return 0;
 }
