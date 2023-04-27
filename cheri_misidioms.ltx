@@ -749,22 +749,29 @@ of snmalloc as \memalloc{snmalloc-repo} which is invulnerable to \overlap.
 \label{sec:performance}
 
 We wanted to understand the performance impact of porting allocators to CHERI.
-Our intention was to run both hybrid and purecap versions of each allocator
-and compare the results. However, while we expected to see differences
-in performance, we observed more than a 2x
-increase in wall-clock time for some benchmarks. As far as we know, we are the first to write
-publicly about such a comparison, and thus there is no obvious precedent to
-draw upon. Although we do not have complete explanations for these differences,
-we have found several possible causes.
+Our intention was to run both hybrid and purecap versions of each allocator and
+compare the results. We expected that comparisons of performance differences
+between hybrid and purecap versions would show differences as a result of a
+variety of different factors. We believe that some of these factors are inherent
+to the costs of using capabilities. For example, capabilities are larger than
+normal addresses and so increase cache pressure, and purecap allocators have
+additional security properties, such as the addition of bounds information which
+will likely take more instructions. However, we believe some of the factors are
+not inherent to the use of capabilities, but come from more transient effects
+such as the maturity of tool chains and also micro-architectural anomalies in a
+first prototype implementation of the design. Other researchers are
+investigating several transient effects more generally for the Morello
+system\footnote{Although not available at the time of writing, a detailed
+performance white paper will shortly be available at
+\url{https://www.arm.com/-/media/Files/pdf/white-paper/prototype-morello-performance-results}}.
+The combination of these effects makes performance
+comparisons across hybrid and pure capability CHERI hard to interpret, and in
+\autoref{sec:dissection} we investigate some of the possible reasons for the
+performance differences in the context of the allocators we investigated.
 
-However, not all is lost. While performance comparisons \emph{across} hybrid and
-pure capability CHERI are hard to believe, performance comparisons \emph{within}
+While performance comparisons across hybrid and pure capability CHERI are
+complicated by this range of different factors, performance comparisons within
 hybrid or pure capability CHERI do appear to be meaningful.
-
-In this section we thus first detail a fairly traditional performance evaluation
-comparing performance amongst purecap CHERI allocators, before showing that
-performance across hybrid and purecap allocators is surprisingly different.
-In~\autoref{sec:dissection} we investigate possible reasons for these differences.
 
 
 \subsection{Methodology}
@@ -858,9 +865,11 @@ greater differences to consider elsewhere, we do not dwell further on these resu
 across hybrid and purecap. As expected, purecap is always slower than hybrid in total
 execution time, and there is significant variance amongst benchmarks.
 However, using the geometric mean, both jemalloc and snmalloc \emph{purecap}
-are 1.59x slower than \emph{hybrid}, which is a much greater figure than we expected. That
-richards, a benchmark which performs little allocation, is over 2x slower
-shows that such slowdowns may have little correlation to allocators.
+are 1.59x slower than \emph{hybrid}, which is a much greater figure than we
+believe can be explained by the fundamental additional costs of using
+capabilities in the allocation. This anomaly is exemplified by the fact that
+richards, a benchmark which per forms little allocation, has a slowdown of more
+than 2x.
 
 
 \begin{figure}
@@ -1075,7 +1084,8 @@ Second those benchmarks which do show noticeable differences:
 \vspace{6pt}\noindent
 \emph{so-call} measures the PLT overhead by having a simple loop
     call an empty function in another shared object. This operation
-    is significantly slower in purecap.
+    is significantly slower in purecap, and we assume this is a
+    microarchitectural artifact.
 
 \vspace{6pt}\noindent
 \emph{ptr-add-align} performs pointer addition followed by an
@@ -1223,18 +1233,20 @@ would require a very challenging analysis that is beyond the scope of our work.
 CHERI holds great promise for securing software in general: allocators are a
 key part of that story. In this paper we have shown that many CHERI allocators,
 including the current CheriBSD default allocator, suffer from simple security
-vulnerabilities. We have also shown how difficult it currently is to understand
-the performance impact of running software on CHERI.
+vulnerabilities. We have also shown how performance analysis of new architecture
+and prototype implementations involves a combination of factors, some of which
+are inherent to the new technology, and others which are more related to
+transient factors such as the maturity of the tool chain or microarchitecture
+features of the initial implementation.
 
 Despite all of this, one allocator has shone throughout this paper: snmalloc is
 not susceptible to any of our attacks, and is faster than the default CheriBSD
 allocator in our benchmarks. We suggest that snmalloc be considered to be the
 default CheriBSD allocator going forward.
 
-\textbf{Acknowledgements:} We thank Ruben Ayrapetyan, David Chisnall,
-and Jessica Clarke for
-comments. This work was funded by the Digital Security by Design (DSbD)
-Programme delivered by UKRI.
+\textbf{Acknowledgements:} We thank Richard Grisenthwaite, Ruben Ayrapetyan,
+David Chisnall, and Jessica Clarke for comments. This work was funded by the
+Digital Security by Design (DSbD) Programme delivered by UKRI.
 
 
 \bibliographystyle{plain}
