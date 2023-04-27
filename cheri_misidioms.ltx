@@ -748,26 +748,32 @@ of snmalloc as \memalloc{snmalloc-repo} which is invulnerable to \overlap.
 \section{Performance Evaluation}
 \label{sec:performance}
 
-We wanted to understand the performance impact of porting allocators to CHERI.
-Our intention was to run both hybrid and purecap versions of each allocator and
-compare the results. We expected that comparisons of performance differences
-between hybrid and purecap versions would show differences as a result of a
-variety of different factors. We believe that some of these factors are inherent
-to the costs of using capabilities. For example, capabilities are larger than
-normal addresses and so increase cache pressure, and purecap allocators have
-additional security properties, such as the addition of bounds information which
-will likely take more instructions. However, we believe some of the factors are
-not inherent to the use of capabilities, but come from more transient effects
-such as the maturity of tool chains and also micro-architectural anomalies in a
-first prototype implementation of the design. Other researchers are
-investigating several transient effects more generally for the Morello
-system\footnote{Although not available at the time of writing, a detailed
+We wanted to understand both the relative performance of allocators under CHERI,
+and also the performance impact of porting allocators to CHERI. The former
+is straightforward (\autoref{ssec:withinhybridpurecap}), but the latter
+raises several challenges, which consume the majority of this Section.
+
+We expected to see some performance difference between hybrid and purecap:
+capabilities are likely to incur some costs due to their increased size
+(e.g.~increased cache pressure); and purecap allocators make use of additional
+security properties, such as bounds information, which require executing more
+instructions. However, as we shall see in this Section, the performance
+differences we observed between hybrid and purecap are sometimes large.
+
+In \autoref{sec:dissection} we investigate some of the possible reasons for the
+performance differences between the hybrid and purecap allocators we investigated. Since
+we submitted this paper we have become aware of other researchers who are also
+investigating similar issues on capability performance
+\footnote{Although not available at the time of writing, a detailed
 performance white paper will shortly be available at
 \url{https://www.arm.com/-/media/Files/pdf/white-paper/prototype-morello-performance-results}}.
-The combination of these effects makes performance
-comparisons across hybrid and pure capability CHERI hard to interpret, and in
-\autoref{sec:dissection} we investigate some of the possible reasons for the
-performance differences in the context of the allocators we investigated.
+It seems likely that much of the difference we see is not inherent to the use
+of capabilities in a CPU, but is the result of immature tool-chains and
+micro-architectural anomalies common in a first prototype implementation of an
+ambitious platform such as Morello. Our results should thus be interpreted in
+that context: it is likely that further research, and future evolutions of
+CHERI hardware, will change our view of capabilities effect on performance.
+
 
 While performance comparisons across hybrid and pure capability CHERI are
 complicated by this range of different factors, performance comparisons within
@@ -868,7 +874,7 @@ However, using the geometric mean, both jemalloc and snmalloc \emph{purecap}
 are 1.59x slower than \emph{hybrid}, which is a much greater figure than we
 believe can be explained by the fundamental additional costs of using
 capabilities in the allocation. This anomaly is exemplified by the fact that
-richards, a benchmark which per forms little allocation, has a slowdown of more
+richards, a benchmark which performs little allocation, has a slowdown of more
 than 2x.
 
 
@@ -1244,8 +1250,8 @@ not susceptible to any of our attacks, and is faster than the default CheriBSD
 allocator in our benchmarks. We suggest that snmalloc be considered to be the
 default CheriBSD allocator going forward.
 
-\textbf{Acknowledgements:} We thank Richard Grisenthwaite, Ruben Ayrapetyan,
-David Chisnall, and Jessica Clarke for comments. This work was funded by the
+\textbf{Acknowledgements:} We thank Ruben Ayrapetyan, David Chisnall, and
+Jessica Clarke, and Richard Grisenthwaite for comments. This work was funded by the
 Digital Security by Design (DSbD) Programme delivered by UKRI.
 
 
