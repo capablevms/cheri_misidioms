@@ -10,14 +10,14 @@ Several open-source memory allocators have been ported to CHERI, a hardware capa
 platform. In this paper we examine the security and performance of these
 allocators when run under CheriBSD on Arm's experimental Morello platform.
 We introduce a number of security attacks and show that all but one allocator
-are vulnerable to some of the attacks -- including the default CheriBSD allocator.
+are vulnerable to some of the attacks --- including the default CheriBSD allocator.
 We then show that while some forms of allocator performance are meaningful,
 comparing the performance of hybrid and pure capability (i.e.~`running in
 non-CHERI vs.~running in CHERI modes') allocators does not appear to be meaningful.
 Although we do not fully understand the
 reasons for this, it seems to be at least as much due to factors such as
-immature compiler toolchains as it is due to the effects of capabilities on
-hardware.
+immature compiler toolchains and experimental hardware as it is due to the effects of
+capabilities on performance.
 \end{abstract}
 
 \maketitle
@@ -46,8 +46,8 @@ We then show that while some forms of allocator performance are meaningful,
 comparing the performance of hybrid and pure capability (roughly speaking: ``running in
 non-CHERI vs.~running in CHERI modes'') allocators does not currently appear to be meaningful.
 We analyse some of the likely factors for this latter case,
-which suggest that this may be as much about the maturity of factors
-such as compiler toolchains as about the effects of capabilities on hardware.
+which suggest that this may be at least as much due to factors such as immature compiler
+toolchains and experimental hardware as to the effects of capabilities on performance.
 We do not claim that our
 work is definitive, though it does suggest two things: that some allocators
 undermine the security properties one might reasonably expect from software running on
@@ -107,7 +107,7 @@ cause the hardware to produce an \emph{inauthentic} result, guaranteeing
 that capabilities cannot be forged.
 On Morello and CHERI RISC-V, capabilities behave as if they are 128 bits in
 size, but also carry an additional (129th) bit that records the authenticity of each
-capability. Software can read, and unset, but cannot set the authenticity bit:
+capability. Software can read, and unset, the authenticity bit, but cannot set it:
 only a child capability
 derived, correctly, from authentic parent capabilities can itself be authentic.
 
