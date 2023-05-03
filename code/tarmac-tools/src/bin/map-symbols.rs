@@ -695,24 +695,94 @@ impl<'m> std::hash::Hash for InsnCountKey<'m> {
     }
 }
 
-#[derive(Default, Debug, Clone)]
-struct InsnCount<'m> {
-    total: u64,
-    unknown_mapping: u64,
-    counts: HashMap<InsnCountKey<'m>, u64>,
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct InsnCount {
+    all: u64,
+    alignd: u64,
+    alignu: u64,
 }
 
-impl<'m> InsnCount<'m> {
+struct InsnCountFmt<'a> {
+    count: &'a InsnCount,
+    prefix: &'a str,
+}
+
+impl InsnCount {
+    fn inc(&mut self, asm: &str) {
+        self.all += 1;
+        if asm.starts_with("ALIGND") {
+            self.alignd += 1;
+        } else if asm.starts_with("ALIGNU") {
+            self.alignu += 1;
+        }
+    }
+
+    fn display_simple(&self) -> impl std::fmt::Display + '_ {
+        self.all
+    }
+
+    fn display_detail<'a>(&'a self, prefix: &'a str) -> impl std::fmt::Display + 'a {
+        InsnCountFmt {
+            count: self,
+            prefix,
+        }
+    }
+}
+
+impl std::ops::AddAssign<&Self> for InsnCount {
+    fn add_assign(&mut self, other: &Self) {
+        *self = Self {
+            all: self.all + other.all,
+            alignd: self.alignd + other.alignd,
+            alignu: self.alignu + other.alignu,
+        }
+    }
+}
+
+impl<'a> std::fmt::Display for InsnCountFmt<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let all = self.count.all;
+        let prefix = self.prefix;
+        write!(f, "{}", all)?;
+
+        let mut printed_of_which = false;
+        let mut detail = |v: u64, desc: &str| -> fmt::Result {
+            if v > 0 {
+                if !printed_of_which {
+                    write!(f, ", of which...")?;
+                    printed_of_which = true;
+                }
+                let perc = 100.0 * (v as f64) / (all as f64);
+                write!(f, "\n{prefix}  - {v} {desc} ({perc:.2}%)")
+            } else {
+                Ok(())
+            }
+        };
+
+        detail(self.count.alignd, "were ALIGND")?;
+        detail(self.count.alignu, "were ALIGNU")?;
+        Ok(())
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+struct CollatedInsnCount<'m> {
+    total: InsnCount,
+    unknown_mapping: InsnCount,
+    counts: HashMap<InsnCountKey<'m>, InsnCount>,
+}
+
+impl<'m> CollatedInsnCount<'m> {
     pub fn total(&self) -> u64 {
-        self.total
+        self.total.all
     }
 
-    pub fn add_unknown(&mut self) {
-        self.total += 1;
-        self.unknown_mapping += 1;
+    pub fn add_unknown(&mut self, asm: &str) {
+        self.total.inc(asm);
+        self.unknown_mapping.inc(asm);
     }
 
-    pub fn add(&mut self, info: VmAddrInfo<'m>) {
+    pub fn add(&mut self, info: VmAddrInfo<'m>, asm: &str) {
         let VmAddrInfo {
             mapping,
             section,
@@ -724,8 +794,8 @@ impl<'m> InsnCount<'m> {
             section,
             symbol,
         };
-        *self.counts.entry(key).or_default() += 1;
-        self.total += 1;
+        self.counts.entry(key).or_default().inc(asm);
+        self.total.inc(asm)
     }
 
     pub fn report(&self) {
@@ -734,10 +804,10 @@ impl<'m> InsnCount<'m> {
         // Collate first.
         #[derive(Default)]
         struct FileCount<'m> {
-            total: u64,
-            by_symbol: HashMap<u64, (u64, &'m VmSectionMapping, &'m VmSymbolMapping)>,
-            unknown_by_section: HashMap<u64, (u64, &'m VmSectionMapping)>,
-            unknown: u64,
+            total: InsnCount,
+            by_symbol: HashMap<u64, (InsnCount, &'m VmSectionMapping, &'m VmSymbolMapping)>,
+            unknown_by_section: HashMap<u64, (InsnCount, &'m VmSectionMapping)>,
+            unknown: InsnCount,
         }
         let mut by_file: HashMap<_, FileCount> = HashMap::new();
         for (
@@ -757,15 +827,16 @@ impl<'m> InsnCount<'m> {
                     let v = entry
                         .unknown_by_section
                         .entry(*sec.va.start())
-                        .or_insert((0, sec));
+                        .or_insert((Default::default(), sec));
                     assert!(v.1 == sec);
                     v.0 += count;
                 }
                 (Some(sec), Some(sym)) => {
-                    let v = entry
-                        .by_symbol
-                        .entry(*sym.va.start())
-                        .or_insert((0, sec, sym));
+                    let v = entry.by_symbol.entry(*sym.va.start()).or_insert((
+                        Default::default(),
+                        sec,
+                        sym,
+                    ));
                     assert!(v.1 == sec);
                     assert!(v.2 == sym);
                     v.0 += count;
@@ -773,43 +844,52 @@ impl<'m> InsnCount<'m> {
             }
         }
 
-        for (path, file_count) in by_file.iter().sorted_by_key(|(_, fc)| !fc.total) {
+        for (path, file_count) in by_file.iter().sorted_by_key(|(_, fc)| !fc.total.all) {
             println!(
                 "{path}: {total}",
                 path = path.as_deref().unwrap_or("unknown file"),
-                total = file_count.total,
+                total = file_count.total.display_simple(),
             );
             for (_, (count, sec, sym)) in file_count
                 .by_symbol
                 .iter()
-                .sorted_by_key(|(_, (count, ..))| !count)
+                .sorted_by_key(|(_, (count, ..))| !count.all)
             {
                 if sec.name == ".text" {
-                    println!("  {sym}: {count}", sym = &sym.name);
+                    println!(
+                        "  {sym}: {count}",
+                        sym = &sym.name,
+                        count = count.display_detail("  ")
+                    );
                 } else {
                     println!(
                         "  {sym} (in {sec}): {count}",
                         sym = &sym.name,
-                        sec = &sec.name
+                        sec = &sec.name,
+                        count = count.display_detail("  "),
                     );
                 }
             }
             for (_, (count, sec)) in file_count
                 .unknown_by_section
                 .iter()
-                .sorted_by_key(|(_, (count, ..))| !count)
+                .sorted_by_key(|(_, (count, ..))| !count.all)
             {
-                println!("  unknown symbol (in {sec}): {count}", sec = &sec.name);
+                println!(
+                    "  unknown symbol (in {sec}): {count}",
+                    sec = &sec.name,
+                    count = count.display_detail("  ")
+                );
             }
-            if file_count.unknown != 0 {
+            if file_count.unknown.all != 0 {
                 println!(
                     "  unknown symbol (in unknown section): {}",
-                    file_count.unknown
+                    file_count.unknown.all
                 );
             }
         }
 
-        println!("Total: {total}", total = self.total());
+        println!("Total: {}", self.total.display_detail(""));
     }
 }
 
@@ -918,7 +998,7 @@ fn main() -> Result<()> {
     )
     .unwrap();
 
-    let mut insn_count = InsnCount::default();
+    let mut insn_count = CollatedInsnCount::default();
 
     let tarmac_start = args
         .tarmac_start
@@ -971,13 +1051,13 @@ fn main() -> Result<()> {
                     if args.annotate_trace {
                         println!("  # {info}");
                     }
-                    insn_count.add(info);
+                    insn_count.add(info, asm);
                 }
                 None => {
                     if args.annotate_trace {
                         println!();
                     }
-                    insn_count.add_unknown();
+                    insn_count.add_unknown(asm);
                 }
             }
             if !args.annotate_trace && insn_count.total() % (1024 * 1024) == 0 {
