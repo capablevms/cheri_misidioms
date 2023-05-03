@@ -666,6 +666,22 @@ struct InsnCountKey<'m> {
     symbol: Option<&'m VmSymbolMapping>,
 }
 
+impl<'m> From<VmAddrInfo<'m>> for InsnCountKey<'m> {
+    fn from(info: VmAddrInfo<'m>) -> Self {
+        let VmAddrInfo {
+            mapping,
+            section,
+            symbol,
+            ..
+        } = info;
+        Self {
+            mapping,
+            section,
+            symbol,
+        }
+    }
+}
+
 impl<'m> PartialEq for InsnCountKey<'m> {
     fn eq(&self, other: &Self) -> bool {
         // Mappings don't overlap and are not duplicated, so we can use fast pointer comparisons.
@@ -700,6 +716,7 @@ struct InsnCount {
     all: u64,
     alignd: u64,
     alignu: u64,
+    branch_to_plt: u64,
 }
 
 struct InsnCountFmt<'a> {
@@ -715,6 +732,10 @@ impl InsnCount {
         } else if asm.starts_with("ALIGNU") {
             self.alignu += 1;
         }
+    }
+
+    fn record_branch_to_plt(&mut self) {
+        self.branch_to_plt += 1;
     }
 
     fn display_simple(&self) -> impl std::fmt::Display + '_ {
@@ -735,6 +756,7 @@ impl std::ops::AddAssign<&Self> for InsnCount {
             all: self.all + other.all,
             alignd: self.alignd + other.alignd,
             alignu: self.alignu + other.alignu,
+            branch_to_plt: self.branch_to_plt + other.branch_to_plt,
         }
     }
 }
@@ -761,6 +783,7 @@ impl<'a> std::fmt::Display for InsnCountFmt<'a> {
 
         detail(self.count.alignd, "were ALIGND")?;
         detail(self.count.alignu, "were ALIGNU")?;
+        detail(self.count.branch_to_plt, "branched to a '.plt' section")?;
         Ok(())
     }
 }
@@ -770,6 +793,38 @@ struct CollatedInsnCount<'m> {
     total: InsnCount,
     unknown_mapping: InsnCount,
     counts: HashMap<InsnCountKey<'m>, InsnCount>,
+    last_added: LastAddedInsnCount<'m>,
+}
+
+#[derive(Default, Debug, Clone)]
+enum LastAddedInsnCount<'m> {
+    #[default]
+    Never,
+    UnknownMapping,
+    Mapped(InsnCountKey<'m>),
+}
+
+#[derive(Default, Debug, Clone)]
+enum LineAnnotation<'m> {
+    #[default]
+    Empty,
+    EnteringSection {
+        mapping: &'m VmMapping,
+        section: &'m str,
+    },
+}
+
+impl<'m> fmt::Display for LineAnnotation<'m> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Empty => Ok(()),
+            Self::EnteringSection { mapping, section } => writeln!(
+                f,
+                "# ---- Entering section '{section}' in {mapping} ----",
+                mapping = mapping.simple_path().unwrap_or("unknown file".into())
+            ),
+        }
+    }
 }
 
 impl<'m> CollatedInsnCount<'m> {
@@ -777,25 +832,53 @@ impl<'m> CollatedInsnCount<'m> {
         self.total.all
     }
 
-    pub fn add_unknown(&mut self, asm: &str) {
+    pub fn add_unknown(&mut self, asm: &str) -> LineAnnotation<'m> {
+        self.last_added = LastAddedInsnCount::UnknownMapping;
         self.total.inc(asm);
         self.unknown_mapping.inc(asm);
+        Default::default()
     }
 
-    pub fn add(&mut self, info: VmAddrInfo<'m>, asm: &str) {
-        let VmAddrInfo {
-            mapping,
-            section,
-            symbol,
-            ..
-        } = info;
-        let key = InsnCountKey {
-            mapping,
-            section,
-            symbol,
-        };
+    pub fn add(&mut self, info: VmAddrInfo<'m>, asm: &str) -> LineAnnotation<'m> {
+        let key = InsnCountKey::from(info);
+        let anno = self.record_section_change(&key);
+        self.last_added = LastAddedInsnCount::Mapped(key.clone());
         self.counts.entry(key).or_default().inc(asm);
-        self.total.inc(asm)
+        self.total.inc(asm);
+        anno
+    }
+
+    fn last_added_count(&mut self) -> Option<(&mut InsnCount, Option<&InsnCountKey>)> {
+        match self.last_added {
+            LastAddedInsnCount::Never => None,
+            LastAddedInsnCount::UnknownMapping => Some((&mut self.unknown_mapping, None)),
+            LastAddedInsnCount::Mapped(ref key) => Some((
+                self.counts
+                    .get_mut(&key)
+                    .expect("cannot update record that does not exist"),
+                Some(key),
+            )),
+        }
+    }
+
+    pub fn record_section_change(&mut self, to: &InsnCountKey<'m>) -> LineAnnotation<'m> {
+        if let Some((count, from)) = self.last_added_count() {
+            let mapping_eq = from.map(|f| &f.mapping.target_path) == Some(&to.mapping.target_path);
+            let section_eq = from.map(|f| f.section) == Some(to.section);
+            if !mapping_eq || !section_eq {
+                if let Some(ref section) = to.section {
+                    if section.name == ".plt" {
+                        count.record_branch_to_plt();
+                        self.total.record_branch_to_plt();
+                    }
+                    return LineAnnotation::EnteringSection {
+                        mapping: &to.mapping,
+                        section: &section.name,
+                    };
+                }
+            }
+        }
+        Default::default()
     }
 
     pub fn report(&self) {
@@ -1042,22 +1125,18 @@ fn main() -> Result<()> {
 
             let pcc_addr = u64::from_str_radix(pcc_addr, 16).unwrap();
 
-            if args.annotate_trace {
-                print!("{pcc_addr:>#18x}  {insn}  {asm:32}");
-                // We'll append a comment below.
-            }
             match vmmap.addr_info(pcc_addr)? {
                 Some(info) => {
+                    let line_anno = insn_count.add(info, asm);
                     if args.annotate_trace {
-                        println!("  # {info}");
+                        println!("{line_anno}{pcc_addr:>#18x}  {insn}  {asm:32}  # {info}");
                     }
-                    insn_count.add(info, asm);
                 }
                 None => {
+                    let line_anno = insn_count.add_unknown(asm);
                     if args.annotate_trace {
-                        println!();
+                        println!("{line_anno}{pcc_addr:>#18x}  {insn}  {asm:32}");
                     }
-                    insn_count.add_unknown(asm);
                 }
             }
             if !args.annotate_trace && insn_count.total() % (1024 * 1024) == 0 {
