@@ -6,6 +6,7 @@ use elf::section::SectionHeader;
 use elf::symbol::Symbol;
 use elf::ElfStream;
 use itertools::Itertools as _;
+use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Deserialize;
 use std::borrow::Cow;
@@ -25,12 +26,30 @@ use std::str::FromStr;
 
 #[derive(Clone, Debug, Parser)]
 #[command()]
-struct Args {
-    #[arg(help = "Generated tarmac trace from Morello FVP model")]
-    tarmac: String,
+struct Cli {
+    #[arg(
+        help = "CSV-formatted VM map, optionally embedded in other logs",
+        long_help = "
+              CSV-formatted VM map, optionally embedded in other logs. If the embedded VMMAP is
+              followed by a line like this:
 
-    #[arg(help = "CSV-formatted VM map, optionally embedded in a stdout recording")]
-    vmmap: String,
+                  Generated 1234 bytes in /absolute/path/to/foo.tarmac [42,4200)...
+
+              ... then suitable defaults will be derived for other arguments, enabling simple,
+              single-argument invocation. Explicit arguments always override values inferred in
+              this way.
+            "
+    )]
+    vmmap: PathBuf,
+
+    #[arg(
+        help = "Generated tarmac trace from Morello FVP model",
+        long_help = "
+              Generated tarmac trace from Morello FVP model. This can be omitted if it can be
+              derived from VMMAP. Otherwise, it is required.
+            "
+    )]
+    tarmac: Option<PathBuf>,
 
     #[arg(
         long,
@@ -58,6 +77,8 @@ struct Args {
             components from the VM map are ignored. This is most useful for locating the executable
             and non-system libraries.
 
+            If nothing is specified explicitly, the directory containing VMMAP is used.
+
             --elf-dir is searched before --rootfs, but otherwise in the order specified.
           "
     )]
@@ -69,6 +90,8 @@ struct Args {
         long_help = "
             A local copy of the rootfs, used to find ELF files. May be specified multiple times, to
             support overlays (like cheribuild's --disk-image/extra-files).
+
+            If nothing is specified explicitly, ~/cheri/output/rootfs-morello-purecap is used.
 
             --elf-dir is searched before --rootfs, but otherwise in the order specified.
           "
@@ -118,12 +141,22 @@ fn cmp_mappings_with_eq_check(
     }
 }
 
+#[derive(Clone, Debug)]
+struct VmMapInferredTarmac {
+    start: u64,
+    end: u64,
+    file: PathBuf,
+}
+
 /// A map of various properties of all virtual memory.
 #[derive(Clone, Debug)]
 struct VmMap {
     elfs: BTreeMap<PathBuf, Option<Rc<LocalMorelloElfFile>>>,
     // Non-overlapping, sorted by address, so slice::binary_search* functions can be used.
     mappings: Vec<VmMapping>,
+
+    // Inferred arguments.
+    tarmac: Option<VmMapInferredTarmac>,
 }
 
 impl VmMap {
@@ -147,21 +180,39 @@ impl VmMap {
             );
             Err(e.into())
         } else {
-            Ok(VmMap { elfs, mappings })
+            Ok(VmMap {
+                elfs,
+                mappings,
+                tarmac: None,
+            })
         }
     }
 
-    pub fn from_stdout(file: &str, elf_dirs: &[PathBuf], rootfs: &[PathBuf]) -> Result<Self> {
+    pub fn from_stdout(file: &Path, elf_dirs: &[PathBuf], rootfs: &[PathBuf]) -> Result<Self> {
         let text = fs::read_to_string(file)?;
         // If the file contains a delimited region, use that. Otherwise, use the whole file.
         let mut lines = text.lines();
         if let Some(begin) = lines.position(|line| line.trim() == "---- BEGIN VM MAP ----") {
             if let Some(len) = lines.position(|line| line.trim() == "---- END VM MAP ----") {
+                lazy_static! {
+                    static ref RE: Regex =
+                        Regex::new(r#"^Generated \d+ bytes in (.*) \[(\d+),(\d+)\)...$"#).unwrap();
+                }
                 Self::from_csv(
                     &text.lines().skip(begin + 1).take(len).join("\n"),
                     elf_dirs,
                     rootfs,
                 )
+                .map(|from_csv| Self {
+                    tarmac: lines.find_map(|line| RE.captures(line)).map(|caps| {
+                        VmMapInferredTarmac {
+                            start: caps.get(2).unwrap().as_str().parse().unwrap(),
+                            end: caps.get(3).unwrap().as_str().parse().unwrap(),
+                            file: caps.get(1).unwrap().as_str().into(),
+                        }
+                    }),
+                    ..from_csv
+                })
             } else {
                 Err("'BEGIN VM MAP' marker found with no matching 'END VM MAP'".into())
             }
@@ -763,8 +814,42 @@ impl<'m> InsnCount<'m> {
 }
 
 fn main() -> Result<()> {
-    let args = Args::parse();
-    let vmmap = VmMap::from_stdout(&args.vmmap, &args.elf_dir, &args.rootfs)?;
+    let args = Cli::parse();
+
+    let elf_dirs = if args.elf_dir.is_empty() {
+        if args.verbose >= 1 {
+            println!("Inferring elf_dirs from VMMAP...");
+        }
+        args.vmmap
+            .parent()
+            .map(Path::to_path_buf)
+            .into_iter()
+            .collect()
+    } else {
+        args.elf_dir
+    };
+    let rootfs = if args.rootfs.is_empty() {
+        if let Some(home) = std::env::var_os("HOME") {
+            vec![PathBuf::from(home).join("cheri/output/rootfs-morello-purecap")]
+        } else {
+            vec![]
+        }
+    } else {
+        args.rootfs
+    };
+
+    if args.verbose >= 1 {
+        println!(
+            "Using elf_dirs: [{}]",
+            elf_dirs.iter().map(|p| p.display()).format(", ")
+        );
+        println!(
+            "Using rootfs: [{}]",
+            rootfs.iter().map(|p| p.display()).format(", ")
+        );
+        println!()
+    }
+    let vmmap = VmMap::from_stdout(&args.vmmap, &elf_dirs, &rootfs)?;
 
     if args.verbose >= 1 {
         for (target_path, local) in vmmap.elfs.iter() {
@@ -810,6 +895,7 @@ fn main() -> Result<()> {
                 }
             }
         }
+        println!();
     }
 
     // Reference:
@@ -834,8 +920,28 @@ fn main() -> Result<()> {
 
     let mut insn_count = InsnCount::default();
 
-    let tarmac_start = args.tarmac_start.unwrap_or(0);
-    let tarmac_end = args.tarmac_end.unwrap_or(u64::MAX);
+    let tarmac_start = args
+        .tarmac_start
+        .or(vmmap.tarmac.as_ref().map(|t| t.start))
+        .unwrap_or(0);
+    let tarmac_end = args
+        .tarmac_end
+        .or(vmmap.tarmac.as_ref().map(|t| t.end))
+        .unwrap_or(u64::MAX);
+    let tarmac_file = match args
+        .tarmac
+        .as_ref()
+        .or(vmmap.tarmac.as_ref().map(|t| &t.file))
+    {
+        None => return Err("No tarmac file specified.".into()),
+        Some(f) => f,
+    };
+    if args.verbose >= 1 {
+        println!(
+            "Using tarmac: {file} [{tarmac_start},{tarmac_end})...",
+            file = tarmac_file.display()
+        );
+    }
     if tarmac_end <= tarmac_start {
         return Err(format!(
             "--tarmac-end ({tarmac_end}) <= --tarmac-start ({tarmac_start}); nothing to analyse"
@@ -844,7 +950,7 @@ fn main() -> Result<()> {
     }
     let tarmac_length = tarmac_end - tarmac_start;
 
-    let mut tarmac = fs::File::open(&args.tarmac)?;
+    let mut tarmac = fs::File::open(tarmac_file)?;
     tarmac.seek(std::io::SeekFrom::Start(tarmac_start))?;
     let tarmac = tarmac.take(tarmac_length);
     for line in io::BufReader::new(tarmac).lines() {
