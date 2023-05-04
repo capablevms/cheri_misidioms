@@ -1024,10 +1024,8 @@ addresses) to provide per-function profiling, and ran this for one full
 benchmark, and shortened versions of two others.
 \autoref{fig:fvpstats} shows that some
 functions execute many more instructions in purecap (vs.~hybrid) than
-others. Slightly anticipating our later analysis, functions which call
-across shared objects, and those that use global variables seem
-particularly impacted --- though, again, this can not explain all
-the differences we see.
+others. \fnc{malloc} and \fnc{free} are particularly strongly affected, but the
+effect on other functions is fairly uniform.
 
 
 \subsection{Low-level Differences}
