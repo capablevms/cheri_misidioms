@@ -1241,9 +1241,11 @@ key part of that story. In this paper we have shown that many CHERI allocators,
 including the current CheriBSD default allocator, suffer from simple security
 vulnerabilities. We have also shown how performance analysis of new architecture
 and prototype implementations involves a combination of factors, some of which
-are inherent to the new technology, and others which are more related to
+are inherent to the new technology, and others are more related to
 transient factors such as the maturity of the tool chain or microarchitecture
 features of the initial implementation.
+More detailed analysis of Morello performance is emerging,
+with particular reference to pipeline dataflow dependence issues \cite{watson23early}.
 
 Despite all of this, one allocator has shone throughout this paper: snmalloc is
 not susceptible to any of our attacks, and is faster than the default CheriBSD
