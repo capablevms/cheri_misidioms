@@ -141,7 +141,7 @@ check, a permissions check, or a bounds check. If a capability passes the
 relevant checks, then the operation \emph{exercises} the capability. If a
 capability fails the relevant checks then either: the hardware produces a
 \lstinline{SIGPROT} exception that terminates the program
-(similarly to a \lstinline{SEGFAULT}); or produces an inauthentic capability as a result (where this is not
+(similarly to a \lstinline{SIGSEGV}); or produces an inauthentic capability as a result (where this is not
 in violation of the CHERI rules).
 
 CHERI allows both double-width capabilities and
