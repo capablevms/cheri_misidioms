@@ -13,7 +13,7 @@ We introduce a number of security attacks and show that all but one allocator
 are vulnerable to some of the attacks --- including the default CheriBSD allocator.
 We then show that while some forms of allocator performance are meaningful,
 comparing the performance of hybrid and pure capability (i.e.~`running in
-non-CHERI vs.~running in CHERI modes') allocators does not appear to be meaningful.
+non-CHERI vs.~running in CHERI modes') allocators does not currently appear to be meaningful.
 Although we do not fully understand the
 reasons for this, it seems to be at least as much due to factors such as
 immature compiler toolchains and experimental hardware as it is due to the effects of
@@ -85,10 +85,11 @@ the security properties and performance of software in general --- any
 security flaws and/or performance problems in allocators thus have
 significant, widespread, consequences.
 
-In this paper we show that most CHERI allocators are subject to at least some, surprisingly simple, attacks.
-We then show that while some forms of allocator performance are meaningful,
-comparing the performance of hybrid and pure capability (roughly speaking: ``running in
-non-CHERI vs.~running in CHERI modes'') allocators does not currently appear to be meaningful.
+In this paper we show that most CHERI allocators are subject to surprisingly simple attacks.
+We then show that while some aspects of allocator performance can be meaningfully
+compared, it does not currently appear to be meaningful to compare the performance of hybrid
+and pure capability (roughly speaking: ``running in
+non-CHERI vs.~running in CHERI modes'') allocators.
 We analyse some of the likely factors for this latter case,
 which suggest that this may be at least as much due to factors such as immature compiler
 toolchains and experimental hardware as to the effects of capabilities on performance.
@@ -180,31 +181,38 @@ capabilities can have an out-of-bounds address.}.
 A \emph{bounds check} is said to be successful if a given capability, address, or
 address range, is in-bounds for a given capability.
 
-A processor instruction that operates on a capability requires one or more of: an authenticity
+A processor instruction that operates on a capability requires at least one of: an authenticity
 check, a permissions check, or a bounds check. If a capability passes the
 relevant checks, then the operation \emph{exercises} the capability. If a
 capability fails the relevant checks then either: the hardware produces a
-\lstinline{SIGPROT} exception that terminates the program
-(similarly to a \lstinline{SIGSEGV}); or produces an inauthentic capability as a result (where this is not
+\lstinline{SIGPROT} exception (similar to \lstinline{SIGSEGV})
+that terminates the program; or produces an inauthentic capability (where this is not
 in violation of the CHERI rules).
 
 CHERI allows both double-width capabilities and
 single-width addresses-as-pointers to exist alongside each other at any time.
 Conventionally, a program which uses both traditional addresses and
 capabilities is said to be operating in \emph{hybrid} mode while a program
-which uses only capabilities is in \emph{pure capability} -- henceforth ``purecap'' -- mode. In this paper
-we concentrate on purecap programs, but frequently compare them to hybrid variants.
+which uses only capabilities is in \emph{pure capability} -- henceforth ``purecap'' -- mode.
+Some caution is necessary with these terms, because different parts of a system
+may be hybrid or purecap. For example, kernels often use hybrid mode while
+some parts of userland may use purecap: at least one of the sides in such
+a relationship must translate between the hybrid and purecap worlds as necessary.
+In this paper we make two simplifying assumptions: that we only have to
+consider userland, and that userland is entirely purecap or entirely hybrid.
 
 CHERI does not presuppose a particular Operating System (OS). While there is a
 CHERI Linux port, at the time of writing the most mature OS for CHERI hardware
-is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD exclusively.
+is CheriBSD, a FreeBSD descendent. In this paper we use CheriBSD.
 
 
 \section{A Basic Pure Capability Allocator}
 \label{sec:bumppointerallocator}
 
 To illustrate how CHERI affects allocators, in this section we adapt a simple
-non-CHERI aware allocator to become CHERI aware.
+non-CHERI aware allocator to become CHERI aware. For simplicity's sake,
+we assume that this means at least running successfully on, and preferably
+taking advantage of, purecap CHERI.
 
 \begin{figure}[t]
 \lstinputlisting[
@@ -228,24 +236,23 @@ a no-op; and \fnc{realloc} always allocates a new chunk of memory. The
 allocator reserves a large chunk of memory using a single \fnc{mmap} call then
 doles out chunks on each \fnc{malloc} / \fnc{realloc} calls. The bump pointer
 moves through the \fnc{mmap}ed chunk until it reaches the upper limit, at which
-point the allocator returns \texttt{NULL}. \fnc{realloc} is intentionally
-simplistic, but correct even when the block is increased in size.
+point the allocator returns \texttt{NULL}. Though intentionally simplistic,
+\fnc{realloc} is correct even when the block is increased in size.
 
 
 \subsection{Adapting the Allocator to CHERI}
 \label{sec:adapting_to_cheri}
 
 Perhaps surprisingly, our simple bump allocator compiles, and \fnc{malloc} runs
-correctly, on CHERI systems too. As this suggests, CHERI C is largely source
+correctly, on a purecap CHERI system. As this suggests, CHERI C is largely source
 compatible with normal C code, though pointer types are transparently `upgraded' to become
 \emph{capability types} (on Morello occupying exactly twice the space of a
 non-capability pointer). CHERI also implies changes in libraries: on CheriBSD,
 for example, \fnc{mmap} returns a capability whose bounds are at least those of
 the size requested: from that capability our bump allocator derives new
 capabilities that differ in their address but not their bounds. In other
-words, two calls to \fnc{malloc} will produce two capabilities that have the
-same bounds, allowing anyone who possesses one of the capabilities to read and
-write from all past and future blocks returned by \fnc{malloc}.
+words, calling \fnc{malloc} just once gives the caller the ability to read and
+write from all past and future blocks returned by \fnc{malloc}!
 
 \begin{figure}[t]
 \lstinputlisting[language=C,
@@ -265,8 +272,8 @@ write from all past and future blocks returned by \fnc{malloc}.
   {code/bump_alloc2.c}
 \end{figure}
 
-As this suggests, using CHERI without careful consideration may lead to
-no additional security benefits of using CHERI. This then raises the question:
+As this suggests, using CHERI without careful thought may give
+no additional security benefits. This then raises the question:
 how should a secure `CHERI aware' allocator behave? There can be no single
 answer to this question, but we believe that most programmers would at least expect
 \texttt{malloc} to return a capability whose bounds are restricted to the block of memory
@@ -288,7 +295,7 @@ bound addresses are rounded down and up (respectively) in a way that ensures
 that the address and size can be fully covered.
 
 The two versions of our allocator have meaningfully different security properties,
-even when we run both on a CHERI system. For example, consider this simple
+even when we run both on a purecap system. For example, consider this simple
 C snippet which models a buffer overrun:
 
 \begin{lstlisting}[language=C]
@@ -299,8 +306,9 @@ b[1] = 'b';
 
 \noindent
 On a non-CHERI system, or a CHERI system with \autoref{lst:bump_alloc1}
-as an allocator, this snippet compiles and runs without error. However, with
-the allocator from \autoref{lst:bump_alloc2} the code compiles, but the tighter
+as an allocator, this snippet compiles and runs without error. However, using
+the allocator from \autoref{lst:bump_alloc2} on a purecap CHERI system,
+while the snippet compiles, the tighter
 capability bounds returned by \texttt{malloc} cause a \lstinline{SIGPROT}
 when executing line 3. This demonstrates how CHERI can prevent
 programmer errors becoming security violations.
@@ -351,7 +359,7 @@ Allocator & Version & SLoC & \multicolumn{2}{c}{Changed}\\
 \label{tab:allocator_summary}
 \end{table}
 
-A number of allocators are available for CheriBSD, installable via three
+A number of allocators are available for purecap CheriBSD, installable via three
 different routes: as part of the base distribution; via CheriBSD
 \emph{packages}; or via external sources.  We examined allocators
 available from all three sources. We excluded
@@ -392,9 +400,7 @@ for them for the rest of this paper, are as follows:
 
 \vspace{6pt}\noindent
 \memalloc{ptmalloc}~\cite{gloger06ptmalloc} is an extension of
-    \memalloc{dlmalloc}, with added support for multiple threads. A
-    non-modified package of \memalloc{ptmalloc3} version 1.8 is available in
-    the package manager of CheriBSD.
+    \memalloc{dlmalloc}, with added support for multiple threads.
 
 \vspace{6pt}\noindent
 \memalloc{bump-alloc-nocheri} is the simple, non-CHERI-aware bump
@@ -480,7 +486,8 @@ Even the default CheriBSD allocator is vulnerable to some attacks: only
 snmalloc is invulnerable.
 
 In the rest of this section we explain each attack, giving C code using the
-CHERI API. Our code examples assume that we start with a `non-attacker' who
+CHERI API. Our code examples assume that we start with a
+\colorbox{gray!15}{`non-attacker'} (whose code has a light grey background) who
 allocates memory and hands it over to another part of the system which has been
 taken over by an `attacker'. For each (allocator, attack) pair, we state whether it is
 vulnerable, invulnerable, or whether the attack fails for other reasons.
@@ -503,6 +510,10 @@ that is a copy of \texttt{c} except with the address \texttt{a}.
 \texttt{vaddr\_t} is a CHERI C integer type that is guaranteed to be big enough
 to represent addresses but, unlike \texttt{intptr\_t}, is not big enough to
 represent capabilities.
+
+\vspace{6pt}
+\noindent\texttt{vaddr\_t cheri\_base\_get(void *c)}
+Returns the address of the lower bound of a capability \texttt{c}.
 
 \vspace{6pt}
 \noindent\texttt{void *cheri\_bounds\_set(void *c, \\size\_t s)}
@@ -579,7 +590,7 @@ those of \texttt{SC} (lines 5 and 6) before narrowing those bounds to
 When implemented in this style, an allocator can be subject to the following
 attack:
 
-\begin{lstlisting}[language=C]
+\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}<5\color{gray!15}\fi}]
 uint8_t *arr = malloc(256);
 for (uint8_t i = 0; i < 256; i++)
   arr[i] = i;
@@ -594,7 +605,7 @@ This attack first \fnc{malloc}s a block of memory, receiving a capability with
 a bounds of 256 bytes (line 1). We fill the block up with data (lines 2 and 3)
 so that we can later test the success of the attack. We then
 \fnc{realloc} the block down to a single byte, receiving back a capability
-whose bounds are 1 byte\footnote{Some allocators bounds bigger than 1 byte, though
+whose bounds are 1 byte\footnote{Some allocators return bounds bigger than 1 byte, though
 none we tested returned a bounds of 256 bytes or more.} (line 5).
 
 At this point, we expect to have permanently lost access to the values written to bytes 2-255
@@ -625,7 +636,7 @@ When an allocator uses a `super' capability (as seen in
 \autoref{narrowwiden}), there may be potential to upgrade a
 capability's permissions as shown in the following simple attack:
 
-\begin{lstlisting}[language=C]
+\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}<7\color{gray!15}\fi}]
 uint8_t *arr = malloc(16);
 assert(cheri_perms_get(arr)
   & CHERI_PERM_STORE));
@@ -670,7 +681,7 @@ An important variant on \escperms is to see whether an allocator will
 reallocate a block pointed to by an inauthentic capability and return
 an authentic capability:
 
-\begin{lstlisting}[language=C]
+\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}<5\color{gray!15}\fi}]
 uint8_t *arr = malloc(16);
 assert(cheri_tag_get(arr));
 arr = cheri_tag_clear(arr);
@@ -697,7 +708,7 @@ follows CHERI-C's rules correctly. However, it is possible for an attacker to us
 behaviour at the language level to trick an allocator into returning authentic capabilities
 that it should not possess as shown in this attack:
 
-\begin{lstlisting}[language=C]
+\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}<6\color{gray!15}\fi}]
 uint8_t *arr = malloc(256);
 for (uint8_t i = 0; i < 256; i++)
   arr[i] = i;
@@ -732,8 +743,8 @@ longer valid by those rules. This outcome is unlikely to trouble an attacker.
 There are no general mitigations for \myundef. For the particular concrete
 example, a partial mitigation is for \fnc{free} to scrub memory so that, at
 least, whatever was present in the buffer cannot be read by the attacker: however,
-since the attack has in effect `aliased' the capability, future writes can be
-observed and tampered with by the attacker.
+since the attack in effect `aliases' the capability, the attacker can observe,
+and tamper with, future writes.
 
 A more complete mitigation for the concrete example is for \fnc{free} to
 scan memory looking for all references to a capability whose bounds
@@ -755,7 +766,7 @@ an allocator returns two distinct capabilities whose bounds overlap
 \cite{woodruff19chericoncentrate}), an attacker might be able to read or write
 memory they should not have access to. An example attack in this mould is:
 
-\begin{lstlisting}[language=C]
+\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}<2\color{gray!15}\fi}]
 void *b1 = malloc(16);
 void *b2 = malloc(16);
 assert(
