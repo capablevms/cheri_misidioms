@@ -1,49 +1,49 @@
 {
-  "snmalloc-repo": {
+  "snmalloc": {
     "hybrid": {
       "barnes": {
-        "normalised-total-time": 0.9985528219971056
+        "normalised-total-time": 0.9985538684020245
       },
       "binary_tree": {
-        "normalised-total-time": 0.42616033755274263
+        "normalised-total-time": 0.43183742591024554
       },
       "cfrac": {
-        "normalised-total-time": 0.8715667311411993
+        "normalised-total-time": 0.8722032318210068
       },
       "espresso": {
-        "normalised-total-time": 0.9079623287671232
+        "normalised-total-time": 0.9089937133815166
       },
       "glibc_bench_simple": {
-        "normalised-total-time": 0.7773880194279547
+        "normalised-total-time": 0.7762356492211503
       },
       "mstress": {
-        "normalised-total-time": 0.8070175438596492
+        "normalised-total-time": 0.8224215246636771
       },
       "richards": {
-        "normalised-total-time": 0.9503759398496241
+        "normalised-total-time": 0.9488175518195097
       }
     },
     "purecap": {
       "barnes": {
-        "normalised-total-time": 1.0
+        "normalised-total-time": 0.9998774885145482
       },
       "binary_tree": {
-        "normalised-total-time": 0.4906832298136646
+        "normalised-total-time": 0.4876543209876543
       },
       "cfrac": {
-        "normalised-total-time": 0.9098613251155624
+        "normalised-total-time": 0.9113168724279835
       },
       "espresso": {
-        "normalised-total-time": 0.8759048603929679
+        "normalised-total-time": 0.875824138284426
       },
       "glibc_bench_simple": {
-        "normalised-total-time": 0.7187120291616039
+        "normalised-total-time": 0.7221884498480243
       },
       "mstress": {
-        "normalised-total-time": 0.7874396135265701
+        "normalised-total-time": 0.7867824409068982
       },
       "richards": {
-        "normalised-total-time": 0.9989417989417989
+        "normalised-total-time": 1.0050202407584958
       }
     }
   }

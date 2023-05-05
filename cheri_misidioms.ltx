@@ -875,7 +875,7 @@ hybrid or pure capability CHERI do appear to be meaningful.
   several performance metrics: \emph{rss-kb} is 
   maximum memory utilisation; \emph{INST\_RETIRED} the number of instructions
   retired while executing the benchmark; and \emph{\{L1I, L1D, L2D\}\_CACHE}
-  the L1 instruction, L1 data, and L2 data, cache accesses respectively.
+  the L1 instruction, L1 data, and L2 data, cache misses respectively.
   None of these factors provides obvious clues as to why purecap is so
   much slower than hybrid.
   }
@@ -912,8 +912,8 @@ The two highest performing allocators were jemalloc and snmalloc. In
 hybrid, snmalloc is 1.25x faster with the geometric mean than
 jemalloc; in purecap, snmalloc is 1.24x faster with the geometric mean
 than jemalloc. In both situations, the wall-clock time roughly correlates
-with instructions counts (snmalloc retires 1.42x fewer instructions
-than jemalloc in hybrid and 1.15x fewer in purecap). Because these
+with instructions counts (snmalloc retires a similar number of instructions
+compared to jemalloc in hybrid and 1.19x fewer in purecap). Because these
 differences are clear and because, as we will soon see, there are much
 greater differences to consider elsewhere, we do not dwell further on these results.
 
@@ -923,9 +923,9 @@ greater differences to consider elsewhere, we do not dwell further on these resu
 \autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} and \memalloc{snmalloc} 
 across hybrid and purecap. As expected, purecap is always slower than hybrid in total
 execution time, and there is significant variance amongst benchmarks.
-However, using the geometric mean, both jemalloc and snmalloc \emph{purecap}
-are 1.59x slower than \emph{hybrid}, which is a much greater figure than we
-believe can be explained by the fundamental additional costs of using
+However, using the geometric mean, jemalloc \emph{purecap} and snmalloc \emph{purecap}
+are 1.56x and 1.61x slower respectively than their \emph{hybrid} counterparts, which
+is a much greater figure than we believe can be explained by the fundamental additional costs of using
 capabilities in the allocator. This anomaly is exemplified by the fact that
 richards, a benchmark which performs little allocation, has a slowdown of more
 than 2x.

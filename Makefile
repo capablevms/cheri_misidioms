@@ -5,7 +5,7 @@
 
 LATEX_FILES = cheri_misidioms.ltx
 
-DIAGRAMS = fig/fvp-stats.pdf fig/jemalloc_bm_overall.pdf fig/microbenchmarks.pdf fig/sn_je_malloc_bm_overall.pdf fig/instruction_mix/stacked_bar_chart.pdf
+DIAGRAMS = fig/fvp-stats.pdf fig/microbenchmarks.pdf fig/sn_je_malloc_bm_overall.pdf fig/instruction_mix/stacked_bar_chart.pdf
 
 all: cheri_misidioms.pdf
 
