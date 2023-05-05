@@ -486,10 +486,10 @@ Even the default CheriBSD allocator is vulnerable to some attacks: only
 snmalloc is invulnerable.
 
 In the rest of this section we explain each attack, giving C code using the
-CHERI API. Our code examples assume that we start with a
-\colorbox{gray!15}{`non-attacker'} (whose code has a light grey background) who
-allocates memory and hands it over to another part of the system which has been
-taken over by an `attacker'. For each (allocator, attack) pair, we state whether it is
+CHERI API. Our code examples assume that we start with a `non-attacker'
+`non-attacker' who allocates memory and hands it over to another part of the system which has been
+taken over by an \colorbox{gray!15}{`attacker'} (whose code has a light grey background).
+For each (allocator, attack) pair, we state whether it is
 vulnerable, invulnerable, or whether the attack fails for other reasons.
 We model this via a series of \lstinline{assert}s:
 if all the \lstinline{assert}s pass, the attack is successful. The code we show
@@ -590,7 +590,7 @@ those of \texttt{SC} (lines 5 and 6) before narrowing those bounds to
 When implemented in this style, an allocator can be subject to the following
 attack:
 
-\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}<5\color{gray!15}\fi}]
+\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}>4\color{gray!15}\fi}]
 uint8_t *arr = malloc(256);
 for (uint8_t i = 0; i < 256; i++)
   arr[i] = i;
@@ -636,7 +636,7 @@ When an allocator uses a `super' capability (as seen in
 \autoref{narrowwiden}), there may be potential to upgrade a
 capability's permissions as shown in the following simple attack:
 
-\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}<7\color{gray!15}\fi}]
+\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}>6\color{gray!15}\fi}]
 uint8_t *arr = malloc(16);
 assert(cheri_perms_get(arr)
   & CHERI_PERM_STORE));
@@ -681,7 +681,7 @@ An important variant on \escperms is to see whether an allocator will
 reallocate a block pointed to by an inauthentic capability and return
 an authentic capability:
 
-\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}<5\color{gray!15}\fi}]
+\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}>4\color{gray!15}\fi}]
 uint8_t *arr = malloc(16);
 assert(cheri_tag_get(arr));
 arr = cheri_tag_clear(arr);
@@ -708,7 +708,7 @@ follows CHERI-C's rules correctly. However, it is possible for an attacker to us
 behaviour at the language level to trick an allocator into returning authentic capabilities
 that it should not possess as shown in this attack:
 
-\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}<6\color{gray!15}\fi}]
+\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}>5\color{gray!15}\fi}]
 uint8_t *arr = malloc(256);
 for (uint8_t i = 0; i < 256; i++)
   arr[i] = i;
@@ -766,7 +766,7 @@ an allocator returns two distinct capabilities whose bounds overlap
 \cite{woodruff19chericoncentrate}), an attacker might be able to read or write
 memory they should not have access to. An example attack in this mould is:
 
-\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}<2\color{gray!15}\fi}]
+\begin{lstlisting}[language=C,linebackgroundcolor={\ifnum\value{lstnumber}>1\color{gray!15}\fi}]
 void *b1 = malloc(16);
 void *b2 = malloc(16);
 assert(
