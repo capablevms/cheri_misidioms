@@ -181,14 +181,6 @@ capabilities can have an out-of-bounds address.}.
 A \emph{bounds check} is said to be successful if a given capability, address, or
 address range, is in-bounds for a given capability.
 
-A processor instruction that operates on a capability requires at least one of: an authenticity
-check, a permissions check, or a bounds check. If a capability passes the
-relevant checks, then the operation \emph{exercises} the capability. If a
-capability fails the relevant checks then either: the hardware produces a
-\lstinline{SIGPROT} exception (similar to \lstinline{SIGSEGV})
-that terminates the program; or produces an inauthentic capability (where this is not
-in violation of the CHERI rules).
-
 CHERI allows both double-width capabilities and
 single-width addresses-as-pointers to exist alongside each other at any time.
 Conventionally, a program which uses both traditional addresses and
