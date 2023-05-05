@@ -669,6 +669,7 @@ easier to rule upon than others.
 
 
 \subsection{\escinauthentic: Escalate Inauthentic Capabilities}
+\label{sec:escinauthentic}
 
 An important variant on \escperms is to see whether an allocator will
 reallocate a block pointed to by an inauthentic capability and return
@@ -686,11 +687,14 @@ assert(cheri_tag_get(arr));
 \noindent
 Interestingly, none of the allocators we examined was vulnerable to this
 attack. However, several fall into something of a
-grey zone: the allocators cause a \lstinline{SIGPROT} when they try to perform
-an operation on the inauthentic capability. In none of theses cases does the
-allocator check the capability's authenticity, and it is an open question as to
-whether the allocator was deliberately designed to \lstinline{SIGPROT} with an inauthentic capability. However, we
-prefer to give the allocators the benefit of doubt, and have classified them as
+grey zone: despite not explicitly checking the capability's authenticity, the
+allocators cause a \lstinline{SIGPROT} when they try to perform an operation on
+the inauthentic capability. It is difficult to know whether this was an
+expected outcome or not, in the sense that programs often explicitly rely on
+null pointer dereferencing causing \texttt{SIGSEGV} to maintain certain
+security properties. However, since the outcome is a reasonable one, we have
+chosen to give the allocators the benefit of doubt in this case, and have
+classified them as
 invulnerable to this attack.
 
 
@@ -780,15 +784,18 @@ resulting capabilities overlap.
 
 \subsection{Failed Attacks}
 
-Two attacks in~\autoref{tab:atks} failed ($\oslash$) in a way that means
-we cannot state whether the allocator is vulnerable or invulnerable.
+Two attacks in~\autoref{tab:atks} failed ($\oslash$) due to what we
+believe are definitely unintended bugs (as distinct from
+\autoref{sec:escinauthentic}, where we could not distinguish unintended
+bugs from careful, efficient, programming), and thus we cannot state whether the allocator is
+vulnerable or invulnerable.
 
 \escperms fails on \memalloc{bump-alloc-nocheri} because its \fnc{realloc}
 causes a \lstinline{SIGPROT} when trying to increase a block in size. By
 design, \memalloc{bump-alloc-cheri} contains a version of \fnc{realloc} which
 fixes this issue (see~\autoref{sec:adapting_to_cheri}).
 
-\overlap fails on \memalloc{snmalloc-cheribuild} due to what appears to be
+\overlap fails on \memalloc{snmalloc-cheribuild} due to what we believe is
 an internal snmalloc bug. Because of this, we included a newer version
 of snmalloc as \memalloc{snmalloc-repo} which is invulnerable to \overlap.
 
