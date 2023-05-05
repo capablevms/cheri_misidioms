@@ -1,0 +1,130 @@
+/lib/libc.so.7: 3727530171
+  free: 1294020684, of which...
+    - 14592688 were ALIGND (1.13%)
+  malloc: 1029097330
+  __je_tcache_bin_flush_small: 452927901, of which...
+    - 9945702 were ALIGND (2.20%)
+    - 99617 branched to a '.plt' section (0.02%)
+  __je_arena_tcache_fill_small: 179552576
+  memmove: 41627859
+  __je_malloc_default: 30683356
+  __je_arena_dalloc_bin_junked_locked: 19891404
+  __je_free_default: 17492978
+  __je_extent_heap_remove: 5198414
+  __je_tcache_alloc_small_hard: 4753780
+  __je_extent_heap_first: 3990394
+  __je_tcache_event_hard: 3756543
+  __je_bitmap_init: 1453063, of which...
+    - 76477 branched to a '.plt' section (5.26%)
+  __je_extents_alloc: 1376586
+  memset: 1300141
+  __je_extent_heap_insert: 1265159
+  __je_extent_heap_remove_first: 985625
+  __je_extents_dalloc: 611968, of which...
+    - 76496 were ALIGND (12.50%)
+  __je_base_extent_hooks_get: 487740
+  __vdso_clock_gettime: 451482
+  __je_arena_decay: 288180
+  clock_gettime: 105666
+  __vdso_gettc: 96060
+  __je_extent_avail_remove: 77888
+  __je_nstime_compare: 67242
+  __je_extent_dalloc: 29557
+  __je_extent_avail_first: 28257
+  __je_extents_evict: 27271
+  __je_extent_alloc: 25080
+  __je_nstime_init: 19282
+  __je_extents_npages_get: 19282
+  __je_extent_hooks_get: 19214
+  basename: 14658
+  basename_r: 7854
+  cap_sandboxed: 5305
+  getdiskbyname: 945
+  fflagstostr: 665
+  strtofflags: 649
+  __bt_pgin: 628
+  sysconf: 588
+  __je_nstime_add: 525
+  setmode: 480
+  check_utility_compat: 427
+  confstr: 364
+  __je_nstime_copy: 315
+  _tztab: 232
+  clock: 226
+  sysctl: 224
+  _seekdir: 211
+  tcflow: 176
+  __je_nstime_subtract: 175
+  fdclosedir: 169
+  basename: 161
+  __je_nstime_divide: 140
+  __je_nstime_imultiply: 140
+  des_cipher: 133
+  des_setkey: 91
+  telldir: 88
+  __je_extent_dalloc_wrapper: 74, of which...
+    - 1 were ALIGND (1.35%)
+  __je_nstime_ns: 70
+  timezone: 60
+  __je_extent_decommit_wrapper: 51, of which...
+    - 1 were ALIGND (1.96%)
+  _fixtelldir: 45
+  sl_free: 40
+  closedir: 35
+  setkey: 35
+  sl_find: 30
+  syslog: 28
+  __cpuset_alloc: 28
+  tcgetwinsize: 21
+  tls_malloc_aligned: 14
+  tls_free: 14
+  __je_pages_purge_lazy: 8, of which...
+    - 1 branched to a '.plt' section (12.50%)
+  __cpuset_free: 7
+  tcsetwinsize: 7
+  madvise: 4
+  clock_getcpuclockid: 3
+  __je_pages_decommit: 2
+  __je_extents_state_get: 2
+  unknown symbol (in .text): 634990177, of which...
+    - 162990 were ALIGND (0.03%)
+    - 9642 branched to a '.plt' section (0.00%)
+  unknown symbol (in .plt): 742953
+  unknown symbol (in unknown section): 32932
+/root/capablevms/cheri-bench/purecap/binary_tree.elf: 609834624
+  BottomUpTree: 204035504, of which...
+    - 14592688 branched to a '.plt' section (7.15%)
+  DeleteTree: 167684848, of which...
+    - 14592688 branched to a '.plt' section (8.70%)
+  ItemCheck: 120586272
+  main: 786426
+  after_test: 70
+  unknown symbol (in .plt): 116741504
+unknown file: 99547
+  unknown symbol (in unknown section): 99547
+/libexec/ld-elf.so.1: 1523
+  symlook_obj: 288
+  strcmp: 250
+  symlook_list: 197
+  find_symdef: 159
+  matched_symbol: 146
+  symlook_default: 84
+  _rtld_bind: 70
+  symlook_global: 54
+  def_lock_acquire: 51
+  memset: 42
+  _rtld_bind_start: 32
+  def_lock_release: 27
+  rlock_acquire: 24
+  bzero: 21
+  lock_release: 19
+  reloc_jmpslot: 17
+  _setjmp: 15
+  _sigprocmask: 8
+  def_thread_clr_flag: 7
+  def_thread_set_flag: 7
+  sigsetjmp: 3
+  def_rlock_acquire: 2
+Total: 4337474812, of which...
+  - 24777888 were ALIGND (0.57%)
+  - 29371113 branched to a '.plt' section (0.68%)

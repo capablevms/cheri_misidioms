@@ -67,7 +67,7 @@ my %hybrid_totals;
 
 print("Benchmark,ABI,ELF,Symbol,Instruction Count,Normalised Instruction Count,Colour\n");
 for my $file (@hybrid, @purecap) {
-  $file =~ /^\d\d\d\d-\d\d-\d\d(?:T\d\d:\d\d\+\d\d:\d\d)-(hybrid|purecap)-(.+)\.analysis$/ or die("Bad analysis file name: $file");
+  $file =~ /^\d\d\d\d-\d\d-\d\d(?:T\d\d:\d\d\+\d\d:\d\d)?-(hybrid|purecap)-(.+)\.analysis$/ or die("Bad analysis file name: $file");
   my ($abi, $benchmark) = ($1, $2);
   my %symbols;
   my $elf = undef;

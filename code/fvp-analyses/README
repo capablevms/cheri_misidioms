@@ -1,0 +1,77 @@
+# Method for gathering and analysing FVP traces
+
+At a high level:
+
+  - Run the FVP model with the ToggleMTITrace plugin enabled.
+  - Instrument a workload to turn on the trace whilst it runs, and also to print
+    the virtual memory mappings ("vmmap") for offline analysis.
+  - Run the workload.
+  - Run the analyser on the collected trace, and the vmmap.
+
+The microbenchmarks come with instrumentation, and a script that automates much of that:
+
+```
+% cd code/microbenchmarks
+% ./build.sh
+% SSHHOST=fvp-morello-purecap FVPTRACE=/tmp/fvp-trace ./run-fast-fvp-trace.sh
+...
+% cd ../tarmac-tools
+% cargo run -- \
+    --elf-dir ../microbenchmarks/bin \
+    --rootfs ~/cheri/output/rootfs-morello-purecap \
+    ../microbenchmarks/trace/11-random-graph-walk-fixed-purecap.{tarmac,stdout}
+...
+/root/capablevms/microbenchmarks/bin/11-random-graph-walk-fixed-purecap: 488 instructions
+Counted 488 EL0 instructions in total.
+```
+
+## Run the FVP model
+
+The easiest way to launch a suitable model is to use cheribuild:
+
+```
+% FVPTRACE=... # The output file (on a file system with plenty of space).
+% ./cheribuild.py run-fvp-morello-purecap --run-fvp/trace="$FVPTRACE" --run-fvp/trace-unbuffered
+```
+
+cheribuild automatically enables ToggleMTITrace when a trace file is given.
+
+By default, FVP buffers writes to the trace file. If you're going to read the
+trace file whilst the model is still running, it's important to pass
+`--run-fvp/trace-unbuffered`.
+
+Note that the trace output can be extremely large. It's quite easy to fill a 1TB
+disk with a even modest workload.
+
+## Instrument and run a workload
+
+With ToggleMTITrace, any code inside the model can execute `hlt #0xbeef` to
+toggle trace output. This allows boot and other setup execution to be
+eliminated. The immediate can be configured, but cheribuild uses `0xbeef` by
+default.
+
+Warning: this is a _toggle_, so if your workload crashes (or is stopped) whilst
+the trace is on, the trace will remain running. In practice, the fastest way to
+recover from this situation is to restart the model.
+
+In addition, it is necessary to dump the virtual memory map (VMMAP). In
+CheriBSD, the VMMAP does not remain available after the process has exited, so
+this is best done using `kinfo_getvmmap()` in the test itself. The analyser
+expects the VMMAP in a CSV format.
+
+The microbenchmarks perform these steps in `before_test()` and `after_test()`,
+which can be used as reference instrumentation.
+
+## Run the analyser
+
+The analyser examines the trace file, the VMMAP and ELF files (if you tell it
+where to find local copies), and produces instruction counts per symbol.
+
+The analyser is provided as Rust source, and requires standard Rust tools to
+build and run. For detailed usage information, enter `code/tarmac-tools` and run
+`cargo run -- --help`.
+
+The analyser output is committed alongside this README as `.analysis` files. The
+provided `collate.pl` and `plot.r` scripts reduce and plot the data for the
+paper, respectively. See `./collate.pl --help` for usage details. These scripts
+require Perl (with some common packages) and R (with the "ggplot2" package).

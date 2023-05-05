@@ -1,0 +1,142 @@
+/root/capablevms/cheri-bench/purecap/richards.elf: 483955290
+  schedule: 223936000
+  handlerfn: 106107600
+  devfn: 92016200
+  idlefn: 39996900
+  workfn: 21873800
+  bench: 18724, of which...
+    - 1400 branched to a '.plt' section (7.48%)
+  main: 434, of which...
+    - 3 branched to a '.plt' section (0.69%)
+  after_test: 10
+  unknown symbol (in .plt): 5622
+/lib/libc.so.7: 157036
+  malloc: 98872
+  __je_arena_tcache_fill_small: 22337
+  __je_extent_heap_remove_first: 2420
+  __je_malloc_default: 2026
+  __vfprintf: 745, of which...
+    - 2 branched to a '.plt' section (0.27%)
+  __je_extent_alloc_wrapper: 680
+  __collate_load: 593
+  fputws_l: 580
+  __sfvwrite: 420, of which...
+    - 8 branched to a '.plt' section (1.90%)
+  _collate_lookup: 413
+  _collate_wxfrm: 390
+  fread: 370
+  __fread: 306
+  __je_extent_alloc: 290
+  __je_tcache_alloc_small_hard: 280
+  memchr: 275
+  memcpy: 260
+  memset: 203
+  __je_bitmap_init: 190, of which...
+    - 10 branched to a '.plt' section (5.26%)
+  __je_base_alloc_extent: 180
+  __je_tcache_event_hard: 179
+  btowc: 175
+  __je_extents_alloc: 170
+  fputws: 160
+  __je_extent_heap_insert: 140
+  freopen: 139
+  sctp_sendv: 110
+  __je_extent_heap_remove: 100
+  rcmdsh: 89
+  sctp_sendx: 82
+  rcmd_af: 72
+  __vdso_gettimeofday: 66
+  __je_extent_heap_first: 60
+  rresvport: 54
+  _ht_getnetbyname: 51
+  vfprintf_l: 44
+  __je_extent_avail_first: 40
+  __sflush: 37
+  __catopen_l: 36
+  _collate_sxfrm: 36
+  sctp_connectx: 36
+  inet6_rthdr_add: 36
+  strftime_l: 32
+  __je_base_extent_hooks_get: 30
+  inet6_rthdr_init: 30
+  sctp_getaddrlen: 28
+  _nis_getnetbyaddr: 28
+  sctp_opt_info: 27
+  c16rtomb_l: 26
+  wcstoumax_l: 26
+  towctrans_l: 25
+  _swrite: 23
+  gettimeofday: 22
+  wcstoull_l: 21
+  __vdso_gettc: 20
+  inet6_rth_getaddr: 20
+  __netent_data_init: 18
+  setipv4sourcefilter: 18
+  inet6_rthdr_space: 18
+  printf: 18, of which...
+    - 1 branched to a '.plt' section (5.56%)
+  vfprintf: 18, of which...
+    - 1 branched to a '.plt' section (5.56%)
+  localeconv_l: 18
+  strftime: 16
+  inet6_rthdr_lasthop: 12
+  _nis_getnetbyname: 12
+  wctomb: 11
+  c16rtomb: 11
+  inet6_rth_reverse: 11
+  inet6_rth_add: 11
+  _dns_getnetbyname: 10
+  strlen: 10
+  fputwc: 9
+  sctp_getladdrs: 9
+  inet6_rthdr_segments: 8
+  inet6_rth_segments: 8
+  _ht_getnetbyaddr: 8
+  sctp_getpaddrs: 7
+  __swrite: 7, of which...
+    - 1 branched to a '.plt' section (14.29%)
+  inet6_rthdr_getaddr: 6
+  acl_delete_entry_np: 6
+  recv: 6
+  getnetent: 6
+  __fflush: 5
+  ___pthread_cleanup_push_imp: 4
+  __error: 4
+  _write: 4
+  ___pthread_cleanup_pop_imp: 4
+  sctp_recvmsg: 4
+  c32rtomb_l: 4
+  sctp_freepaddrs: 2
+  unknown symbol (in .text): 22521, of which...
+    - 95 were ALIGND (0.42%)
+  unknown symbol (in .plt): 92
+unknown file: 15423
+  unknown symbol (in unknown section): 15423
+/libexec/ld-elf.so.1: 2474
+  symlook_obj: 440
+  find_symdef: 362
+  symlook_list: 296
+  strcmp: 278
+  symlook_default: 154
+  matched_symbol: 146
+  _rtld_bind: 140
+  symlook_global: 108
+  def_lock_acquire: 102
+  memset: 84
+  _rtld_bind_start: 64
+  def_lock_release: 54
+  rlock_acquire: 48
+  bzero: 42
+  lock_release: 38
+  reloc_jmpslot: 34
+  _setjmp: 30
+  _sigprocmask: 16
+  def_thread_clr_flag: 14
+  def_thread_set_flag: 14
+  sigsetjmp: 6
+  def_rlock_acquire: 4
+/lib/libutil.so.9: 456
+  unknown symbol (in unknown section): 456
+Total: 484131907, of which...
+  - 96 were ALIGND (0.00%)
+  - 1426 branched to a '.plt' section (0.00%)

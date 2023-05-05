@@ -1,0 +1,86 @@
+/usr/lib64/libc.so.7: 2574873782
+  free: 682777176
+  malloc: 610160300
+  __je_tcache_bin_flush_small: 432138753, of which...
+    - 99617 branched to a '.plt' section (0.02%)
+  __je_arena_tcache_fill_small: 167326867
+  __je_malloc_default: 26779273
+  memmove: 22133265
+  __je_arena_dalloc_bin_junked_locked: 19891346
+  __je_free_default: 14748696
+  __je_tcache_alloc_small_hard: 4756880
+  __je_tcache_event_hard: 3641594
+  __je_extent_heap_remove: 2268247
+  __je_extent_heap_first: 1754865
+  __je_bitmap_init: 700397, of which...
+    - 36863 branched to a '.plt' section (5.26%)
+  __je_extents_alloc: 552945
+  __je_extent_heap_insert: 547832
+  memset: 516096
+  __vdso_clock_gettime: 509118
+  __je_arena_decay: 288180
+  __je_extent_heap_remove_first: 252248
+  __je_base_extent_hooks_get: 250029
+  __je_extents_dalloc: 221238
+  clock_gettime: 105666
+  __vdso_gettc: 96060
+  __je_nstime_compare: 67242
+  __je_nstime_init: 19266
+  __je_extents_npages_get: 19266
+  __je_extent_hooks_get: 19214
+  __je_extent_avail_remove: 12659
+  __je_extent_dalloc: 9637
+  __je_extents_evict: 9076
+  __je_extent_alloc: 8738
+  __je_extent_avail_first: 1594
+  __je_nstime_add: 405
+  __je_nstime_copy: 243
+  __je_nstime_subtract: 135
+  __je_nstime_divide: 108
+  __je_nstime_imultiply: 108
+  __je_extent_dalloc_wrapper: 80
+  __je_nstime_ns: 54
+  __je_extent_decommit_wrapper: 50
+  __je_pages_purge_lazy: 8, of which...
+    - 1 branched to a '.plt' section (12.50%)
+  madvise: 4
+  __je_pages_purge_forced: 2
+  __je_extents_state_get: 2
+  __je_pages_decommit: 2
+  unknown symbol (in .text): 581704353, of which...
+    - 9634 branched to a '.plt' section (0.00%)
+  unknown symbol (in .plt): 584465
+/root/capablevms/cheri-bench/hybrid/binary_tree.elf: 602494585
+  BottomUpTree: 196695472, of which...
+    - 14592688 branched to a '.plt' section (7.42%)
+  DeleteTree: 167684848, of which...
+    - 14592688 branched to a '.plt' section (8.70%)
+  ItemCheck: 120586272
+  main: 786426
+  after_test: 63
+  unknown symbol (in .plt): 116741504
+/libexec/ld-elf64.so.1: 1314
+  symlook_obj: 260
+  symlook_list: 187
+  strcmp: 164
+  find_symdef: 159
+  matched_symbol: 144
+  symlook_default: 67
+  _rtld_bind: 62
+  symlook_global: 46
+  def_lock_acquire: 41
+  _rtld_bind_start: 32
+  def_lock_release: 27
+  rlock_acquire: 24
+  bzero: 21
+  lock_release: 19
+  reloc_jmpslot: 16
+  _setjmp: 15
+  memset: 13
+  def_thread_set_flag: 6
+  def_thread_clr_flag: 6
+  sigsetjmp: 3
+  def_rlock_acquire: 2
+Total: 3177749599, of which...
+  - 14 were ALIGND (0.00%)
+  - 29331491 branched to a '.plt' section (0.92%)

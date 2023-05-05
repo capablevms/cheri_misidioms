@@ -1,0 +1,231 @@
+/root/capablevms/cheri-bench/hybrid/mstress.elf: 80924740
+  thread_entry: 79901648, of which...
+    - 200122 branched to a '.plt' section (0.25%)
+  main: 218517, of which...
+    - 1011 branched to a '.plt' section (0.46%)
+  after_test: 9
+  unknown symbol (in .plt): 804566
+/usr/lib64/libc.so.7: 22509825
+  free: 4154730, of which...
+    - 1 branched to a '.plt' section (0.00%)
+  malloc: 3117278
+  __je_tcache_bin_flush_small: 2667182, of which...
+    - 6683 branched to a '.plt' section (0.25%)
+  __je_free_default: 1801806
+  __je_arena_tcache_fill_small: 962494, of which...
+    - 2704 branched to a '.plt' section (0.28%)
+  __je_extent_heap_remove_first: 405654
+  __je_malloc_default: 205556
+  memmove: 160282
+  __je_extent_alloc_wrapper: 125037, of which...
+    - 2714 branched to a '.plt' section (2.17%)
+  __je_arena_dalloc_bin_junked_locked: 105928
+  __je_extent_alloc: 67560, of which...
+    - 3374 branched to a '.plt' section (4.99%)
+  __je_extent_heap_remove: 62027
+  __je_extents_evict: 57386, of which...
+    - 652 branched to a '.plt' section (1.14%)
+  __je_extent_dalloc: 43485, of which...
+    - 1776 branched to a '.plt' section (4.08%)
+  __je_base_alloc_extent: 42228
+  __je_extent_heap_insert: 33942
+  __je_bitmap_init: 33333, of which...
+    - 1450 branched to a '.plt' section (4.35%)
+  __je_arena_extent_alloc_large: 29564
+  __je_large_palloc: 29108
+  __je_tcache_alloc_small_hard: 27060
+  __je_arena_malloc_hard: 26189, of which...
+    - 562 branched to a '.plt' section (2.15%)
+  __je_extent_dalloc_wrapper: 26080
+  __je_extents_alloc: 25740
+  memset: 23336
+  __je_tcache_event_hard: 20476
+  __je_extent_decommit_wrapper: 16300
+  __je_extent_heap_first: 15023
+  __je_arena_extent_dalloc_large_prep: 12232
+  __je_base_extent_hooks_get: 9936
+  __je_extents_dalloc: 9228
+  __je_large_dalloc: 9039
+  __je_arena_bin_choose_lock: 7994, of which...
+    - 238 branched to a '.plt' section (2.98%)
+  __je_tcache_bin_flush_large: 7367, of which...
+    - 23 branched to a '.plt' section (0.31%)
+  __je_extent_avail_first: 6809
+  __je_malloc_mutex_lock_slow: 6256, of which...
+    - 759 branched to a '.plt' section (12.13%)
+  __je_arena_extents_dirty_dalloc: 5838
+  __je_arena_tdata_get_hard: 5169
+  __je_base_new: 5004
+  __je_bootstrap_calloc: 4968
+  __je_malloc_mutex_init: 4785, of which...
+    - 184 branched to a '.plt' section (3.85%)
+  __je_bin_init: 4184, of which...
+    - 1 branched to a '.plt' section (0.02%)
+  __je_arena_new: 3816
+  __vdso_clock_gettime: 3604
+  __je_large_dalloc_finish: 2782
+  __je_pages_purge_lazy: 2608, of which...
+    - 326 branched to a '.plt' section (12.50%)
+  __je_tsd_tcache_data_init: 2364, of which...
+    - 8 branched to a '.plt' section (0.34%)
+  __je_arena_choose_hard: 2192, of which...
+    - 8 branched to a '.plt' section (0.36%)
+  __je_extent_heap_new: 2144
+  __je_arena_decay: 1620
+  __je_large_dalloc_prep_junked_locked: 1605
+  __je_rtree_leaf_elm_lookup_hard: 1343, of which...
+    - 43 branched to a '.plt' section (3.20%)
+  madvise: 1304
+  __je_rtree_ctx_data_init: 1196
+  __je_nstime_init: 880
+  __je_large_malloc: 834
+  clock_gettime: 748
+  calloc: 728, of which...
+    - 8 branched to a '.plt' section (1.10%)
+  __vdso_gettc: 680
+  __je_pages_purge_forced: 652
+  __je_pages_decommit: 652
+  __je_extents_state_get: 652
+  __je_pages_map: 640, of which...
+    - 20 branched to a '.plt' section (3.12%)
+  __je_arena_dalloc_small: 575, of which...
+    - 10 branched to a '.plt' section (1.74%)
+  __je_tsd_state_set: 452, of which...
+    - 16 branched to a '.plt' section (3.54%)
+  __je_extents_init: 432, of which...
+    - 12 branched to a '.plt' section (2.78%)
+  __je_nstime_compare: 371
+  realloc: 300
+  __je_extent_alloc_mmap: 300
+  _malloc_thread_cleanup: 280, of which...
+    - 4 branched to a '.plt' section (1.43%)
+  __je_tsd_slow_update: 252
+  __je_tsd_cleanup: 232
+  __je_tsd_fetch_slow: 232
+  __je_tcache_arena_associate: 208, of which...
+    - 8 branched to a '.plt' section (3.85%)
+  __je_arena_palloc: 140
+  __je_extents_npages_get: 120
+  __je_extent_hooks_get: 116
+  __cxa_thread_call_dtors: 116
+  __je_arena_nthreads_get: 108
+  __je_nstime_add: 105
+  mmap: 100
+  __je_arena_extent_sn_next: 80
+  __je_iarena_cleanup: 72
+  __je_arena_cleanup: 72
+  __je_tsd_tcache_enabled_data_init: 68
+  _umtx_op: 64
+  __je_nstime_copy: 63
+  __je_arena_nthreads_inc: 40
+  __je_arena_nthreads_dec: 40
+  __je_extent_avail_remove: 38
+  __je_arenas_tdata_cleanup: 32
+  __je_nstime_subtract: 25
+  getpagesize: 21
+  __je_arena_set: 20
+  __je_tcache_cleanup: 20
+  __je_malloc_initialized: 20
+  sigfastblock: 16
+  thr_new: 16
+  __je_nstime_idivide: 16
+  mprotect: 16
+  __je_nstime_ns: 12
+  __je_extent_avail_new: 8
+  thr_exit: 8
+  __je_base_alloc: 8
+  __je_nstime_imultiply: 8
+  __je_nstime_divide: 8
+  __je_extent_dss_prec_get: 8
+  __je_prof_tdata_cleanup: 4
+  __je_witnesses_cleanup: 4
+  malloc_mutex_first_thread: 2
+  _malloc_first_thread: 1
+  unknown symbol (in .text): 7843206, of which...
+    - 39593 branched to a '.plt' section (0.50%)
+  unknown symbol (in .plt): 244733
+/usr/lib64/libthr.so.3: 6615016
+  __Tthr_mutex_trylock: 2117702, of which...
+    - 1 branched to a '.plt' section (0.00%)
+  _thr_ast: 480532
+  _thr_mutex_unlock: 424740
+  _pthread_mutex_init_calloc_cb: 4600
+  _thr_alloc_wake_addr: 1164, of which...
+    - 2 branched to a '.plt' section (0.17%)
+  _thr_try_gc: 776
+  pthread_create: 560, of which...
+    - 13 branched to a '.plt' section (2.32%)
+  _thr_alloc: 404, of which...
+    - 4 branched to a '.plt' section (0.99%)
+  _thr_stack_alloc: 369, of which...
+    - 12 branched to a '.plt' section (3.25%)
+  _thr_rwl_unlock: 260
+  _thr_rwl_wrlock: 228
+  _thr_link: 220
+  _thr_find_thread: 196
+  __thr_umutex_lock: 144, of which...
+    - 3 branched to a '.plt' section (2.08%)
+  _pthread_exit_mask: 119, of which...
+    - 5 branched to a '.plt' section (4.20%)
+  _thr_rwl_rdlock: 88
+  __Tthr_mutex_lock: 66
+  _tcb_ctor: 56, of which...
+    - 4 branched to a '.plt' section (7.14%)
+  _thr_umtx_wait: 52, of which...
+    - 4 branched to a '.plt' section (7.69%)
+  __thr_rwlock_unlock: 48, of which...
+    - 4 branched to a '.plt' section (8.33%)
+  _thr_cancel_enter: 32
+  __thr_rwlock_rdlock: 32, of which...
+    - 2 branched to a '.plt' section (6.25%)
+  _sleepq_alloc: 32, of which...
+    - 4 branched to a '.plt' section (12.50%)
+  _thr_cancel_leave: 28
+  _thr_signal_block_setup: 24, of which...
+    - 4 branched to a '.plt' section (16.67%)
+  _umtx_op_err: 24, of which...
+    - 3 branched to a '.plt' section (12.50%)
+  _thr_testcancel: 24
+  _Tthr_exit: 16
+  _thr_join: 12
+  _thr_setthreaded: 4
+  unknown symbol (in .text): 3582099, of which...
+    - 16 branched to a '.plt' section (0.00%)
+  unknown symbol (in .plt): 365
+/libexec/ld-elf64.so.1: 35784
+  memcpy: 6480
+  symlook_obj: 5167
+  find_symdef: 4500
+  symlook_list: 3648
+  strcmp: 3297
+  matched_symbol: 2232
+  symlook_default: 1251
+  _rtld_bind: 1240
+  kvprintf: 1019
+  symlook_global: 959
+  memset: 941
+  __crt_malloc: 756
+  _rtld_bind_start: 642
+  rlock_acquire: 504
+  lock_release: 475
+  allocate_tls: 452
+  bzero: 441
+  do_dlsym: 437
+  _setjmp: 317
+  reloc_jmpslot: 315
+  _rtld_allocate_tls: 144
+  malloc_aligned: 116
+  wlock_acquire: 96
+  __crt_calloc: 84
+  strlen: 73
+  sigsetjmp: 63
+  _rtld_error: 45
+  _rtld_get_stack_prot: 36
+  xcalloc: 24
+  rtld_vsnprintf: 24
+  dlsym: 6
+unknown file: 20863
+  unknown symbol (in unknown section): 20863
+Total: 110109487, of which...
+  - 1 were ALIGND (0.00%)
+  - 262391 branched to a '.plt' section (0.24%)

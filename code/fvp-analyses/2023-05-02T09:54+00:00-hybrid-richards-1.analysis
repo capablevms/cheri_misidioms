@@ -1,0 +1,84 @@
+/root/capablevms/cheri-bench/hybrid/richards.elf: 439601078
+  schedule: 217356400
+  handlerfn: 96554900
+  devfn: 75285800
+  idlefn: 31997200
+  workfn: 18383300
+  bench: 17417, of which...
+    - 1400 branched to a '.plt' section (8.04%)
+  main: 430, of which...
+    - 3 branched to a '.plt' section (0.70%)
+  after_test: 9
+  unknown symbol (in .plt): 5622
+/usr/lib64/libc.so.7: 122692
+  malloc: 58663
+  __je_arena_tcache_fill_small: 21664
+  __je_extent_heap_remove_first: 4199
+  __je_malloc_default: 2054
+  __je_extent_alloc_wrapper: 1292
+  __vfprintf: 743, of which...
+    - 2 branched to a '.plt' section (0.27%)
+  __je_extent_alloc: 459
+  __je_base_alloc_extent: 425
+  __je_tcache_alloc_small_hard: 360
+  __je_bitmap_init: 323, of which...
+    - 17 branched to a '.plt' section (5.26%)
+  __sfvwrite: 290, of which...
+    - 8 branched to a '.plt' section (2.76%)
+  __je_extents_alloc: 255
+  memcpy: 252
+  __je_extent_heap_insert: 221
+  memset: 204
+  __je_tcache_event_hard: 176
+  memchr: 160
+  __je_extent_heap_remove: 136
+  __je_extent_heap_first: 102
+  __vdso_gettimeofday: 80
+  __je_extent_avail_first: 68
+  vfprintf_l: 52
+  __je_base_extent_hooks_get: 51
+  printf: 45, of which...
+    - 1 branched to a '.plt' section (2.22%)
+  __sflush: 37
+  vfprintf: 34, of which...
+    - 1 branched to a '.plt' section (2.94%)
+  _swrite: 23
+  gettimeofday: 22
+  strlen: 21
+  __vdso_gettc: 20
+  localeconv_l: 18
+  __swrite: 7, of which...
+    - 1 branched to a '.plt' section (14.29%)
+  __fflush: 5
+  ___pthread_cleanup_pop_imp: 4
+  _write: 4
+  ___pthread_cleanup_push_imp: 4
+  __error: 3
+  unknown symbol (in .text): 30096
+  unknown symbol (in .plt): 120
+/libexec/ld-elf64.so.1: 2214
+  symlook_obj: 423
+  find_symdef: 362
+  symlook_list: 278
+  strcmp: 221
+  matched_symbol: 144
+  _rtld_bind: 124
+  symlook_default: 120
+  symlook_global: 92
+  def_lock_acquire: 82
+  _rtld_bind_start: 64
+  def_lock_release: 54
+  rlock_acquire: 48
+  bzero: 42
+  lock_release: 38
+  reloc_jmpslot: 32
+  _setjmp: 30
+  memset: 26
+  def_thread_clr_flag: 12
+  def_thread_set_flag: 12
+  sigsetjmp: 6
+  def_rlock_acquire: 4
+unknown file: 192
+  unknown symbol (in unknown section): 192
+Total: 439740601, of which...
+  - 1433 branched to a '.plt' section (0.00%)
