@@ -497,15 +497,15 @@ Our descriptions use the following CHERI functions:
 \setlength{\leftskip}{6pt}
 
 \vspace{6pt}
-\noindent\texttt{void *cheri\_address\_set(void *c, \\vaddr\_t a)}~~~~
+\noindent\texttt{void *cheri\_address\_set(void *c, \\ptraddr\_t a)}~~~~
 Takes a capability \texttt{c} as input and returns a new capability
 that is a copy of \texttt{c} except with the address \texttt{a}.
-\texttt{vaddr\_t} is a CHERI C integer type that is guaranteed to be big enough
+\texttt{ptraddr\_t} is a CHERI C integer type that is guaranteed to be big enough
 to represent addresses but, unlike \texttt{intptr\_t}, is not big enough to
 represent capabilities.
 
 \vspace{6pt}
-\noindent\texttt{vaddr\_t cheri\_base\_get(void *c)}
+\noindent\texttt{ptraddr\_t cheri\_base\_get(void *c)}
 Returns the address of the lower bound of a capability \texttt{c}.
 
 \vspace{6pt}
