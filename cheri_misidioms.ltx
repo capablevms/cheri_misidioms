@@ -919,7 +919,7 @@ execution time, and there is significant variance amongst benchmarks.
 However, using the geometric mean, both jemalloc and snmalloc \emph{purecap}
 are 1.59x slower than \emph{hybrid}, which is a much greater figure than we
 believe can be explained by the fundamental additional costs of using
-capabilities in the alloactor. This anomaly is exemplified by the fact that
+capabilities in the allocator. This anomaly is exemplified by the fact that
 richards, a benchmark which performs little allocation, has a slowdown of more
 than 2x.
 
