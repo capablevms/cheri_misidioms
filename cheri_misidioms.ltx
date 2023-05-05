@@ -8,7 +8,7 @@
 \noindent
 Several open-source memory allocators have been ported to CHERI, a hardware capability
 platform. In this paper we examine the security and performance of these
-allocators when run under CheriBSD on Arm's experimental Morello platform.
+allocators when run under CheriBSD on Arm's prototype Morello platform.
 We introduce a number of security attacks and show that all but one allocator
 are vulnerable to some of the attacks --- including the default CheriBSD allocator.
 We then show that while some forms of allocator performance are meaningful,
@@ -16,7 +16,7 @@ comparing the performance of hybrid and pure capability (i.e.~`running in
 non-CHERI vs.~running in CHERI modes') allocators does not currently appear to be meaningful.
 Although we do not fully understand the
 reasons for this, it seems to be at least as much due to factors such as
-immature compiler toolchains and experimental hardware as it is due to the effects of
+immature compiler toolchains and prototype hardware as it is due to the effects of
 capabilities on performance.
 \end{abstract}
 
@@ -92,7 +92,7 @@ and pure capability (roughly speaking: ``running in
 non-CHERI vs.~running in CHERI modes'') allocators.
 We analyse some of the likely factors for this latter case,
 which suggest that this may be at least as much due to factors such as immature compiler
-toolchains and experimental hardware as to the effects of capabilities on performance.
+toolchains and prototype hardware as to the effects of capabilities on performance.
 We do not claim that our
 work is definitive, though it does suggest two things: that some allocators
 undermine the security properties one might reasonably expect from software running on
@@ -135,8 +135,8 @@ e.g.~\cite{brooks19cheriabi}), a user-facing library that exposes
 capability-related functions, and a CHERI-aware language. (e.g.~CHERI C~\cite{watson20chericprogramming},
 an adaption, in the sense of both extending and occasionally altering, of C).
 Except where we use the name of a different hardware implementation (e.g.~CHERI
-RISC-V), we assume the use of Arm's `Morello' hardware, which is an
-experimental ARMv8 chip extended with CHERI instructions.
+RISC-V), we assume the use of Arm's `Morello' hardware, which is a
+prototype ARMv8 chip extended with CHERI instructions.
 
 \label{abilities}
 Conceptually, a CHERI system starts with a `root' capability that has
@@ -804,23 +804,21 @@ We expected to see some performance difference between hybrid and purecap:
 capabilities are likely to incur some costs due to their increased size
 (e.g.~increased cache pressure); and purecap allocators make use of additional
 security properties, such as bounds information, which require executing more
-instructions. However, as we shall see in this Section, the performance
+instructions. However, the performance
 differences we observed between hybrid and purecap are sometimes large.
 
 In \autoref{sec:dissection} we investigate some of the possible reasons for the
 performance differences between the hybrid and purecap allocators we investigated. Since
 we submitted this paper we have become aware of other researchers who are also
-investigating similar issues on capability performance
-\footnote{Although not available at the time of writing, a detailed
-performance white paper will shortly be available at
+investigating similar issues\footnote{Although not available at the time of writing, we have been
+informed that a detailed performance white paper will soon be available at
 \url{https://www.arm.com/-/media/Files/pdf/white-paper/prototype-morello-performance-results}}.
 It seems likely that much of the difference we see is not inherent to the use
 of capabilities in a CPU, but is the result of immature tool-chains and
 micro-architectural anomalies common in a first prototype implementation of an
 ambitious platform such as Morello. Our results should thus be interpreted in
 that context: it is likely that further research, and future evolutions of
-CHERI hardware, will change our view of capabilities effect on performance.
-
+CHERI hardware, will change our view of capabilities' effect on performance.
 
 While performance comparisons across hybrid and pure capability CHERI are
 complicated by this range of different factors, performance comparisons within
@@ -920,7 +918,7 @@ execution time, and there is significant variance amongst benchmarks.
 However, using the geometric mean, both jemalloc and snmalloc \emph{purecap}
 are 1.59x slower than \emph{hybrid}, which is a much greater figure than we
 believe can be explained by the fundamental additional costs of using
-capabilities in the allocation. This anomaly is exemplified by the fact that
+capabilities in the alloactor. This anomaly is exemplified by the fact that
 richards, a benchmark which performs little allocation, has a slowdown of more
 than 2x.
 
@@ -989,9 +987,9 @@ To understand this, we wanted
 to count how often different `classes' of instructions were executed.
 Unfortunately, there is currently no direct way on either CheriBSD or Morello
 to obtain such a count, so we had to cobble together two approaches: a fast,
-but potentially imprecise, approach based on QEMU; and a slow, but much more
-precise, approach based on Arm's Morello Platform FVP~\cite[p.~23]{morellofvp}
-used as a sanity check for our QEMU results.
+somewhat imprecise, approach based on QEMU; and a slow, but more
+precise, approach based on Arm's Morello Platform FVP~\cite[p.~23]{morellofvp}.
+In essence the latter serves as a sanity check for the former.
 
 We wrote a custom QEMU plugin that maintains counts for each class of
 instructions as a Morello instance is running. This includes the kernel booting
@@ -1078,16 +1076,16 @@ the `beneath the surface' factors that might explain part of the performance
 story.
 
 
-\subsubsection{\fhardware: Hardware pointer operation (microbenchmarks)}
+\subsubsection{\fhardware: Hardware pointer operation (micro\-benchmarks)}
 
-To understand the impact of low-level Morello hardware performance, we wrote a
-series of simple microbenchmarks that we can run under both hybrid and purecap
+To attempt to understand the performance characteristics of Morello, we wrote a
+series of simple microbenchmarks that run under both hybrid and purecap
 CheriBSD. Most are written in C (with annotations to minimise compiler
 variance), but many include, or are primarily written in, assembly. Our aim
 with these microbenchmarks is not to judge `real-world' performance, but to
-help us better understand larger benchmarks.
+help us better understand larger benchmarks. The results are shown in \autoref{fig:mbench}.
 
-We split our microbenchmarks into two. First those microbenchmarks which
+We split our microbenchmarks into two. First, those microbenchmarks which
 show little or no difference between hybrid and purecap:
 
 \setlength{\leftskip}{6pt}
@@ -1116,7 +1114,7 @@ show little or no difference between hybrid and purecap:
 \setlength{\leftskip}{0pt}
 
 \vspace{6pt}\noindent
-Second those benchmarks which do show noticeable differences:
+Second, those benchmarks which do show noticeable differences:
 
 \setlength{\leftskip}{6pt}
 
@@ -1284,13 +1282,10 @@ would require a very challenging analysis that is beyond the scope of our work.
 CHERI holds great promise for securing software in general: allocators are a
 key part of that story. In this paper we have shown that many CHERI allocators,
 including the current CheriBSD default allocator, suffer from simple security
-vulnerabilities. We have also shown how performance analysis of new architecture
-and prototype implementations involves a combination of factors, some of which
-are inherent to the new technology, and others are more related to
-transient factors such as the maturity of the tool chain or microarchitecture
-features of the initial implementation.
-More detailed analysis of Morello performance is emerging,
-with particular reference to pipeline dataflow dependence issues \cite{watson23early}.
+vulnerabilities. We have also shown that measuring the effect of
+capabilities on performance is challenging, as it is difficult to understand, let
+alone factor out, the impact of immature compiler toolchains and prototype
+hardware. We expect ongoing and future research to tease apart these factors.
 
 Despite all of this, one allocator has shone throughout this paper: snmalloc is
 not susceptible to any of our attacks, and is faster than the default CheriBSD
