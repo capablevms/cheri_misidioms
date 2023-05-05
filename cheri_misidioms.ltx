@@ -1153,6 +1153,14 @@ Second, those benchmarks which do show noticeable differences:
 
 \setlength{\leftskip}{0pt}
 
+\vspace{6pt}\noindent
+Of the three benchmarks studied in \autoref{fig:fvpstats}, align-down and
+shared-object calls together account for between 0.00\% and 1.25\% of all
+executed instructions, and are unlikely to be responsible for the majority of
+the performance differenced shown in \autoref{fig:eval jemalloc}.
+
+\setlength{\leftskip}{0pt}
+
 
 \begin{figure}
   \begin{center}
@@ -1192,8 +1200,8 @@ tight bounds:
 \noindent
 It is difficult for us to tell if this behaviour is important for
 security in all, or merely some, situations. However, analysing
-the traces behind~\autoref{fig:fvpstats} showed that this can
-have a significant performance impact: in the richards benchmark,
+the traces behind~\autoref{fig:fvpstats} showed that
+in the richards benchmark,
 for example, we were able to observe that such code was executed
 frequently in some functions, though we cannot precisely quantify
 the performance impact.
@@ -1202,7 +1210,7 @@ the performance impact.
 \subsubsection{\fcompiler: Toolchain maturity}
 
 We noticed that the same C code compiled for hybrid and purecap by LLVM could
-sometimes lead to variable length machine code. The differences are
+sometimes result in very different machine code. The differences are
 far too extensive to admit a simple analysis, but we hypothesise that
 they might be due to capability code: either preventing LLVM from performing
 some of its normal optimisations when capability code is present; or LLVM
