@@ -96,7 +96,7 @@ for my $file (@hybrid, @purecap) {
       die("Unimplemented: Symbol name contains a comma: $symbol\n") if ($elf =~ /,/);;
       $symbols{"$elf,$1"} = $2;
     } elsif ($line =~ /^ *- \d+ (.*)$/) {
-      next; # TODO: Should we do something with this?
+      next;
     } else {
       die("Unrecognised input: $line");
     }
