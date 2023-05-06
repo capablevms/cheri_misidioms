@@ -805,32 +805,12 @@ of snmalloc as \memalloc{snmalloc-repo} which is invulnerable to \overlap.
 
 We wanted to understand both the relative performance of allocators under CHERI,
 and also the performance impact of porting allocators to CHERI. The former
-is straightforward (\autoref{ssec:withinhybridpurecap}), but the latter
-raises several challenges, which consume the majority of this Section.
-
-We expected to see some performance difference between hybrid and purecap:
-capabilities are likely to incur some costs due to their increased size
-(e.g.~increased cache pressure); and purecap allocators make use of additional
-security properties, such as bounds information, which require executing more
-instructions. However, the performance
-differences we observed between hybrid and purecap are sometimes large.
-
-In \autoref{sec:dissection} we investigate some of the possible reasons for the
-performance differences between the hybrid and purecap allocators we investigated. Since
-we submitted this paper we have become aware of other researchers who are also
-investigating similar issues\footnote{Although not available at the time of writing, we have been
-informed that a detailed performance white paper will soon be available at
-\url{https://www.arm.com/-/media/Files/pdf/white-paper/prototype-morello-performance-results}}.
-It seems likely that much of the difference we see is not inherent to the use
-of capabilities in a CPU, but is the result of immature tool-chains and
-micro-architectural anomalies common in a first prototype implementation of an
-ambitious platform such as Morello. Our results should thus be interpreted in
-that context: it is likely that further research, and future evolutions of
-CHERI hardware, will change our view of capabilities' effect on performance.
-
-While performance comparisons across hybrid and pure capability CHERI are
-complicated by this range of different factors, performance comparisons within
-hybrid or pure capability CHERI do appear to be meaningful.
+measures performance within hybrid and purecap and is
+straightforward (\autoref{ssec:withinhybridpurecap}). The latter measures
+performance across hybrid and purecap and shows far greater differences
+than we expected (\autoref{ssec:withinhybridpurecap}). Because of that,
+in \autoref{sec:dissection} we attempt to understand possible causes
+for these differences.
 
 
 \subsection{Methodology}
@@ -921,14 +901,16 @@ greater differences to consider elsewhere, we do not dwell further on these resu
 \subsection{Results Across Hybrid and Purecap}
 
 \autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} and \memalloc{snmalloc} 
-across hybrid and purecap. As expected, purecap is always slower than hybrid in total
-execution time, and there is significant variance amongst benchmarks.
-However, using the geometric mean, jemalloc \emph{purecap} and snmalloc \emph{purecap}
-are 1.56x and 1.61x slower respectively than their \emph{hybrid} counterparts, which
-is a much greater figure than we believe can be explained by the fundamental additional costs of using
-capabilities in the allocator. This anomaly is exemplified by the fact that
-richards, a benchmark which performs little allocation, has a slowdown of more
-than 2x.
+across hybrid and purecap. We expected to see some performance difference between hybrid and purecap:
+capabilities are likely to incur some costs due to their increased size
+(e.g.~increased cache pressure); and purecap allocators make use of additional
+security properties, such as bounds information, which require executing more
+instructions. However, the differences are far greater than we expected:
+using the geometric mean, jemalloc and snmalloc purecap
+are 1.56x and 1.61x slower respectively than their hybrid counterparts.
+This is a larger slowdown than we believe can be explained by the additional costs of using
+capabilities in the allocator --- indeed, richards, a benchmark which performs
+little allocation, also slows down by more than 2x.
 
 
 \begin{figure}
@@ -966,10 +948,21 @@ than 2x.
 \section{Analysing The Disparity Between Hybrid and Purecap Performance}
 \label{sec:dissection}
 
-The disparity in performance between hybrid and purecap surprised us. In this
-section, we explain the three avenues of investigation we undertook to try
-and understand possible causes for the disparity. Roughly speaking, we
-attempted (and explain) the avenues in ascending order of difficulty.
+The disparity in performance between hybrid and purecap surprised us,
+and we thus explored three different avenues in an attempt to understand
+the causes. In this section, we explain these avenues in ascending order of
+difficulty.
+
+Since we submitted this paper we have become aware of other researchers who are also
+investigating similar issues\footnote{Although not available at the time of writing, we have been
+informed that a detailed performance white paper will soon be available at
+\url{https://www.arm.com/-/media/Files/pdf/white-paper/prototype-morello-performance-results}}.
+It seems likely that much of the difference we see is not inherent to the use
+of capabilities in a CPU, but is the result of immature tool-chains and
+micro-architectural anomalies common in a first prototype implementation of an
+ambitious platform such as Morello. Our results should thus be interpreted in
+that context: it is likely that further research, and future evolutions of
+CHERI hardware, will change our view of capabilities' effect on performance.
 
 
 \subsection{Simple Metrics}
