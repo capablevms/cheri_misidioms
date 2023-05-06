@@ -769,7 +769,7 @@ void *b2 = malloc(16);
 assert(
   cheri_base_get(b1) >= cheri_base_get(b2)
   && cheri_base_get(b1) <
-    cheri_base_get(b2) + cheri_length_get(b2)
+  cheri_base_get(b2) + cheri_length_get(b2)
 );
 \end{lstlisting}
 
