@@ -978,21 +978,22 @@ metrics. L2 data cache accesses increase in almost all cases in purecap,
 suggesting increased pressure on the L1 data cache with capabilities. In most
 cases memory usage is only slightly worse in purecap, though in the
 allocator-intensive mstress RSS doubles.
-However, overall, these factors do not allow us to identify a single cause of slowdown.
+However, overall, these factors do not suggest an obvious cause for the slowdown
+we see.
 
 
 \subsection{Class, and Quantity of, Instructions}
 
 We wondered whether the higher instruction counts on purecap benchmarks
-could be explained by the extra CHERI instructions that we saw
-even a simple allocator needs (compare Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2}).
+could be explained by the extra CHERI instructions that
+an allocator needs (compare Listings~\ref{lst:bump_alloc1} and~\ref{lst:bump_alloc2}).
 To understand this, we wanted
 to count how often different `classes' of instructions were executed.
 Unfortunately, there is currently no direct way on either CheriBSD or Morello
 to obtain such a count, so we had to cobble together two approaches: a fast,
 somewhat imprecise, approach based on QEMU; and a slow, but more
 precise, approach based on Arm's Morello Platform FVP~\cite[p.~23]{morellofvp}.
-In essence the latter serves as a sanity check for the former.
+In essence, the latter serves as a sanity check for the former.
 
 We wrote a custom QEMU plugin that maintains counts for each class of
 instructions as a Morello instance is running. This includes the kernel booting
