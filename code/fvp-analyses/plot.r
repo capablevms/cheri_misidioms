@@ -8,10 +8,12 @@ library(ggplot2)
 data <- read.csv(file='stdin', header=TRUE)
 
 colours <- array(dimnames=list(data$ELF:data$Symbol), data=data$Colour)
+ElfSymLevels <- unique(paste(data$ELF:data$Symbol))
+data$ElfSym <- factor(paste(data$ELF:data$Symbol), levels=ElfSymLevels)
 
 ggplot(data,
-       aes(x = ABI, y = Normalised.Instruction.Count, fill = ELF:Symbol)) +
-  scale_fill_manual(values=colours) +
+       aes(x = ABI, y = Normalised.Instruction.Count, fill = ElfSym)) +
+  scale_fill_manual(values=colours, breaks=ElfSymLevels) +
   geom_bar(stat = 'identity', position = 'stack', colour="black", width=1) +
   facet_grid(~ Benchmark) +
   scale_x_discrete(expand=c(0,1.25)) +

@@ -48,7 +48,7 @@ my @available_colour_sets = (
 );
 
 # Used for benchmark ELFs.
-my @neutrals = qw/474747 777777 aaaaaa e1e1e1/;
+my @neutrals = qw/242921 494d40 6e715f 92947d b7b89c dcdcbb/;
 
 my %colour_sets;
 my %colours;
@@ -66,6 +66,7 @@ for my $file (@ARGV) {
 my %hybrid_totals;
 
 print("Benchmark,ABI,ELF,Symbol,Instruction Count,Normalised Instruction Count,Colour\n");
+my @rows;
 for my $file (@hybrid, @purecap) {
   $file =~ /^\d\d\d\d-\d\d-\d\d(?:T\d\d:\d\d\+\d\d:\d\d)?-(hybrid|purecap)-(.+)\.analysis$/ or die("Bad analysis file name: $file");
   my ($abi, $benchmark) = ($1, $2);
@@ -94,7 +95,11 @@ for my $file (@hybrid, @purecap) {
     } elsif ($line =~ /^  (\S[^:]+): (\d+)(, of which...)?$/) {
       my ($symbol, $count) = ($1, $2);
       die("Unimplemented: Symbol name contains a comma: $symbol\n") if ($elf =~ /,/);;
-      $symbols{"$elf,$1"} = $2;
+      if ($symbol =~ /^unknown symbol/) {
+        $symbols{'[mixed],[other]'} = $count;
+      } else {
+        $symbols{"$elf,$symbol"} = $count;
+      }
     } elsif ($line =~ /^ *- \d+ (.*)$/) {
       next;
     } else {
@@ -118,7 +123,7 @@ for my $file (@hybrid, @purecap) {
       if ($elf =~ /\.so/) {
         $colour_sets{$elf} = shift(@available_colour_sets) or die("Ran out of colour sets");
       } else {
-        $colour_sets{$elf} = [@neutrals];
+        $colour_sets{$elf} = \@neutrals;
       }
     }
     if (!exists($colours{$elf_sym})) {
@@ -127,14 +132,24 @@ for my $file (@hybrid, @purecap) {
     my $colour = $colours{$elf_sym};
     my $count = $symbols{$elf_sym};
     my $norm = $count / $hybrid_totals{$benchmark};
-    print("$benchmark,$abi,$elf_sym,$count,$norm,#$colour\n");
+    #print("$benchmark,$abi,$elf_sym,$count,$norm,#$colour\n");
+    push(@rows, [$benchmark,$abi,split(',',$elf_sym),$count,$norm,"#$colour"]);
   }
   for my $elf_sym (@sorted) {
     $other += $symbols{$elf_sym};
   }
   if ($other != 0) {
     my $norm = $other / $hybrid_totals{$benchmark};
-    print("$benchmark,$abi,[mixed],[other],$other,$norm,#ffffff\n");
+    #print("$benchmark,$abi,[mixed],[other],$other,$norm,#ffffff\n");
+    push(@rows, [$benchmark,$abi,'[mixed]','[other]',$other,$norm,"#ffffff"]);
   }
-  # TODO: Normalise to something.
+}
+sub sort_key {
+  my ($row) = @_;
+  return "2-$&" if ($row->[2] =~ /\.elf$/);
+  return "1-$&" if ($row->[2] =~ /\.so$/);
+  return "0-$row";
+}
+for my $row (sort { sort_key($a) cmp sort_key($b) } @rows) {
+  print(join(',', @$row)."\n");
 }
