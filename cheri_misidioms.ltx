@@ -1086,12 +1086,9 @@ story.
 
 \subsubsection{\fhardware: Hardware pointer operation (micro\-benchmarks)}
 
-To attempt to understand the performance characteristics of Morello, we wrote a
-series of simple microbenchmarks that run under both hybrid and purecap
-CheriBSD. Most are written in C (with annotations to minimise compiler
-variance), but many include, or are primarily written in, assembly. Our aim
-with these microbenchmarks is not to judge `real-world' performance, but to
-help us better understand larger benchmarks. The results are shown in \autoref{fig:mbench}.
+To attempt to understand some of the performance characteristics of Morello, we wrote a
+series of simple microbenchmarks, in a variety of C and assembly, that run
+under both hybrid and purecap CheriBSD. The results are shown in \autoref{fig:mbench}.
 
 We split our microbenchmarks into two. First, those microbenchmarks which
 show little or no difference between hybrid and purecap:
@@ -1129,8 +1126,7 @@ Second, those benchmarks which do show noticeable differences:
 \vspace{6pt}\noindent
 \emph{factorial-asm-minimal} is a tail-recursive factorial
     implementation that, despite not using capabilities in the loop, shows
-    bimodality in hybrid. We have no obvious explanation for this, so we assume it
-    is a microarchitectural artefact.
+    bimodality in hybrid. We assume this is a microarchitectural artefact.
 
 \vspace{6pt}\noindent
 \emph{factorial-asm-indirect} is similar, but uses an indirect
@@ -1141,7 +1137,7 @@ Second, those benchmarks which do show noticeable differences:
 \vspace{6pt}\noindent
 \emph{so-call} measures the PLT overhead by having a simple loop
     call an empty function in another shared object. This operation
-    is significantly slower in purecap, and we assume this is a
+    is significantly slower in purecap. We assume this is a
     microarchitectural artifact.
 
 \vspace{6pt}\noindent
@@ -1154,12 +1150,12 @@ Second, those benchmarks which do show noticeable differences:
 \setlength{\leftskip}{0pt}
 
 \vspace{6pt}\noindent
-Of the three benchmarks studied in \autoref{fig:fvpstats}, align-down and
-shared-object calls together account for between 0.00\% and 1.25\% of all
-executed instructions, and are unlikely to be responsible for the majority of
-the performance differenced shown in \autoref{fig:eval jemalloc}.
-
-\setlength{\leftskip}{0pt}
+Since the \emph{so-call} and \emph{ptr-add-align} microbenchmarks show
+significant differences between purecap and hybrid, we analysed how often the
+same idioms occurred in our larger benchmarks. In the three benchmarks shown in
+\autoref{fig:fvpstats}, these two factors account for 0.00\%-1.25\% of executed
+instructions --- they are thus likely to play a correspondingly small part in
+the performance difference seen in \autoref{fig:eval jemalloc}.
 
 
 \begin{figure}
