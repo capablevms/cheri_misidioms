@@ -883,26 +883,27 @@ performance against other factors.
 We compile each benchmark with clang's \texttt{-O3} optimisation level. We
 use \texttt{LD\_PRELOAD} at runtime to dynamically switch between allocators.
 We measure wall-clock time on an otherwise unloaded Morello machine.
+Since jemalloc and snmalloc were the highest performing allocators, we
+concentrate on them for the rest of this section.
 
 
 \subsection{Results Within Hybrid and Purecap}
 \label{ssec:withinhybridpurecap}
 
-The two highest performing allocators were jemalloc and snmalloc. In
-hybrid, snmalloc is 1.25x faster with the geometric mean than
+In hybrid, snmalloc is 1.25x faster with the geometric mean than
 jemalloc; in purecap, snmalloc is 1.24x faster with the geometric mean
-than jemalloc. 
-Overall, the wall-clock time roughly correlates with instruction counts 
-and L1I-cache misses. snmalloc retires a similar number of instructions 
-compared to jemalloc in hybrid and 1.19x fewer in purecap. snmalloc also 
-has 1.73x and 1.6x fewer L1-I-cache misses than jemalloc  in hybrid and purecap respectively. 
+than jemalloc.
+Overall, the wall-clock time roughly correlates with instruction counts
+and L1I-cache misses. snmalloc retires a similar number of instructions
+compared to jemalloc in hybrid and 1.19x fewer in purecap. snmalloc also
+has 1.73x and 1.6x fewer L1-I cache misses than jemalloc in hybrid and purecap respectively.
 Because these differences are clear and because, as we will soon see, there are much
 greater differences to consider elsewhere, we do not dwell further on these results.
 
 
 \subsection{Results Across Hybrid and Purecap}
 
-\autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} and \memalloc{snmalloc} 
+\autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} and \memalloc{snmalloc}
 across hybrid and purecap. We expected to see some performance difference between hybrid and purecap:
 capabilities are likely to incur some costs due to their increased size
 (e.g.~increased cache pressure); and purecap allocators make use of additional
