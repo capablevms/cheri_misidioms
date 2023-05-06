@@ -891,10 +891,12 @@ We measure wall-clock time on an otherwise unloaded Morello machine.
 The two highest performing allocators were jemalloc and snmalloc. In
 hybrid, snmalloc is 1.25x faster with the geometric mean than
 jemalloc; in purecap, snmalloc is 1.24x faster with the geometric mean
-than jemalloc. In both situations, the wall-clock time roughly correlates
-with instructions counts (snmalloc retires a similar number of instructions
-compared to jemalloc in hybrid and 1.19x fewer in purecap). Because these
-differences are clear and because, as we will soon see, there are much
+than jemalloc. 
+Overall, the wall-clock time roughly correlates with instruction counts 
+and L1I-cache misses. snmalloc retires a similar number of instructions 
+compared to jemalloc in hybrid and 1.19x fewer in purecap. snmalloc also 
+has 1.73x and 1.6x fewer L1-I-cache misses than jemalloc  in hybrid and purecap respectively. 
+Because these differences are clear and because, as we will soon see, there are much
 greater differences to consider elsewhere, we do not dwell further on these results.
 
 
