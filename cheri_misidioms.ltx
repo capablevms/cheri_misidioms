@@ -479,7 +479,7 @@ Even the default CheriBSD allocator is vulnerable to some attacks: only
 snmalloc is invulnerable.
 
 In the rest of this section we explain each attack, giving C code using the
-CHERI API. Our code examples assume that we start with a `non-attacker'
+CHERI API. Our code examples assume that we start with a
 `non-attacker' who allocates memory and hands it over to another part of the system which has been
 taken over by an `\colorbox{gray!20}{attacker}' (whose code has a light grey background).
 For each (allocator, attack) pair, we state whether it is
