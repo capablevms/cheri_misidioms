@@ -356,7 +356,7 @@ A number of allocators are available for purecap CheriBSD, installable via three
 different routes: as part of the base distribution; via CheriBSD
 \emph{packages}; or via external sources.  We examined allocators
 available from all three sources. We excluded
-allocators aimed at debugging (e.g.~\memalloc{ElectricFence}).
+allocators aimed at debugging (e.g.~\emph{ElectricFence}).
 We then ran a simple validation test, \fnc{malloc}ing a block of memory,
 copying data into the block, and then \fnc{free}ing the block: we
 excluded any allocator which failed this test.
