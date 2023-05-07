@@ -594,20 +594,19 @@ for (uint8_t i = 0; i < 256; i++)
 \end{lstlisting}
 
 \noindent
-This attack first \fnc{malloc}s a block of memory, receiving a capability with
+We first allocate a block of memory, receiving a capability with
 a bounds of 256 bytes (line 1). We fill the block up with data (lines 2 and 3)
-so that we can later test the success of the attack. We then
-\fnc{realloc} the block down to a single byte, receiving back a capability
+then \fnc{realloc} the block down to a single byte, receiving back a capability
 whose bounds are 1 byte\footnote{Some allocators return bounds bigger than 1 byte, though
 none we tested returned a bounds of 256 bytes or more.} (line 4).
 
 At this point, we expect to have permanently lost access to the values written to bytes 2-255
-in lines 2 and 3. If an attacker then \fnc{realloc}s the block back to
+in lines 2 and 3 --- if an attacker \fnc{realloc}s the block back to
 its original size they should not have access to the values written to bytes
 2-255. However, allocators using the optimisation above will often
 return a capability that covers the same portion of memory as the original
 block, without zeroing it, allowing an attacker to read the original bytes out
-unchanged.
+unchanged (lines 6 and 7).
 
 It might seem merely undesirable for \fnc{realloc} to allow an attacker access to the
 original data, but in a capability system this attack is particularly
@@ -779,12 +778,12 @@ resulting capabilities overlap.
 \subsection{Failed Attacks}
 
 Two attacks in~\autoref{tab:atks} failed ($\oslash$) due to what we
-believe are definitely unintended bugs (as distinct from
+believe are unintended bugs (as distinct from
 \autoref{sec:escinauthentic}, where we could not distinguish unintended
 bugs from careful, efficient, programming), and thus we cannot state whether the allocator is
 vulnerable or invulnerable.
 
-\escperms fails on \memalloc{bump-alloc-nocheri} because its \fnc{realloc}
+\escperms fails on \memalloc{bump-alloc-nocheri} because \fnc{realloc}
 causes a \lstinline{SIGPROT} when trying to increase a block in size. By
 design, \memalloc{bump-alloc-cheri} contains a version of \fnc{realloc} which
 fixes this issue (see~\autoref{sec:adapting_to_cheri}).
@@ -887,7 +886,7 @@ concentrate on them for the rest of this section.
 With the geometric mean, snmalloc is faster than jemalloc by 1.25x
 and 1.24x in hybrid and purecap respectively.
 Overall, the wall-clock time roughly correlates with instruction counts
-and L1I-cache misses. snmalloc retires a similar number of instructions
+and L1I instruction cache misses. snmalloc retires a similar number of instructions
 compared to jemalloc in hybrid and 1.19x fewer in purecap. snmalloc also
 has 1.73x and 1.6x fewer L1-I cache misses than jemalloc in hybrid and purecap respectively.
 It is difficult to know whether this difference is because snmalloc is
@@ -1226,7 +1225,7 @@ can make it difficult for humans to comprehend differences between
 hybrid and purecap code generation.
 
 Another example relevant to allocators is in a hot path
-within jemalloc's \fnc{malloc} function, where a byte-sized thread-local
+within jemalloc's \fnc{malloc} function, where a byte-sized th\-read-local
 is loaded from memory. In hybrid this is compiled to:
 
 \begin{lstlisting}
