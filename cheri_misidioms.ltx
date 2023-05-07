@@ -599,7 +599,7 @@ a bounds of 256 bytes (line 1). We fill the block up with data (lines 2 and 3)
 so that we can later test the success of the attack. We then
 \fnc{realloc} the block down to a single byte, receiving back a capability
 whose bounds are 1 byte\footnote{Some allocators return bounds bigger than 1 byte, though
-none we tested returned a bounds of 256 bytes or more.} (line 5).
+none we tested returned a bounds of 256 bytes or more.} (line 4).
 
 At this point, we expect to have permanently lost access to the values written to bytes 2-255
 in lines 2 and 3. If an attacker then \fnc{realloc}s the block back to
