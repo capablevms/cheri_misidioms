@@ -739,18 +739,12 @@ longer valid by those rules. This outcome is unlikely to trouble an attacker.
 
 There are no general mitigations for \myundef. For the particular concrete
 example, a partial mitigation is for \fnc{free} to scrub memory so that, at
-least, whatever was present in the buffer cannot be read by the attacker: however,
-since the attack in effect `aliases' the capability, the attacker can observe,
-and tamper with, future writes.
-
-A more complete mitigation for the concrete example is for \fnc{free} to
+least, whatever was present in the buffer cannot be read by the attacker.
+More generally, attackers may sometimes be able to use undefined behaviour to `alias'
+a capability. In most such cases, the only solution is to
 scan memory looking for all references to a capability whose bounds
-encompass an address and render them inauthentic (so-called `revocation'~\cite{xia19cherivoke}).
-In our case, this
-would cause the non-attack code to crash with a \texttt{SIGPROT} exception when it
-tried to dereference \emph{C1}, downgrading the security leak into a
-denial-of-service. However, it is not currently possible to perform capability
-revocation at speeds that most allocators would find acceptable.
+encompass an address and render them inauthentic (so-called `revocation'~\cite{xia19cherivoke}),
+downgrading a security leak into a denial-of-service.
 
 
 \subsection{\overlap: Capabilities Whose Memory Bounds Overlap with Another's}
