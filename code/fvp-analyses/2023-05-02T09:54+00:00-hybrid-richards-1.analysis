@@ -51,8 +51,8 @@
     - 1 branched to a '.plt' section (14.29%)
   __fflush: 5
   ___pthread_cleanup_pop_imp: 4
-  _write: 4
   ___pthread_cleanup_push_imp: 4
+  _write: 4
   __error: 3
   unknown symbol (in .text): 30096
   unknown symbol (in .plt): 120
@@ -82,3 +82,6 @@ unknown file: 192
   unknown symbol (in unknown section): 192
 Total: 439740601, of which...
   - 1433 branched to a '.plt' section (0.00%)
+  - 183 were BR <cap> (0.00%)
+  - 7 were BLR <cap> (0.00%)
+  - 199 were RET <cap> (0.00%)

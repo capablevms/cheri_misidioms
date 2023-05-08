@@ -1,138 +1,227 @@
 /root/capablevms/cheri-bench/purecap/richards.elf: 483955290
-  schedule: 223936000
-  handlerfn: 106107600
-  devfn: 92016200
-  idlefn: 39996900
-  workfn: 21873800
+  schedule: 223936000, of which...
+    - 6579000 were BLR <cap> (2.94%)
+    - 100 were RET <cap> (0.00%)
+  handlerfn: 106107600, of which...
+    - 2325200 were RET <cap> (2.19%)
+  devfn: 92016200, of which...
+    - 2788400 were RET <cap> (3.03%)
+  idlefn: 39996900, of which...
+    - 1000000 were RET <cap> (2.50%)
+  workfn: 21873800, of which...
+    - 465400 were RET <cap> (2.13%)
   bench: 18724, of which...
     - 1400 branched to a '.plt' section (7.48%)
+    - 100 were RET <cap> (0.53%)
   main: 434, of which...
     - 3 branched to a '.plt' section (0.69%)
   after_test: 10
-  unknown symbol (in .plt): 5622
+  unknown symbol (in .plt): 5622, of which...
+    - 1405 were BR <cap> (24.99%)
 /lib/libc.so.7: 157036
-  malloc: 98872
-  __je_arena_tcache_fill_small: 22337
-  __je_extent_heap_remove_first: 2420
-  __je_malloc_default: 2026
+  malloc: 98872, of which...
+    - 1380 were RET <cap> (1.40%)
+  __je_arena_tcache_fill_small: 22337, of which...
+    - 14 were RET <cap> (0.06%)
+  __je_extent_heap_remove_first: 2420, of which...
+    - 530 were RET <cap> (21.90%)
+  __je_malloc_default: 2026, of which...
+    - 20 were RET <cap> (0.99%)
   __vfprintf: 745, of which...
     - 2 branched to a '.plt' section (0.27%)
-  __je_extent_alloc_wrapper: 680
-  __collate_load: 593
+    - 1 were RET <cap> (0.13%)
+  __je_extent_alloc_wrapper: 680, of which...
+    - 10 were RET <cap> (1.47%)
+  __collate_load: 593, of which...
+    - 26 were RET <cap> (4.38%)
   fputws_l: 580
   __sfvwrite: 420, of which...
     - 8 branched to a '.plt' section (1.90%)
-  _collate_lookup: 413
-  _collate_wxfrm: 390
+    - 6 were RET <cap> (1.43%)
+  _collate_lookup: 413, of which...
+    - 11 were RET <cap> (2.66%)
+  _collate_wxfrm: 390, of which...
+    - 14 were RET <cap> (3.59%)
   fread: 370
   __fread: 306
   __je_extent_alloc: 290
-  __je_tcache_alloc_small_hard: 280
-  memchr: 275
-  memcpy: 260
-  memset: 203
+  __je_tcache_alloc_small_hard: 280, of which...
+    - 14 were RET <cap> (5.00%)
+  memchr: 275, of which...
+    - 4 were RET <cap> (1.45%)
+  memcpy: 260, of which...
+    - 4 were RET <cap> (1.54%)
+  memset: 203, of which...
+    - 10 were RET <cap> (4.93%)
   __je_bitmap_init: 190, of which...
     - 10 branched to a '.plt' section (5.26%)
-  __je_base_alloc_extent: 180
-  __je_tcache_event_hard: 179
+    - 10 were RET <cap> (5.26%)
+  __je_base_alloc_extent: 180, of which...
+    - 10 were RET <cap> (5.56%)
+  __je_tcache_event_hard: 179, of which...
+    - 6 were RET <cap> (3.35%)
   btowc: 175
-  __je_extents_alloc: 170
+  __je_extents_alloc: 170, of which...
+    - 10 were RET <cap> (5.88%)
   fputws: 160
-  __je_extent_heap_insert: 140
-  freopen: 139
+  __je_extent_heap_insert: 140, of which...
+    - 10 were RET <cap> (7.14%)
+  freopen: 139, of which...
+    - 1 were RET <cap> (0.72%)
   sctp_sendv: 110
-  __je_extent_heap_remove: 100
-  rcmdsh: 89
-  sctp_sendx: 82
-  rcmd_af: 72
-  __vdso_gettimeofday: 66
-  __je_extent_heap_first: 60
-  rresvport: 54
+  __je_extent_heap_remove: 100, of which...
+    - 10 were RET <cap> (10.00%)
+  rcmdsh: 89, of which...
+    - 5 were RET <cap> (5.62%)
+  sctp_sendx: 82, of which...
+    - 2 were RET <cap> (2.44%)
+  rcmd_af: 72, of which...
+    - 4 were RET <cap> (5.56%)
+  __vdso_gettimeofday: 66, of which...
+    - 2 were RET <cap> (3.03%)
+  __je_extent_heap_first: 60, of which...
+    - 10 were RET <cap> (16.67%)
+  rresvport: 54, of which...
+    - 6 were RET <cap> (11.11%)
   _ht_getnetbyname: 51
-  vfprintf_l: 44
-  __je_extent_avail_first: 40
-  __sflush: 37
-  __catopen_l: 36
-  _collate_sxfrm: 36
-  sctp_connectx: 36
+  vfprintf_l: 44, of which...
+    - 1 were RET <cap> (2.27%)
+  __je_extent_avail_first: 40, of which...
+    - 10 were RET <cap> (25.00%)
+  __sflush: 37, of which...
+    - 1 were RET <cap> (2.70%)
+  sctp_connectx: 36, of which...
+    - 1 were RET <cap> (2.78%)
+  __catopen_l: 36, of which...
+    - 1 were RET <cap> (2.78%)
   inet6_rthdr_add: 36
-  strftime_l: 32
-  __je_base_extent_hooks_get: 30
+  _collate_sxfrm: 36, of which...
+    - 1 were RET <cap> (2.78%)
+  strftime_l: 32, of which...
+    - 8 were BR <cap> (25.00%)
+  __je_base_extent_hooks_get: 30, of which...
+    - 10 were RET <cap> (33.33%)
   inet6_rthdr_init: 30
-  sctp_getaddrlen: 28
   _nis_getnetbyaddr: 28
+  sctp_getaddrlen: 28
   sctp_opt_info: 27
-  c16rtomb_l: 26
-  wcstoumax_l: 26
-  towctrans_l: 25
-  _swrite: 23
-  gettimeofday: 22
-  wcstoull_l: 21
-  __vdso_gettc: 20
+  wcstoumax_l: 26, of which...
+    - 1 were RET <cap> (3.85%)
+  c16rtomb_l: 26, of which...
+    - 1 were RET <cap> (3.85%)
+  towctrans_l: 25, of which...
+    - 1 were RET <cap> (4.00%)
+  _swrite: 23, of which...
+    - 1 were BLR <cap> (4.35%)
+    - 1 were RET <cap> (4.35%)
+  gettimeofday: 22, of which...
+    - 2 were RET <cap> (9.09%)
+  wcstoull_l: 21, of which...
+    - 1 were RET <cap> (4.76%)
   inet6_rth_getaddr: 20
-  __netent_data_init: 18
-  setipv4sourcefilter: 18
+  __vdso_gettc: 20, of which...
+    - 2 were RET <cap> (10.00%)
   inet6_rthdr_space: 18
   printf: 18, of which...
     - 1 branched to a '.plt' section (5.56%)
+    - 1 were RET <cap> (5.56%)
   vfprintf: 18, of which...
     - 1 branched to a '.plt' section (5.56%)
-  localeconv_l: 18
-  strftime: 16
+  setipv4sourcefilter: 18, of which...
+    - 2 were RET <cap> (11.11%)
+  __netent_data_init: 18, of which...
+    - 2 were RET <cap> (11.11%)
+  localeconv_l: 18, of which...
+    - 1 were RET <cap> (5.56%)
+  strftime: 16, of which...
+    - 4 were BR <cap> (25.00%)
   inet6_rthdr_lasthop: 12
   _nis_getnetbyname: 12
-  wctomb: 11
   c16rtomb: 11
+  wctomb: 11
   inet6_rth_reverse: 11
   inet6_rth_add: 11
-  _dns_getnetbyname: 10
-  strlen: 10
+  _dns_getnetbyname: 10, of which...
+    - 2 were RET <cap> (20.00%)
+  strlen: 10, of which...
+    - 1 were RET <cap> (10.00%)
+  sctp_getladdrs: 9, of which...
+    - 1 were RET <cap> (11.11%)
   fputwc: 9
-  sctp_getladdrs: 9
+  _ht_getnetbyaddr: 8
   inet6_rthdr_segments: 8
   inet6_rth_segments: 8
-  _ht_getnetbyaddr: 8
   sctp_getpaddrs: 7
   __swrite: 7, of which...
     - 1 branched to a '.plt' section (14.29%)
-  inet6_rthdr_getaddr: 6
-  acl_delete_entry_np: 6
-  recv: 6
+    - 1 were RET <cap> (14.29%)
   getnetent: 6
+  acl_delete_entry_np: 6
+  inet6_rthdr_getaddr: 6
+  recv: 6
   __fflush: 5
-  ___pthread_cleanup_push_imp: 4
-  __error: 4
-  _write: 4
-  ___pthread_cleanup_pop_imp: 4
   sctp_recvmsg: 4
+  ___pthread_cleanup_push_imp: 4, of which...
+    - 1 were BR <cap> (25.00%)
+  __error: 4, of which...
+    - 1 were BR <cap> (25.00%)
+  _write: 4, of which...
+    - 1 were RET <cap> (25.00%)
   c32rtomb_l: 4
+  ___pthread_cleanup_pop_imp: 4, of which...
+    - 1 were BR <cap> (25.00%)
   sctp_freepaddrs: 2
   unknown symbol (in .text): 22521, of which...
     - 95 were ALIGND (0.42%)
-  unknown symbol (in .plt): 92
+    - 115 were BR <cap> (0.51%)
+    - 14 were BLR <cap> (0.06%)
+    - 211 were RET <cap> (0.94%)
+  unknown symbol (in .plt): 92, of which...
+    - 23 were BR <cap> (25.00%)
 unknown file: 15423
   unknown symbol (in unknown section): 15423
 /libexec/ld-elf.so.1: 2474
-  symlook_obj: 440
-  find_symdef: 362
-  symlook_list: 296
-  strcmp: 278
-  symlook_default: 154
-  matched_symbol: 146
-  _rtld_bind: 140
-  symlook_global: 108
-  def_lock_acquire: 102
-  memset: 84
-  _rtld_bind_start: 64
+  symlook_obj: 440, of which...
+    - 10 were RET <cap> (2.27%)
+  find_symdef: 362, of which...
+    - 2 were RET <cap> (0.55%)
+  symlook_list: 296, of which...
+    - 2 were RET <cap> (0.68%)
+  strcmp: 278, of which...
+    - 4 were RET <cap> (1.44%)
+  symlook_default: 154, of which...
+    - 2 were RET <cap> (1.30%)
+  matched_symbol: 146, of which...
+    - 2 were RET <cap> (1.37%)
+  _rtld_bind: 140, of which...
+    - 2 were RET <cap> (1.43%)
+  symlook_global: 108, of which...
+    - 2 were RET <cap> (1.85%)
+  def_lock_acquire: 102, of which...
+    - 2 were RET <cap> (1.96%)
+  memset: 84, of which...
+    - 2 were RET <cap> (2.38%)
+  _rtld_bind_start: 64, of which...
+    - 2 were BR <cap> (3.12%)
   def_lock_release: 54
-  rlock_acquire: 48
-  bzero: 42
-  lock_release: 38
-  reloc_jmpslot: 34
-  _setjmp: 30
-  _sigprocmask: 16
-  def_thread_clr_flag: 14
-  def_thread_set_flag: 14
+  rlock_acquire: 48, of which...
+    - 4 were BLR <cap> (8.33%)
+    - 2 were RET <cap> (4.17%)
+  bzero: 42, of which...
+    - 2 were RET <cap> (4.76%)
+  lock_release: 38, of which...
+    - 2 were BR <cap> (5.26%)
+    - 2 were BLR <cap> (5.26%)
+  reloc_jmpslot: 34, of which...
+    - 2 were RET <cap> (5.88%)
+  _setjmp: 30, of which...
+    - 2 were RET <cap> (6.67%)
+  _sigprocmask: 16, of which...
+    - 4 were RET <cap> (25.00%)
+  def_thread_set_flag: 14, of which...
+    - 2 were RET <cap> (14.29%)
+  def_thread_clr_flag: 14, of which...
+    - 2 were RET <cap> (14.29%)
   sigsetjmp: 6
   def_rlock_acquire: 4
 /lib/libutil.so.9: 456
@@ -140,3 +229,6 @@ unknown file: 15423
 Total: 484131907, of which...
   - 96 were ALIGND (0.00%)
   - 1426 branched to a '.plt' section (0.00%)
+  - 1632 were BR <cap> (0.00%)
+  - 6579030 were BLR <cap> (1.36%)
+  - 6581773 were RET <cap> (1.36%)

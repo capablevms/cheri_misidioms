@@ -83,9 +83,9 @@
   calloc: 728, of which...
     - 8 branched to a '.plt' section (1.10%)
   __vdso_gettc: 680
+  __je_extents_state_get: 652
   __je_pages_purge_forced: 652
   __je_pages_decommit: 652
-  __je_extents_state_get: 652
   __je_pages_map: 640, of which...
     - 20 branched to a '.plt' section (3.12%)
   __je_arena_dalloc_small: 575, of which...
@@ -95,8 +95,8 @@
   __je_extents_init: 432, of which...
     - 12 branched to a '.plt' section (2.78%)
   __je_nstime_compare: 371
-  realloc: 300
   __je_extent_alloc_mmap: 300
+  realloc: 300
   _malloc_thread_cleanup: 280, of which...
     - 4 branched to a '.plt' section (1.43%)
   __je_tsd_slow_update: 252
@@ -112,8 +112,8 @@
   __je_nstime_add: 105
   mmap: 100
   __je_arena_extent_sn_next: 80
-  __je_iarena_cleanup: 72
   __je_arena_cleanup: 72
+  __je_iarena_cleanup: 72
   __je_tsd_tcache_enabled_data_init: 68
   _umtx_op: 64
   __je_nstime_copy: 63
@@ -124,18 +124,18 @@
   __je_nstime_subtract: 25
   getpagesize: 21
   __je_arena_set: 20
-  __je_tcache_cleanup: 20
   __je_malloc_initialized: 20
-  sigfastblock: 16
+  __je_tcache_cleanup: 20
   thr_new: 16
-  __je_nstime_idivide: 16
+  sigfastblock: 16
   mprotect: 16
+  __je_nstime_idivide: 16
   __je_nstime_ns: 12
+  __je_nstime_divide: 8
   __je_extent_avail_new: 8
   thr_exit: 8
   __je_base_alloc: 8
   __je_nstime_imultiply: 8
-  __je_nstime_divide: 8
   __je_extent_dss_prec_get: 8
   __je_prof_tdata_cleanup: 4
   __je_witnesses_cleanup: 4
@@ -176,16 +176,16 @@
   __thr_rwlock_unlock: 48, of which...
     - 4 branched to a '.plt' section (8.33%)
   _thr_cancel_enter: 32
-  __thr_rwlock_rdlock: 32, of which...
-    - 2 branched to a '.plt' section (6.25%)
   _sleepq_alloc: 32, of which...
     - 4 branched to a '.plt' section (12.50%)
+  __thr_rwlock_rdlock: 32, of which...
+    - 2 branched to a '.plt' section (6.25%)
   _thr_cancel_leave: 28
+  _thr_testcancel: 24
   _thr_signal_block_setup: 24, of which...
     - 4 branched to a '.plt' section (16.67%)
   _umtx_op_err: 24, of which...
     - 3 branched to a '.plt' section (12.50%)
-  _thr_testcancel: 24
   _Tthr_exit: 16
   _thr_join: 12
   _thr_setthreaded: 4
@@ -221,11 +221,14 @@
   sigsetjmp: 63
   _rtld_error: 45
   _rtld_get_stack_prot: 36
-  xcalloc: 24
   rtld_vsnprintf: 24
+  xcalloc: 24
   dlsym: 6
 unknown file: 20863
   unknown symbol (in unknown section): 20863
 Total: 110109487, of which...
   - 1 were ALIGND (0.00%)
   - 262391 branched to a '.plt' section (0.24%)
+  - 197 were BR <cap> (0.00%)
+  - 13 were BLR <cap> (0.00%)
+  - 258 were RET <cap> (0.00%)

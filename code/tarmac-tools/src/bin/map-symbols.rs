@@ -716,6 +716,9 @@ struct InsnCount {
     all: u64,
     alignd: u64,
     alignu: u64,
+    br_cap: u64,
+    blr_cap: u64,
+    ret_cap: u64,
     branch_to_plt: u64,
 }
 
@@ -731,6 +734,21 @@ impl InsnCount {
             self.alignd += 1;
         } else if asm.starts_with("ALIGNU") {
             self.alignu += 1;
+        } else {
+            let mut tokens = asm.split_whitespace();
+            let insn = tokens.next();
+            let arg = tokens.next();
+            match arg {
+                Some(reg) if reg.starts_with("c") => {
+                    match insn {
+                        Some("BR") => self.br_cap += 1,
+                        Some("BLR") => self.blr_cap += 1,
+                        Some("RET") => self.ret_cap += 1,
+                        _ => {},
+                    };
+                }
+                _ => {}
+            }
         }
     }
 
@@ -756,6 +774,9 @@ impl std::ops::AddAssign<&Self> for InsnCount {
             all: self.all + other.all,
             alignd: self.alignd + other.alignd,
             alignu: self.alignu + other.alignu,
+            br_cap: self.br_cap + other.br_cap,
+            blr_cap: self.blr_cap + other.blr_cap,
+            ret_cap: self.ret_cap + other.ret_cap,
             branch_to_plt: self.branch_to_plt + other.branch_to_plt,
         }
     }
@@ -784,6 +805,9 @@ impl<'a> std::fmt::Display for InsnCountFmt<'a> {
         detail(self.count.alignd, "were ALIGND")?;
         detail(self.count.alignu, "were ALIGNU")?;
         detail(self.count.branch_to_plt, "branched to a '.plt' section")?;
+        detail(self.count.br_cap, "were BR <cap>")?;
+        detail(self.count.blr_cap, "were BLR <cap>")?;
+        detail(self.count.ret_cap, "were RET <cap>")?;
         Ok(())
     }
 }

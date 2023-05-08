@@ -1,130 +1,219 @@
 /lib/libc.so.7: 3727530171
   free: 1294020684, of which...
     - 14592688 were ALIGND (1.13%)
-  malloc: 1029097330
+    - 14429902 were RET <cap> (1.12%)
+  malloc: 1029097330, of which...
+    - 14292375 were RET <cap> (1.39%)
   __je_tcache_bin_flush_small: 452927901, of which...
     - 9945702 were ALIGND (2.20%)
     - 99617 branched to a '.plt' section (0.02%)
-  __je_arena_tcache_fill_small: 179552576
-  memmove: 41627859
-  __je_malloc_default: 30683356
+    - 99617 were RET <cap> (0.02%)
+  __je_arena_tcache_fill_small: 179552576, of which...
+    - 236366 were RET <cap> (0.13%)
+  memmove: 41627859, of which...
+    - 99652 were RET <cap> (0.24%)
+  __je_malloc_default: 30683356, of which...
+    - 300313 were RET <cap> (0.98%)
   __je_arena_dalloc_bin_junked_locked: 19891404
-  __je_free_default: 17492978
-  __je_extent_heap_remove: 5198414
-  __je_tcache_alloc_small_hard: 4753780
-  __je_extent_heap_first: 3990394
-  __je_tcache_event_hard: 3756543
+  __je_free_default: 17492978, of which...
+    - 162786 were RET <cap> (0.93%)
+  __je_extent_heap_remove: 5198414, of which...
+    - 149056 were RET <cap> (2.87%)
+  __je_tcache_alloc_small_hard: 4753780, of which...
+    - 237689 were RET <cap> (5.00%)
+  __je_extent_heap_first: 3990394, of which...
+    - 289748 were RET <cap> (7.26%)
+  __je_tcache_event_hard: 3756543, of which...
+    - 128908 were RET <cap> (3.43%)
   __je_bitmap_init: 1453063, of which...
     - 76477 branched to a '.plt' section (5.26%)
-  __je_extents_alloc: 1376586
-  memset: 1300141
-  __je_extent_heap_insert: 1265159
-  __je_extent_heap_remove_first: 985625
+    - 76477 were RET <cap> (5.26%)
+  __je_extents_alloc: 1376586, of which...
+    - 76477 were RET <cap> (5.56%)
+  memset: 1300141, of which...
+    - 76478 were RET <cap> (5.88%)
+  __je_extent_heap_insert: 1265159, of which...
+    - 87373 were RET <cap> (6.91%)
+  __je_extent_heap_remove_first: 985625, of which...
+    - 92824 were RET <cap> (9.42%)
   __je_extents_dalloc: 611968, of which...
     - 76496 were ALIGND (12.50%)
-  __je_base_extent_hooks_get: 487740
-  __vdso_clock_gettime: 451482
+  __je_base_extent_hooks_get: 487740, of which...
+    - 162580 were RET <cap> (33.33%)
+  __vdso_clock_gettime: 451482, of which...
+    - 9606 were RET <cap> (2.13%)
   __je_arena_decay: 288180
-  clock_gettime: 105666
-  __vdso_gettc: 96060
-  __je_extent_avail_remove: 77888
-  __je_nstime_compare: 67242
-  __je_extent_dalloc: 29557
-  __je_extent_avail_first: 28257
-  __je_extents_evict: 27271
-  __je_extent_alloc: 25080
-  __je_nstime_init: 19282
-  __je_extents_npages_get: 19282
+  clock_gettime: 105666, of which...
+    - 9606 were RET <cap> (9.09%)
+  __vdso_gettc: 96060, of which...
+    - 9606 were RET <cap> (10.00%)
+  __je_extent_avail_remove: 77888, of which...
+    - 760 were RET <cap> (0.98%)
+  __je_nstime_compare: 67242, of which...
+    - 9606 were RET <cap> (14.29%)
+  __je_extent_dalloc: 29557, of which...
+    - 778 were RET <cap> (2.63%)
+  __je_extent_avail_first: 28257, of which...
+    - 760 were RET <cap> (2.69%)
+  __je_extents_evict: 27271, of which...
+    - 1 were RET <cap> (0.00%)
+  __je_extent_alloc: 25080, of which...
+    - 760 were RET <cap> (3.03%)
+  __je_nstime_init: 19282, of which...
+    - 9641 were RET <cap> (50.00%)
+  __je_extents_npages_get: 19282, of which...
+    - 9641 were RET <cap> (50.00%)
   __je_extent_hooks_get: 19214
   basename: 14658
   basename_r: 7854
   cap_sandboxed: 5305
-  getdiskbyname: 945
-  fflagstostr: 665
-  strtofflags: 649
-  __bt_pgin: 628
-  sysconf: 588
-  __je_nstime_add: 525
-  setmode: 480
+  getdiskbyname: 945, of which...
+    - 22 were RET <cap> (2.33%)
+  fflagstostr: 665, of which...
+    - 172 were BR <cap> (25.86%)
+  strtofflags: 649, of which...
+    - 164 were BR <cap> (25.27%)
+  __bt_pgin: 628, of which...
+    - 39 were RET <cap> (6.21%)
+  sysconf: 588, of which...
+    - 147 were BR <cap> (25.00%)
+  __je_nstime_add: 525, of which...
+    - 105 were RET <cap> (20.00%)
+  setmode: 480, of which...
+    - 10 were RET <cap> (2.08%)
   check_utility_compat: 427
   confstr: 364
-  __je_nstime_copy: 315
-  _tztab: 232
+  __je_nstime_copy: 315, of which...
+    - 105 were RET <cap> (33.33%)
+  _tztab: 232, of which...
+    - 58 were BR <cap> (25.00%)
   clock: 226
-  sysctl: 224
-  _seekdir: 211
-  tcflow: 176
-  __je_nstime_subtract: 175
+  sysctl: 224, of which...
+    - 56 were BR <cap> (25.00%)
+  _seekdir: 211, of which...
+    - 49 were BR <cap> (23.22%)
+  tcflow: 176, of which...
+    - 44 were BR <cap> (25.00%)
+  __je_nstime_subtract: 175, of which...
+    - 35 were RET <cap> (20.00%)
   fdclosedir: 169
   basename: 161
-  __je_nstime_divide: 140
-  __je_nstime_imultiply: 140
+  __je_nstime_divide: 140, of which...
+    - 35 were RET <cap> (25.00%)
+  __je_nstime_imultiply: 140, of which...
+    - 35 were RET <cap> (25.00%)
   des_cipher: 133
   des_setkey: 91
-  telldir: 88
+  telldir: 88, of which...
+    - 22 were BR <cap> (25.00%)
   __je_extent_dalloc_wrapper: 74, of which...
     - 1 were ALIGND (1.35%)
-  __je_nstime_ns: 70
-  timezone: 60
+    - 1 were BLR <cap> (1.35%)
+  __je_nstime_ns: 70, of which...
+    - 35 were RET <cap> (50.00%)
+  timezone: 60, of which...
+    - 15 were BR <cap> (25.00%)
   __je_extent_decommit_wrapper: 51, of which...
     - 1 were ALIGND (1.96%)
-  _fixtelldir: 45
-  sl_free: 40
+    - 1 were BLR <cap> (1.96%)
+    - 1 were RET <cap> (1.96%)
+  _fixtelldir: 45, of which...
+    - 15 were BR <cap> (33.33%)
+  sl_free: 40, of which...
+    - 10 were BR <cap> (25.00%)
   closedir: 35
-  setkey: 35
+  setkey: 35, of which...
+    - 7 were RET <cap> (20.00%)
   sl_find: 30
-  syslog: 28
   __cpuset_alloc: 28
+  syslog: 28, of which...
+    - 7 were BR <cap> (25.00%)
   tcgetwinsize: 21
-  tls_malloc_aligned: 14
   tls_free: 14
+  tls_malloc_aligned: 14, of which...
+    - 7 were BR <cap> (50.00%)
   __je_pages_purge_lazy: 8, of which...
     - 1 branched to a '.plt' section (12.50%)
+    - 1 were RET <cap> (12.50%)
   __cpuset_free: 7
-  tcsetwinsize: 7
-  madvise: 4
+  tcsetwinsize: 7, of which...
+    - 7 were BR <cap> (100.00%)
+  madvise: 4, of which...
+    - 1 were RET <cap> (25.00%)
   clock_getcpuclockid: 3
   __je_pages_decommit: 2
-  __je_extents_state_get: 2
+  __je_extents_state_get: 2, of which...
+    - 1 were RET <cap> (50.00%)
   unknown symbol (in .text): 634990177, of which...
     - 162990 were ALIGND (0.03%)
     - 9642 branched to a '.plt' section (0.00%)
-  unknown symbol (in .plt): 742953
+    - 137 were BR <cap> (0.00%)
+    - 19972 were BLR <cap> (0.00%)
+    - 11142746 were RET <cap> (1.75%)
+  unknown symbol (in .plt): 742953, of which...
+    - 185738 were BR <cap> (25.00%)
   unknown symbol (in unknown section): 32932
 /root/capablevms/cheri-bench/purecap/binary_tree.elf: 609834624
   BottomUpTree: 204035504, of which...
     - 14592688 branched to a '.plt' section (7.15%)
+    - 14592688 were RET <cap> (7.15%)
   DeleteTree: 167684848, of which...
     - 14592688 branched to a '.plt' section (8.70%)
-  ItemCheck: 120586272
+  ItemCheck: 120586272, of which...
+    - 7340032 were RET <cap> (6.09%)
   main: 786426
   after_test: 70
-  unknown symbol (in .plt): 116741504
+  unknown symbol (in .plt): 116741504, of which...
+    - 29185376 were BR <cap> (25.00%)
 unknown file: 99547
   unknown symbol (in unknown section): 99547
 /libexec/ld-elf.so.1: 1523
-  symlook_obj: 288
-  strcmp: 250
-  symlook_list: 197
-  find_symdef: 159
-  matched_symbol: 146
-  symlook_default: 84
-  _rtld_bind: 70
-  symlook_global: 54
-  def_lock_acquire: 51
-  memset: 42
-  _rtld_bind_start: 32
+  symlook_obj: 288, of which...
+    - 6 were RET <cap> (2.08%)
+  strcmp: 250, of which...
+    - 4 were RET <cap> (1.60%)
+  symlook_list: 197, of which...
+    - 1 were RET <cap> (0.51%)
+  find_symdef: 159, of which...
+    - 1 were RET <cap> (0.63%)
+  matched_symbol: 146, of which...
+    - 2 were RET <cap> (1.37%)
+  symlook_default: 84, of which...
+    - 1 were RET <cap> (1.19%)
+  _rtld_bind: 70, of which...
+    - 1 were RET <cap> (1.43%)
+  symlook_global: 54, of which...
+    - 1 were RET <cap> (1.85%)
+  def_lock_acquire: 51, of which...
+    - 1 were RET <cap> (1.96%)
+  memset: 42, of which...
+    - 1 were RET <cap> (2.38%)
+  _rtld_bind_start: 32, of which...
+    - 1 were BR <cap> (3.12%)
   def_lock_release: 27
-  rlock_acquire: 24
-  bzero: 21
-  lock_release: 19
-  reloc_jmpslot: 17
-  _setjmp: 15
-  _sigprocmask: 8
-  def_thread_clr_flag: 7
-  def_thread_set_flag: 7
+  rlock_acquire: 24, of which...
+    - 2 were BLR <cap> (8.33%)
+    - 1 were RET <cap> (4.17%)
+  bzero: 21, of which...
+    - 1 were RET <cap> (4.76%)
+  lock_release: 19, of which...
+    - 1 were BR <cap> (5.26%)
+    - 1 were BLR <cap> (5.26%)
+  reloc_jmpslot: 17, of which...
+    - 1 were RET <cap> (5.88%)
+  _setjmp: 15, of which...
+    - 1 were RET <cap> (6.67%)
+  _sigprocmask: 8, of which...
+    - 2 were RET <cap> (25.00%)
+  def_thread_clr_flag: 7, of which...
+    - 1 were RET <cap> (14.29%)
+  def_thread_set_flag: 7, of which...
+    - 1 were RET <cap> (14.29%)
   sigsetjmp: 3
   def_rlock_acquire: 2
 Total: 4337474812, of which...
   - 24777888 were ALIGND (0.57%)
   - 29371113 branched to a '.plt' section (0.68%)
+  - 29372506 were BR <cap> (0.68%)
+  - 20027 were BLR <cap> (0.00%)
+  - 64136739 were RET <cap> (1.48%)

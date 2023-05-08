@@ -36,17 +36,17 @@
   __je_nstime_add: 405
   __je_nstime_copy: 243
   __je_nstime_subtract: 135
-  __je_nstime_divide: 108
   __je_nstime_imultiply: 108
+  __je_nstime_divide: 108
   __je_extent_dalloc_wrapper: 80
   __je_nstime_ns: 54
   __je_extent_decommit_wrapper: 50
   __je_pages_purge_lazy: 8, of which...
     - 1 branched to a '.plt' section (12.50%)
   madvise: 4
-  __je_pages_purge_forced: 2
-  __je_extents_state_get: 2
   __je_pages_decommit: 2
+  __je_extents_state_get: 2
+  __je_pages_purge_forced: 2
   unknown symbol (in .text): 581704353, of which...
     - 9634 branched to a '.plt' section (0.00%)
   unknown symbol (in .plt): 584465
@@ -77,10 +77,13 @@
   reloc_jmpslot: 16
   _setjmp: 15
   memset: 13
-  def_thread_set_flag: 6
   def_thread_clr_flag: 6
+  def_thread_set_flag: 6
   sigsetjmp: 3
   def_rlock_acquire: 2
 Total: 3177749599, of which...
   - 14 were ALIGND (0.00%)
   - 29331491 branched to a '.plt' section (0.92%)
+  - 1388 were BR <cap> (0.00%)
+  - 49 were BLR <cap> (0.00%)
+  - 1501 were RET <cap> (0.00%)
