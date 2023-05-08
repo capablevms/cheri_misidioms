@@ -373,20 +373,20 @@ for them for the rest of this paper, are as follows:
 
 \vspace{6pt}\noindent
 \memalloc{libmalloc-simple}\footnoteurl{https://github.com/CTSRD-CHERI/cheribsd/commit/e85ccde6d78d40f130ebf126a001589d75d60473}{23rd
-    February 2023} is a port of the allocator present in FreeBSD's
+    February 2023}, a port of the allocator present in FreeBSD's
     \texttt{rtld-elf} utility\footnoteurl{https://github.com/freebsd/freebsd-src/blob/releng/4.3/libexec/rtld-elf/malloc.c}{
     23rd of February 2023}, based on Kingsley's malloc from 4.2BSD.
 
 \vspace{6pt}\noindent
-\memalloc{snmalloc-cheribuild} is an old version of
+\memalloc{snmalloc-cheribuild}, a version of
     \emph{snmalloc}~\cite{lietar19snmalloc} that can be installed via
     \texttt{cheribuild}. We found this version to have several problems
-    which we rectified by manually building a version from \emph{snmalloc}'s
-    GitHub repository, which includes the \texttt{cheribuild} version, but has
-    more recent updates. We term this more recent version \texttt{snmalloc-repo}.
+    which we rectified by manually building a newer version from \emph{snmalloc}'s
+    GitHub repository. We term this more recent version \texttt{snmalloc-repo}.
 
 \vspace{6pt}\noindent
-\memalloc{dlmalloc-cheribuild}, a modified version of the well-known~\cite{lea96memory}
+\memalloc{dlmalloc-cheribuild}, a modified version of the well-known
+    allocator~\cite{lea96memory},
     installable via \texttt{cheribuild}. \memalloc{dlmalloc-pkg64c} is an
     unmodified version  of the allocator, available as a package in CheriBSD. Both
     versions are based on dlmalloc 2.8.6.
