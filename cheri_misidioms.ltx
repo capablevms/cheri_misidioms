@@ -91,8 +91,16 @@ We do not claim that our
 work is definitive, though it does suggest two things: that some allocators
 undermine the security properties one might reasonably expect from software running on
 pure capability CHERI; and that it is currently difficult to reason about the
-performance impact of CHERI on software.
+performance impact of CHERI on software. Our experiments
+are repeatable and can be downloaded at:
 
+\vspace{-1pt}
+\begin{center}
+\url{https://archive.org/download/XYZ}
+\end{center}
+\vspace{-1pt}
+
+\noindent
 This paper is structured as follows. First, we introduce the necessary
 background: a brief overview of capabilities and CHERI (\autoref{sec:cheri});
 and our running example, a trivial bump allocator (\autoref{sec:bumppointerallocator}).
@@ -388,7 +396,7 @@ for them for the rest of this paper, are as follows:
 \memalloc{dlmalloc-cheribuild}, a modified version of the well-known
     allocator~\cite{lea96memory},
     installable via \texttt{cheribuild}. \memalloc{dlmalloc-pkg64c} is an
-    unmodified version  of the allocator, available as a package in CheriBSD. Both
+    unmodified version of the allocator, available as a package in CheriBSD. Both
     versions are based on dlmalloc 2.8.6.
 
 \vspace{6pt}\noindent
@@ -489,7 +497,7 @@ if all the \lstinline{assert}s pass, the attack is successful. The code we show
 in the paper is elided relative to the version we run, which contains changes
 that makes it possible for us to automate the running of the attacks over
 multiple allocators. The
-full code (available on GitHub) must be considered the definitive source of
+full code (available as part of our experiment) must be considered the definitive source of
 truth for \autoref{sec:cheriallocators}.
 
 Our descriptions use the following CHERI functions:
