@@ -4,7 +4,8 @@ void *malloc(size_t size) {
 
   char *new_ptr = __builtin_align_up(
     heap,
-    -cheri_representable_alignment_mask(size));
+    -cheri_representable_alignment_mask(
+      size));
   size_t bounds =
     cheri_representable_length(size);
   size_t size_on_heap =
