@@ -212,6 +212,7 @@ taking advantage of, purecap CHERI.
 \begin{figure}[t]
 \lstinputlisting[
   language=C,
+  xleftmargin=1.3em,
   caption={
     A simple, but complete, non-CHERI aware, bump pointer allocator:
     \fnc{malloc} works as per normal; \fnc{free} is a no-op; and
@@ -251,6 +252,7 @@ write from all past and future blocks returned by \fnc{malloc}!
 
 \begin{figure}[t]
 \lstinputlisting[language=C,
+  xleftmargin=1.3em,
   caption={
     Replacing the non-CHERI aware \fnc{malloc} from ~\autoref{lst:bump_alloc1}
     with a CHERI-aware alternative
