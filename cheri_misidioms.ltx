@@ -257,7 +257,7 @@ write from all past and future blocks returned by \fnc{malloc}!
     using the idioms suggested in~{\cite[p.~30]{watson20chericprogramming}}.
     This \fnc{malloc} returns a capability whose bounds are sufficient
     to cover \texttt{size} bytes starting at the capability's address
-    (calculated in lines 5--9),
+    (calculated in lines 5--10),
     such that two callers to \fnc{malloc} cannot read or write from
     another block. We also have to update \fnc{realloc} so that it never tries to copy
     more data from the old block than the \texttt{ptr} capability gives
