@@ -33,4 +33,4 @@ grep -v '\<2.-global' results.csv |
     sed -e 's/\<[0-9][0-9]-//g' |
     # l1 -> L1, to match the text.
     sed -e 's/-l1\>/-L1/' |
-    "$BMPLOTTER" --width=0.5 --height=0.7 --no-legend-title --colours=759DA0,E1A765,8A67BA,E06A4A --out="$out" --overplot=jitter
+    "$BMPLOTTER" --width=0.5 --height=0.7 --no-legend-title --legend-position=top --colours=759DA0,E1A765,8A67BA,E06A4A --out="$out" --overplot=jitter
