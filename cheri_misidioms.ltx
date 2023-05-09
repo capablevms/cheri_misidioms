@@ -1150,7 +1150,8 @@ Since the \emph{so-call} and \emph{ptr-add-align} microbenchmarks show
 significant differences between purecap and hybrid, we analysed how often the
 same idioms occurred in our larger benchmarks. In the three benchmarks shown in
 \autoref{fig:fvpstats}, these two factors account for 0.00\%-1.25\% of executed
-instructions --- they are thus likely to play a correspondingly small part in
+instructions (\autoref{tab:fvp_insn_report}) --- they are thus likely to play a
+correspondingly small part in
 the performance difference seen in \autoref{fig:eval jemalloc}.
 
 
@@ -1306,7 +1307,38 @@ Digital Security by Design (DSbD) Programme delivered by UKRI
 (including grants EP/V000349/1 and EP/V000373/1).
 
 
+\begin{table*}[htp]
+  \begin{center}
+    \begin{tabular}{lrrrrr}
+      \toprule
+      Name & \multicolumn{5}{c}{\% of instructions}\\
+      \cmidrule(lr){2-6}
+        &  ALIGND & BLR <cap> & BR <cap> & RET <cap> & branch to .plt\\
+        \midrule
+        hybrid-mstress-4-50-1 & 0.00 & 0.00 & 0.00 & 0.00 & 0.24\\
+        purecap-mstress-4-50-1 & 0.13 & 0.00 & 0.18 & 0.52 & 0.18\\
+        hybrid-richards-1 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00\\
+        purecap-richards-1 & 0.00 & 1.36 & 0.00 & 1.36 & 0.00\\
+        hybrid-binary-tree & 0.00 & 0.00 & 0.00 & 0.00 & 0.92\\
+        purecap-binary-tree & 0.57 & 0.00 & 0.68 & 1.48 & 0.68\\
+        \bottomrule
+    \end{tabular}
+  \end{center}
+  \caption{Instruction statistics for the workloads presented in
+  \autoref{fig:fvpstats}.
+  "branch to .plt" and "ALIGND" most closely match \emph{so-call} and
+  \emph{ptr-add-align}, respectively.
+  The purecap PLT sequence ends with \lstinline{BR c17}, which explains why
+  "branch to .plt" closely matches "BR <cap>".
+  \lstinline{RET c30} is the standard purecap function return, and we expect
+  that the "BLR <cap>" results for purecap-richards-1 indicate calls
+  via function pointers.
+  As expected, hybrid targets almost never use branch-to-capability.}
+\label{tab:fvp_insn_report}
+\end{table*}
+
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{bib}
+
 
 \end{document}
