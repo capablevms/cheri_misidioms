@@ -1,8 +1,6 @@
 {
     "cheribsd_cc": "$WORK/cheribuild/output/morello-sdk/bin/clang",
-    "cheribsd_cflags": "--config cheribsd-morello-purecap",
     "cheribsd_cxx": "$WORK/cheribuild/output/morello-sdk/bin/clang++",
-    "cheribsd_cxxflags": "--config cheribsd-morello-purecap",
     "cheribsd_ld": "$HOME/cheribuild/output/morello-sdk/bin/clang",
     "cheribuild_folder": "$HOME/cheribuild",
     "cheribsd_ports_url": "https://github.com/CTSRD-CHERI/cheribsd-ports",
@@ -10,21 +8,29 @@
     "cheri_qemu_port": 10086,
     "cheri_qemu_test_folder": "$RHOME/tests",
     "data_get_script_path": "$CWD/get_data.py",
-    "tests_folder": "$CWD/../code",
+    "attacks_folder": "$CWD/../code",
+    "benchmarks_folder": "$CWD/../code/benchmarks",
     "allocators_folder": "$CWD/allocators",
-    "table_tests_to_ignore":
+    "table_attacks_to_ignore":
     [
         "unrepresentable_length",
         "narrow",
         "narrow_realloc",
         "validate"
     ],
-    "tests_to_ignore":
+    "attacks_to_ignore":
     [
         "bump_alloc1",
         "bump_alloc2",
         "bump_alloc_lib",
         "test_bump_alloc1",
         "test_bump_alloc2"
-    ]
+    ],
+    "benchmarks_params":
+    {
+        "espresso": "largest.espresso",
+        "barnes": "< input",
+        "cfrac": "17545186520507317056371138836327483792789528",
+        "mstress": "4 50 25"
+    }
 }

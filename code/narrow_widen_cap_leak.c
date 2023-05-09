@@ -34,8 +34,8 @@ int main() {
     assert(cheri_is_equal_exact(arr[0], secret));
     printf("No other capabilities should be exposed by the realloc:\n");
     for (int i = 1; i < 256; i++) {
-        printf("  arr[%u] = %#lp\n", i, arr[i]);
         if (cheri_tag_get(arr[i])) {
+            printf("  arr[%u] = %#lp\n", i, arr[i]);
             printf("Attack successful\n");
             return 0;
         }

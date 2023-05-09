@@ -2,9 +2,19 @@
     "install":
     {
         "mode": "pkg64c",
-        "target": "dlmalloc",
         "version": "2.8.6",
-        "lib_file": "/usr/local/lib/libdlmalloc.so.2"
+        "target": {
+            "purecap":
+            {
+                "name": "dlmalloc",
+                "lib_file": "/usr/local/lib/libdlmalloc.so.2"
+            },
+            "hybrid":
+            {
+                "name": "dlmalloc",
+                "lib_file": "/usr/local64/lib/libdlmalloc.so.2"
+            }
+        }
     },
     "repo": "https://github.com/CTSRD-CHERI/cheribsd-ports/tree/main/devel/dlmalloc",
     "cheribsd_ports_path": "devel/libdlmalloc",

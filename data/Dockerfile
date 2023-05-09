@@ -37,14 +37,14 @@ WORKDIR /home/memalloc
 ENV PATH="${PATH}:/home/memalloc/.local/bin"
 
 RUN wget https://bootstrap.pypa.io/get-pip.py && \
-    python3.10 get-pip.py && \
-    pip3.10 install fabric GitPython
+    python3.10 get-pip.py
 
 RUN ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519 < /dev/null
 
 RUN git clone --depth 1 https://github.com/CTSRD-CHERI/cheribuild
 
 RUN git clone --depth 1 https://github.com/capablevms/cheri_misidioms && \
-    find /home/memalloc/cheri_misidioms -name build.sh -exec chmod u+x {} \;
+    find /home/memalloc/cheri_misidioms -name build.sh -exec chmod u+x {} \; &&
+    pip3.10 install -r /home/memalloc/cheri_misidioms/data/requirements.txt
 
 WORKDIR /home/memalloc/cheri_misidioms/data

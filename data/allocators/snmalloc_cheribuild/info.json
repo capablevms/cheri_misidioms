@@ -2,10 +2,20 @@
     "install":
     {
         "mode": "cheribuild",
-        "target": "snmalloc-morello-purecap",
-        "source": "$WORK/cheribuild/snmalloc/",
+        "source": "./snmalloc/",
         "commit": "888d182baccb3288e41172fec3e0501158418613",
-        "lib_file": "$WORK/cheribuild/build/snmalloc-morello-purecap-build/libsnmallocshim.so"
+        "target": {
+            "purecap":
+            {
+                "name": "snmalloc-morello-purecap",
+                "lib_file": "./build/snmalloc-morello-purecap-build/libsnmallocshim.so"
+            },
+            "hybrid":
+            {
+                "name": "snmalloc-aarch64",
+                "lib_file": "./build/snmalloc-aarch64-build/libsnmallocshim.so"
+            }
+        }
     },
     "file": "pycheribuild/projects/cross/snmalloc.py",
     "repo": "https://github.com/nwf/snmalloc",

@@ -2,11 +2,21 @@
     "install":
     {
         "mode": "cheribuild",
-        "target": "cheribsd-morello-purecap",
         "source_old": "$WORK/cheribuild/cheribsd/lib/libmalloc_simple",
-        "source": "$WORK/cheribuild/cheribsd/lib/libmalloc_simple",
+        "source": "./cheribsd/lib/libmalloc_simple",
         "commit": "621751074f8feaafb270c4699a7f1380bca41f23",
-        "lib_file": "$WORK/cheribuild/output/rootfs-morello-purecap/usr/lib/libmalloc_simple.so.1"
+        "target": {
+            "purecap":
+            {
+                "name": "cheribsd-morello-purecap",
+                "lib_file": "./output/rootfs-morello-purecap/usr/lib/libmalloc_simple.so.1"
+            },
+            "hybrid":
+            {
+                "name": "cheribsd-morello-hybrid",
+                "lib_file": "./output/rootfs-morello-hybrid/usr/lib64c/libmalloc_simple.so.1"
+            }
+        }
     },
     "repo": "https://github.com/CTSRD-CHERI/cheribsd",
     "path": "https://github.com/CTSRD-CHERI/cheribsd/tree/main/lib/libmalloc_simple",

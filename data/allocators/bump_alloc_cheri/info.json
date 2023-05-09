@@ -2,13 +2,10 @@
     "install":
     {
         "mode": "repo",
-        "repo": "https://github.com/capablevms/cheri_misidioms",
-        "commit": "21cb5f38daf630b2185f90f86d099f11ffed9b81",
+        "target": "https://github.com/capablevms/cheri_misidioms",
+        "commit": "8901fd884d0faa1950b433e3bc30f32b86070fb8",
         "lib_file": "./code/libbumpalloc_cheri.so",
         "build_file": "build.sh"
     },
     "date": "2023-03-01"
 }
-
-
-

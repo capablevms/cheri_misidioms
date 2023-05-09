@@ -2,7 +2,7 @@
     "install":
     {
         "mode": "repo",
-        "repo": "https://github.com/cheri-linux/musl",
+        "target": "https://github.com/cheri-linux/musl",
         "commit": "7696cd655e20e765c32ad6292a3b4b885ed92d90",
         "lib_file": false,
         "build_file": false

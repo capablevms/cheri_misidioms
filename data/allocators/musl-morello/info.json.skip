@@ -2,7 +2,7 @@
     "install":
     {
         "mode": "repo",
-        "repo": "https://git.morello-project.org/morello/musl-libc",
+        "target": "https://git.morello-project.org/morello/musl-libc",
         "commit": "60029bbd149ab40059284bacbcb8931abab84f2c",
         "lib_file": false,
         "build_file": false

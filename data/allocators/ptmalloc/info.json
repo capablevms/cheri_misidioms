@@ -2,9 +2,19 @@
     "install":
     {
         "mode": "pkg64c",
-        "target": "ptmalloc",
         "version": "3.0_2",
-        "lib_file": "/usr/local/lib/libptmalloc.so.3"
+        "target": {
+            "purecap":
+            {
+                "name": "ptmalloc",
+                "lib_file": "/usr/local/lib/libptmalloc.so.3"
+            },
+            "hybrid":
+            {
+                "name": "ptmalloc",
+                "lib_file": "/usr/local64/lib/libptmalloc.so.3"
+            }
+        }
     },
     "repo": "https://github.com/CTSRD-CHERI/cheribsd-ports/tree/main/devel/ptmalloc",
     "cheribsd_ports_path": "devel/ptmalloc",

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-CHERI_PATH=${1:-$HOME/cheri}
 rm -rf build && mkdir build && cd build
-cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=$CHERI_PATH/output/morello-sdk/bin/clang -DCMAKE_C_FLAGS="--config cheribsd-morello-purecap.cfg -O3" -DCMAKE_CXX_COMPILER=$CHERI_PATH/output/morello-sdk/bin/clang++ -DCMAKE_CXX_FLAGS="--config cheribsd-morello-purecap.cfg -O3" -DCMAKE_BUILD_TYPE=Release ..
+cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=$CC -DCMAKE_C_FLAGS="$CFLAGS -O3" -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_CXX_FLAGS="$CXXFLAGS -O3" -DCMAKE_BUILD_TYPE=Release ..
 make -j5

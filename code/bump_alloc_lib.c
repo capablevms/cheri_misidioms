@@ -35,16 +35,24 @@ void *malloc(size_t size) {
       heap_start + HEAP_SIZE)
     return NULL;
   heap = new_ptr + size_on_heap;
+#ifdef __CHERI_PURE_CAPABILITY__
   return cheri_bounds_set_exact(
     new_ptr, alloc_size);
+#else
+  return new_ptr;
+#endif
 }
 
 void *realloc(void *ptr, size_t size) {
   void *new_ptr = malloc(size);
   if (new_ptr == NULL) return NULL;
   memcpy(new_ptr, ptr,
+#ifdef __CHERI_PURE_CAPABILITY__
     cheri_length_get(ptr) < size
     ? cheri_length_get(ptr) : size);
+#else
+    size);
+#endif
   return new_ptr;
 }
 #else
