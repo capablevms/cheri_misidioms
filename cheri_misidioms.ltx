@@ -1271,12 +1271,13 @@ Digital Security by Design (DSbD) Programme delivered by UKRI
 
 \begin{table*}[htp]
   \begin{center}
-    \begin{tabular}{lrrrrr}
+    \begin{tabular}{lccccc}
       \toprule
       Name & \multicolumn{5}{c}{\% of instructions}\\
       \cmidrule(lr){2-6}
         & \texttt{.plt} entries & \texttt{ALIGND} & \texttt{BLR <cap>} & \texttt{BR <cap>} & \texttt{RET <cap>}\\
       \midrule
+      \emph{Hybrid}
       hybrid-binary-tree & 0.92 & 0.00 & 0.00 & 0.00 & 0.00\\
       purecap-binary-tree & 0.68 & 0.57 & 0.00 & 0.68 & 1.48\\[6pt]
       hybrid-mstress-4-50-1 & 0.24 & 0.00 & 0.00 & 0.00 & 0.00\\
@@ -1286,18 +1287,19 @@ Digital Security by Design (DSbD) Programme delivered by UKRI
       \bottomrule
     \end{tabular}
   \end{center}
-  \caption{Instruction statistics for the workloads presented in
-  \autoref{fig:fvpstats}.
-  "\lstinline{.plt} entries" counts the number of times a \lstinline{.plt}
-  section was entered (by any means).
-  This closely matches the "\lstinline{BR <cap>}" results because each purecap
-  PLT entry ends with \lstinline{BR c17}.
-  "\lstinline{.plt} entries" and "\lstinline{ALIGND}" roughly correspond to
-  the \emph{so-call} and \emph{ptr-add-align} micro\-benchmarks, respectively.
-  \lstinline{RET c30} is a purecap function return
-  We expect that the "BLR <cap>" results for purecap-richards-1 indicate calls
-  via function pointers.
-  As expected, hybrid targets almost never use branch-to-capability.}
+  \caption{Detailed instruction statistics (as a percentage of all instructions executed) for the benchmarks presented in
+  \autoref{fig:fvpstats}. As expected, none of the benchmarks used branch-to-capability
+  in hybrid. In purecap, `\lstinline{.plt} entries', which counts the number of times a \lstinline{.plt}
+  section was entered (by any means), is virtually the same as `\lstinline{BR <cap>}'
+  because each purecap PLT entry ends with \lstinline{BR c17}.
+  `\lstinline{.plt} entries' and `\lstinline{ALIGND}' correspond to
+  the \emph{so-call} and \emph{ptr-add-align} micro\-benchmarks, respectively,
+  \laurie{``showing that any performance degradation from these micro-benchmarks
+  cannot explain the overall slowdowns we see''?}.
+  \lstinline{RET c30} is a purecap function return \laurie{not sure I understand
+  what this is saying}.
+  We believe that the "BLR <cap>" results for purecap-richards-1 are calls
+  via function pointers \laurie{and ...?}.}
 \label{tab:fvp_insn_report}
 \end{table*}
 
