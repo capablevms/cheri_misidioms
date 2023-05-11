@@ -8,6 +8,7 @@ use warnings;
 use Getopt::Long;
 use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
+use File::Basename;
 use feature qw/say/;
 
 my $fmt = 'plain';
@@ -46,7 +47,7 @@ exit(1) unless GetOptions("help" => sub { ExitWithUsage(0) },
 my @results;
 my %of_which_cols;
 for my $file (@ARGV) {
-  $file =~ /^\d\d\d\d-\d\d-\d\d(?:T\d\d:\d\d\+\d\d:\d\d)?-(hybrid|purecap)-(.+)\.analysis$/ or die("Bad analysis file name: $file");
+  fileparse($file) =~ /^\d\d\d\d-\d\d-\d\d(?:T\d\d:\d\d\+\d\d:\d\d)?-(hybrid|purecap)-(.+)\.analysis$/ or die("Bad analysis file name: $file");
   my ($abi, $benchmark) = ($1, $2);
   open(my $fh, $file) or die("Could not open $file: $!");
   my $total = undef;
@@ -71,8 +72,8 @@ for my $file (@ARGV) {
       if (defined($total)) {
         my ($event, $abs, $perc) = ($2, $1, $3);
         if ($fmt =~ /latex/) {
-          $event = 'branch to .plt' if ($event eq "branched to a '.plt' section");
-          $event = $1 if ($event =~ /^were (.*)$/);
+          $event = '\\texttt{.plt} entries' if ($event eq "branched to a '.plt' section");
+          $event = "\\texttt{$1}" if ($event =~ /^were (.*)$/);
         }
         $of_which{$event} = { abs => $abs, perc => $perc };
         next; # Don't reset $total.
@@ -87,13 +88,29 @@ for my $file (@ARGV) {
   $of_which_cols{$_}++ for (keys %of_which);
 
   push(@results, {
+      abi => $abi,
+      benchmark => $benchmark,
       name => "$abi-$benchmark",
       total => $total,
       of_which => \%of_which,
   });
 }
 
-@results = sort { $a->{total} <=> $b->{total} } @results;
+sub benchmark_sort_key {
+  my ($bm) = @_;
+  return "0-$bm" if ($bm =~ /^binary-tree/);
+  return "1-$bm" if ($bm =~ /^mstress/);
+  return "2-$bm" if ($bm =~ /^richards/);
+  return "9-$bm";
+}
+
+# Sort in the order in the paper.
+@results = sort {
+  (benchmark_sort_key($a->{benchmark}) cmp benchmark_sort_key($b->{benchmark}))
+  || ($a->{abi} cmp $b->{abi})
+  || ($a->{total} <=> $b->{total})
+} @results;
+
 if ($fmt eq 'plain') {
   for my $result (@results) {
     my @cols = sort keys %{$result->{of_which}};
@@ -173,26 +190,32 @@ if ($fmt eq 'plain') {
   my $n_of_which = keys %of_which_cols;
   my $first_of_which = 2;
   my $last_of_which = $first_of_which + $n_of_which - 1;
-  say('\\begin{table}[tb]');
-  say('\\begin{center}');
-  say('\\begin{tabular}{l' . ('r' x $n_of_which) . '}');
-  say('\\toprule');
-  say("Name & \\multicolumn{$n_of_which}{c}{\\% of instructions}\\\\");
-  say("\\cmidrule(lr){$first_of_which-$last_of_which}");
-  say('  &  ' . join(' & ', sort keys %of_which_cols) . '\\\\');
-  say('\\midrule');
+  say('\\begin{table*}[htp]');
+  say('  \\begin{center}');
+  say('    \\begin{tabular}{l' . ('r' x $n_of_which) . '}');
+  say('      \\toprule');
+  say("      Name & \\multicolumn{$n_of_which}{c}{\\% of instructions}\\\\");
+  say("      \\cmidrule(lr){$first_of_which-$last_of_which}");
+  say('        & ' . join(' & ', sort keys %of_which_cols) . '\\\\');
+  print('      \\midrule');
+  my $last_stem = undef;
   for my $result (@results) {
     my $row = "$result->{name}";
+    my $stem = $row =~ s/^(hybrid|purecap)-//r;
+    print("[6pt]") if (defined($last_stem) and ($stem ne $last_stem));
+    $last_stem = $stem;
+    print("\n");
     for my $col (sort keys %of_which_cols) {
       my $v = $result->{of_which}->{$col}->{perc} // '0.00';
       $row = "$row & $v";
     }
-    say("$row\\\\");
+    print("      $row\\\\");
   }
-  say('\\bottomrule');
-  say('\\end{tabular}');
-  say('\\end{center}');
-  say('\\end{table}');
+  print("\n");
+  say('      \\bottomrule');
+  say('    \\end{tabular}');
+  say('  \\end{center}');
+  say('\\end{table*}');
 } else {
   die("Bad value for '--fmt': $fmt\n");
 }
