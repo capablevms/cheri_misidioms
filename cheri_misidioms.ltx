@@ -1279,10 +1279,10 @@ Digital Security by Design (DSbD) Programme delivered by UKRI
       \midrule
       hybrid-binary-tree & 0.92 & 0.00 & 0.00 & 0.00 & 0.00\\
       purecap-binary-tree & 0.68 & 0.57 & 0.00 & 0.68 & 1.48\\[6pt]
-      hybrid-mstress-4-50-1 & 0.24 & 0.00 & 0.00 & 0.00 & 0.00\\
-      purecap-mstress-4-50-1 & 0.18 & 0.13 & 0.00 & 0.18 & 0.52\\[6pt]
-      hybrid-richards-1 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00\\
-      purecap-richards-1 & 0.00 & 0.00 & 1.36 & 0.00 & 1.36\\
+      hybrid-mstress & 0.24 & 0.00 & 0.00 & 0.00 & 0.00\\
+      purecap-mstress & 0.18 & 0.13 & 0.00 & 0.18 & 0.52\\[6pt]
+      hybrid-richards & 0.00 & 0.00 & 0.00 & 0.00 & 0.00\\
+      purecap-richards & 0.00 & 0.00 & 1.36 & 0.00 & 1.36\\
       \bottomrule
     \end{tabular}
   \end{center}
@@ -1295,7 +1295,7 @@ Digital Security by Design (DSbD) Programme delivered by UKRI
   the \emph{so-call} and \emph{ptr-add-align} micro\-benchmarks, respectively,
   showing that any performance degradation from these micro-benchmarks can
   explain only a small part of the overall slowdowns we see.
-  We believe that the `\lstinline{BLR <cap>}' results for purecap-richards-1 are calls
+  We believe that the `\lstinline{BLR <cap>}' results for purecap-richards are calls
   via function pointers, which probably have performance characteristics similar
   to \lstinline{BR <cap>}, and therefore also the \emph{so-call} micro-benchmark.}
 \label{tab:fvp_insn_report}
