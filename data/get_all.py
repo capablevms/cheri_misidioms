@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
 import enum
 import glob
 import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
-import shutil
 import tempfile
 import time
 
@@ -164,6 +165,9 @@ def read_apis(apis_path):
                     fns = [x.removesuffix("(") for x in fns]
                 api_fns[api].update(fns)
     return api_fns
+
+def get_timestamp():
+    return datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
 
 def log_message(msg):
     print(msg)
@@ -350,6 +354,7 @@ class Allocator:
             elif self.install_mode == InstallMode.PKG:
                 for machine in execution_targets.values():
                     machine.install_alloc(self.install_target[mode]["name"], self.version, mode)
+                    machine.run_cmd(f"cp {self.get_libfile(mode)} {machine.get_work_dir(mode)}")
 
 class ExecEnvironment:
     def __init__(self, addr):
@@ -524,7 +529,7 @@ def do_attacks(alloca, attacks, machine):
     for attack in attacks:
         cmd = os.path.join(machine.work_dir, os.path.basename(attack))
         remote_env = { 'LD_PRELOAD' : alloca.get_remote_lib_path(machine, "purecap") }
-        log_message(f"RUN {cmd} WITH ENV {remote_env}")
+        log_message(f'{get_timestamp()} RUN {cmd} WITH ENV {remote_env}')
         start_time = time.perf_counter_ns()
         attack_res = machine.run_cmd(cmd, env = remote_env, check = False)
         runtime = time.perf_counter_ns() - start_time
@@ -564,7 +569,7 @@ def do_benchs(alloca, benchs, machine):
             for it in range(iteration_count):
                 it_result = {}
                 for executor in executors:
-                    log_message(f"== RUN {bench} ({it + 1} / {iteration_count}) TYPE {executor.type} WITH ENV {remote_env}")
+                    log_message(f"{get_timestamp()} RUN {bench} ({it + 1} / {iteration_count}) TYPE {executor.type} WITH ENV {remote_env}")
                     it_result.update(executor.do_exec(bench_cmd, mode, remote_env, machine))
                 results[mode][bench] = {k : v + [it_result[k]] for k,v in results[mode][bench].items()}
             if 0 in results[mode][bench]["returncode"]:
