@@ -333,7 +333,7 @@ exploring in more detail how the allocators have been adapted (if at all) for
 CHERI.
 
 
-\subsection{The Allocators Under Consideration}
+\subsection{The Allocators under Consideration}
 
 \begin{table}[tb]
 \begin{center}
@@ -701,7 +701,7 @@ classified them as
 invulnerable to this attack.
 
 
-\subsection{\myundef: Authentic capabilities from Undefined Behaviour}
+\subsection{\myundef: Authentic Capabilities from Undefined Behaviour}
 
 It is easy to assume that authentic capabilities can only be derived if one
 follows CHERI-C's rules correctly. However, it is possible for an attacker to use undefined
@@ -884,7 +884,7 @@ Since jemalloc and snmalloc were the highest performing allocators, we
 concentrate on them for the rest of this section.
 
 
-\subsection{Results Within Hybrid and Purecap}
+\subsection{Results within Hybrid and Purecap}
 \label{ssec:withinhybridpurecap}
 
 With the geometric mean, snmalloc is faster than jemalloc by 1.25x
@@ -900,7 +900,7 @@ Because the overall performance differences are clear and because, as we will so
 greater differences to consider elsewhere, we do not dwell further on these results.
 
 
-\subsection{Results Across Hybrid and Purecap}
+\subsection{Results across Hybrid and Purecap}
 
 \autoref{fig:eval jemalloc} shows a comparison of \memalloc{jemalloc} and \memalloc{snmalloc}
 across hybrid and purecap. We expected to see some performance difference between hybrid and purecap:
@@ -947,7 +947,7 @@ little allocation, also slows down by more than 2x.
 \end{figure}
 
 
-\section{Analysing The Disparity Between Hybrid and Purecap Performance}
+\section{Analysing the Disparity between Hybrid and Purecap Performance}
 \label{sec:dissection}
 
 The disparity in performance between hybrid and purecap surprised us,
@@ -982,7 +982,7 @@ However, overall, these factors do not suggest an obvious cause for the slowdown
 we see.
 
 
-\subsection{Class, and Quantity of, Instructions}
+\subsection{Class and Quantity of Instructions}
 
 We wondered whether the higher instruction counts on purecap benchmarks
 could be explained by the extra CHERI instructions that
@@ -1033,7 +1033,7 @@ others. \fnc{malloc} and \fnc{free} are particularly strongly affected, but the
 effect on other functions is fairly uniform.
 
 
-\subsection{Low-level Differences}
+\subsection{Low-Level Differences}
 
 Hybrid and purecap CHERI imply certain differences which we would expect to
 account for some of the performance changes we see. In this
@@ -1080,7 +1080,7 @@ the `beneath the surface' factors that might explain part of the performance
 story.
 
 
-\subsubsection{\fhardware: Hardware pointer operation (micro\-benchmarks)}
+\subsubsection{\fhardware: Hardware Pointer Operation (Micro\-Benchmarks)}
 
 To attempt to understand some of the performance characteristics of Morello, we wrote a
 series of simple microbenchmarks, in a variety of C and assembly, that run
@@ -1199,7 +1199,7 @@ frequently in some functions, though we cannot precisely quantify
 the performance impact.
 
 
-\subsubsection{\fcompiler: Toolchain maturity}
+\subsubsection{\fcompiler: Toolchain Maturity}
 
 We noticed that the same C code compiled for hybrid and purecap by LLVM could
 sometimes result in very different machine code. The differences are
