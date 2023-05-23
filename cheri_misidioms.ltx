@@ -236,9 +236,9 @@ point the allocator returns \texttt{NULL}. Though intentionally simplistic,
 \fnc{realloc} is correct even when the block is increased in size.
 
 
-\subsection{Adapting the Allocator to CHERI}
-\label{sec:adapting_to_cheri}
-
+\noindent
+\textbf{Adapting the Allocator to CHERI}:
+%% \label{sec:adapting_to_cheri}
 Perhaps surprisingly, our simple bump allocator compiles, and \fnc{malloc} runs
 correctly, on a purecap CHERI system. As this suggests, CHERI C is largely source
 compatible with normal C code, though pointer types are transparently `upgraded' to become
@@ -756,7 +756,7 @@ downgrading a security leak into a denial-of-service.
 A capability's bounds span a portion of memory from a low to a high address. If
 an allocator returns two distinct capabilities whose bounds overlap
 (e.g.~because of the bounds imprecision we saw in
-\autoref{sec:adapting_to_cheri} as a result of
+\autoref{sec:bumppointerallocator} as a result of
 \cite{woodruff19chericoncentrate}), an attacker might be able to read or write
 memory they should not have access to. An example attack in this mould is:
 
@@ -790,7 +790,7 @@ vulnerable or invulnerable.
 \escperms fails on \memalloc{bump-alloc-nocheri} because \fnc{realloc}
 causes a \lstinline{SIGPROT} when trying to increase a block in size. By
 design, \memalloc{bump-alloc-cheri} contains a version of \fnc{realloc} which
-fixes this issue (see~\autoref{sec:adapting_to_cheri}).
+fixes this issue (see~\autoref{sec:bumppointerallocator}).
 
 \overlap fails on \memalloc{snmalloc-cheribuild} due to what we believe is
 an internal snmalloc bug. Because of this, we included a newer version
