@@ -617,8 +617,8 @@ original data, but in a capability system this attack is particularly
 egregious if that data contains capabilities, since an attacker can read those
 and gain new abilities.
 
-\subsubsection{Mitigations}
-
+\noindent
+\textbf{Mitigations:}
 Mitigating this attack is relatively simple. When \fnc{realloc} shrinks a
 block, any excess storage should be zeroed. Note that we consider this safer
 than the seemingly similar alternative of zeroing excess storage when
@@ -652,9 +652,8 @@ that this permission really has been removed (lines 5 and 6). We then call
 \fnc{realloc} (without changing the block's size) and check whether we have
 regained the ability to store data via the capability.
 
-
-\subsubsection{Mitigations}
-
+\noindent
+\textbf{Mitigations:}
 There are two ways of mitigating such an attack. The simplest is to AND
 the output capability's permissions with the input capability's permissions:
 doing so guarantees that the output capability has no more permissions
@@ -738,8 +737,9 @@ the non-attackers version of the capability is, technically speaking, no
 longer valid by those rules. This outcome is unlikely to trouble an attacker.
 
 
-\subsubsection{Mitigations}
 
+\noindent
+\textbf{Mitigations:}
 There are no general mitigations for \myundef. For the particular concrete
 example, a partial mitigation is for \fnc{free} to scrub memory so that, at
 least, whatever was present in the buffer cannot be read by the attacker.
