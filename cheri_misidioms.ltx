@@ -336,6 +336,13 @@ CHERI.
 \subsection{The Allocators under Consideration}
 
 \begin{table}[tb]
+  \caption{The allocators we examined, their size in Source Lines of Code
+  (SLoC), and the number of lines changed (as an absolute value and relative
+  percentage) to adapt them for purecap CheriBSD. The top portion
+  of the table shows the allocators which
+  passed a basic test and are used in our experiments; the bottom portion
+  shows the allocators which failed a basic test.}
+  \label{tab:allocator_summary}
 \begin{center}
 \begin{tabular}{llrrr}
 \toprule
@@ -347,13 +354,6 @@ Allocator & Version & SLoC & \multicolumn{2}{c}{Changed}\\
 \\ \bottomrule
 \end{tabular}
 \end{center}
-  \caption{The allocators we examined, their size in Source Lines of Code
-  (SLoC), and the number of lines changed (as an absolute value and relative
-  percentage) to adapt them for purecap CheriBSD. The top portion
-  of the table shows the allocators which
-  passed a basic test and are used in our experiments; the bottom portion
-  shows the allocators which failed a basic test.}
-\label{tab:allocator_summary}
 \end{table}
 
 A number of allocators are available for purecap CheriBSD, installable via three
@@ -451,6 +451,10 @@ requires more LoC to be adapted.
 \label{sec:atks}
 
 \begin{table}[t]
+  \caption{Attacks per allocator: $\times$ indicates that an allocator is vulnerable to an attack;
+  $\checkmark$ that the allocator is invulnerable; and $\oslash$ a failure for other
+  reasons (e.g.~a segfault).}
+  \label{tab:atks}
 \begin{center}
 \begin{tabular}{lccccc}
 \toprule
@@ -459,10 +463,6 @@ Allocator & \tblescunauthentic & \tblescperms & \tblnarrowwidencapleak & \tblove
 \input{./data/results/tests.tex}
 \\ \bottomrule
 \end{tabular}
-\caption{Attacks per allocator: $\times$ indicates that an allocator is vulnerable to an attack;
-  $\checkmark$ that the allocator is invulnerable; and $\oslash$ a failure for other
-  reasons (e.g.~a segfault).}
-\label{tab:atks}
 \end{center}
 \end{table}
 
@@ -813,6 +813,11 @@ for these differences.
 \subsection{Methodology}
 
 \begin{table}[t]
+  \caption{Our benchmark suite. We list the benchmark name, the source
+  of the benchmark, and a brief characterisation of it as a workload.
+  \emph{Alloc} is short-hand for `allocator intensive' (i.e.~frequent
+  allocation and deallocation).}
+  \label{tab:benchmarks}
   \begin{center}
     \begin{tabular}{lll}
       \toprule
@@ -831,11 +836,6 @@ for these differences.
       \bottomrule
     \end{tabular}
   \end{center}
-  \caption{Our benchmark suite. We list the benchmark name, the source
-  of the benchmark, and a brief characterisation of it as a workload.
-  \emph{Alloc} is short-hand for `allocator intensive' (i.e.~frequent
-  allocation and deallocation).}
-\label{tab:benchmarks}
 \end{table}
 
 \begin{figure*}[t]
