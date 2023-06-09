@@ -26,10 +26,8 @@ elseif (${gclib} STREQUAL cheribumpalloc)
     target_link_libraries(glibc_bench_simple.elf PRIVATE cheribumpalloc)
     target_link_libraries(glibc_bench_thread.elf PRIVATE cheribumpalloc)
 elseif (${gclib} STREQUAL static)
-    target_link_libraries(glibc_bench_simple.elf PRIVATE ${staticlib})
-    target_link_libraries(glibc_bench_thread.elf PRIVATE ${staticlib})
-    target_link_options(glibc_bench_simple.elf PRIVATE -no-pie -static)
-    target_link_options(glibc_bench_thread.elf PRIVATE -no-pie -static)
+    setup_static(glibc_bench_simple.elf)
+    setup_static(glibc_bench_thread.elf)
 endif()
 
 install(TARGETS glibc_bench_simple.elf  glibc_bench_thread.elf

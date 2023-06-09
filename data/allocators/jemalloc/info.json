@@ -8,12 +8,14 @@
             "purecap":
             {
                 "name": "cheribsd-morello-purecap",
-                "lib_file": "./output/rootfs-morello-purecap/lib/libc.so.7"
+                "lib_file": "./output/rootfs-morello-purecap/lib/libc.so.7",
+                "lib_file_static": "./output/rootfs-morello-purecap/usr/lib/libc.a"
             },
             "hybrid":
             {
                 "name": "cheribsd-morello-hybrid",
-                "lib_file": "./output/rootfs-morello-hybrid/lib/libc.so.7"
+                "lib_file": "./output/rootfs-morello-hybrid/lib/libc.so.7",
+                "lib_file_static": "./output/rootfs-morello-hybrid/usr/lib/libc.a"
             }
         }
     },

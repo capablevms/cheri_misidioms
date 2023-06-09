@@ -19,8 +19,7 @@ elseif (${gclib} STREQUAL cheribumpalloc)
     include_directories(AFTER ${CMAKE_SOURCE_DIR}/cheri_bump_alloc)
     target_link_libraries(richards.elf PRIVATE cheribumpalloc)
 elseif (${gclib} STREQUAL static)
-    target_link_libraries(richards.elf PRIVATE ${staticlib})
-    target_link_options(richards.elf PRIVATE -no-pie -static)
+    setup_static(richards.elf)
 endif()
 
 install(TARGETS richards.elf

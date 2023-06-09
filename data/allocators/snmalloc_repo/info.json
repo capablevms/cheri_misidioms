@@ -5,9 +5,9 @@
         "target": "https://github.com/microsoft/snmalloc",
         "commit": "0a5eb403adf85b3e04ad90e6b44e0cb1de99ba38",
         "lib_file": "./build/libsnmallocshim.so",
+        "lib_file_static": "./build/libsnmallocshim-static.a",
+        "static_flags": "-Wl,--defsym=malloc=sn_malloc,--defsym=calloc=sn_calloc,--defsym=realloc=sn_realloc,--defsym=free=sn_free",
         "build_file": "build.sh"
     },
     "date": "2022-11-21"
 }
-
-

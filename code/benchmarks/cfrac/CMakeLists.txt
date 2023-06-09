@@ -27,8 +27,7 @@ elseif (${gclib} STREQUAL cheribumpalloc)
     include_directories(AFTER ${CMAKE_SOURCE_DIR}/cheri_bump_alloc)
     target_link_libraries(cfrac.elf PRIVATE cheribumpalloc)
 elseif (${gclib} STREQUAL static)
-    target_link_libraries(cfrac.elf PRIVATE ${staticlib})
-    target_link_options(cfrac.elf PRIVATE -no-pie -static)
+    setup_static(cfrac.elf)
 endif()
 
 install(TARGETS cfrac.elf

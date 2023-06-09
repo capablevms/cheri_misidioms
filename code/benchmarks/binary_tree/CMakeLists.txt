@@ -20,8 +20,7 @@ elseif (${gclib} STREQUAL cheribumpalloc)
     include_directories(AFTER ${CMAKE_SOURCE_DIR}/cheri_bump_alloc)
     target_link_libraries(binary_tree.elf PRIVATE cheribumpalloc)
 elseif (${gclib} STREQUAL static)
-    target_link_libraries(binary_tree.elf PRIVATE ${staticlib})
-    target_link_options(binary_tree.elf PRIVATE -no-pie -static)
+    setup_static(binary_tree.elf)
 endif()
 
 install(TARGETS binary_tree.elf 

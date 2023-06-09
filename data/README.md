@@ -28,6 +28,25 @@ Run the evaluation script:
 
 `$ python3.10 ./get_all.py`
 
+### Static linking
+
+We additionally provide an option to run the benchmarks with static linking
+(mainly due to observing that shared object could potentially be expensive
+enough to induce a significant execution time overhead). By using the flag
+`--benchs-static`, an additional benchmark evaluation will be performed using
+statically linked version of the benchmarks. The argument to this flag will
+determine what kind of CHERI mode the benchmarks should be run in.
+
+An additional script, `parse_statics.py` can be used, given a `results.json`
+produced by `get_all.py`, to parse some of the metrics computed by the
+evaluation run, and see a general overview of dynamic versus static linkage
+results. The script will only output benchmarks which have a "margin" (the
+percentage difference in runtime, with dynamic considered 100%) higher than a
+given threshold (by default, 7%).
+
+Furthermore, an additional flag called `--bench-static-lto` can be used to
+compile the benchmarks with link-time optimisation turned on.
+
 ## Experimental artifact
 
 To provide a reproducible artifact of our ISMM paper [^1], we provide an
@@ -45,6 +64,9 @@ repetitions. By default, the number of repetitions in the script is 3, and can
 be controlled via the flag `--benchs-rep-count`.
 
 ## Known issues
+
+While the script has been thoroughly tested, during implementation, we
+non-deterministically observed the following issues:
 
 ### Terminal output stuck
 
